@@ -831,29 +831,31 @@ Honest self-assessment of the biggest risks:
 
 ## 🗺️ Roadmap
 
+> Checked Phase 1-3 items below are implemented as **Compose UI with dummy/local data only** — no Firebase, no real auth, no live backend yet. See `app/` for the current runnable Android Studio scaffold.
+
 ### Phase 1 — MVP Foundation
 - [x] Project setup and architecture design
 - [ ] Firebase project setup
-- [ ] Authentication (Email + Google)
-- [ ] Role selection flow
-- [ ] Home screen with chef discovery
-- [ ] Chef & meal detail pages
-- [ ] Cart and order placement
-- [ ] Basic chef dashboard
+- [ ] Authentication (Email + Google) — UI screen built, not wired to a real backend
+- [x] Role selection flow
+- [x] Home screen with chef discovery
+- [x] Chef & meal detail pages
+- [x] Cart and order placement
+- [x] Basic chef dashboard
 
 ### Phase 2 — Core Features
-- [ ] Real-time order tracking
-- [ ] 4-dimension rating & review system
+- [x] Real-time order tracking — simulated auto-progress timeline, not backend-driven
+- [x] 4-dimension rating & review system
 - [ ] AI recommendation engine (hybrid scoring)
-- [ ] Chef menu manager
+- [x] Chef menu manager
 - [ ] Push notifications (FCM)
-- [ ] Chef earnings dashboard
+- [x] Chef earnings dashboard
 
 ### Phase 3 — Polish
-- [ ] Dark mode
+- [x] Dark mode
 - [ ] Animations and micro-interactions
-- [ ] Empty states and shimmer loaders
-- [ ] Complete onboarding flow
+- [ ] Empty states and shimmer loaders — empty states done, shimmer loaders pending
+- [x] Complete onboarding flow
 - [ ] Error handling and offline mode
 
 ### Phase 4 — Advanced
