@@ -11,6 +11,7 @@ import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
 import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefDashboardScreen
+import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
 import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
 import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
@@ -64,9 +65,16 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Routes.CHEF_DASHBOARD) {
-            ChefDashboardScreen(onLogout = {
-                navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
-            })
+            ChefDashboardScreen(
+                onLogout = {
+                    navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
+                },
+                onManageMenu = { navController.navigate(Routes.MENU_MANAGER) }
+            )
+        }
+
+        composable(Routes.MENU_MANAGER) {
+            MenuManagerScreen(onBack = { navController.popBackStack() })
         }
 
         composable(

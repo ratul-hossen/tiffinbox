@@ -7,6 +7,7 @@ object Routes {
     const val LOGIN = "login"
     const val MAIN = "main"
     const val CHEF_DASHBOARD = "chef_dashboard"
+    const val MENU_MANAGER = "menu_manager"
     const val CHEF_DETAIL = "chef_detail/{chefId}"
     const val MEAL_DETAIL = "meal_detail/{mealId}"
     const val CART = "cart"

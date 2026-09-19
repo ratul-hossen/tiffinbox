@@ -24,7 +24,7 @@ private val dummyOrders = listOf(
 )
 
 @Composable
-fun ChefDashboardScreen(onLogout: () -> Unit) {
+fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf(dummyOrders) }
 
@@ -62,6 +62,11 @@ fun ChefDashboardScreen(onLogout: () -> Unit) {
                 Text("আজ Available আছি", style = MaterialTheme.typography.titleMedium)
                 Switch(checked = available, onCheckedChange = { available = it })
             }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(onClick = onManageMenu, modifier = Modifier.fillMaxWidth()) {
+            Text("মেনু ম্যানেজ করুন")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
