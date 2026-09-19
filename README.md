@@ -856,7 +856,7 @@ Honest self-assessment of the biggest risks:
 ### Phase 3 — Polish
 - [x] Dark mode
 - [x] Animations and micro-interactions — fade/slide screen transitions; more granular micro-interactions (press states, shared-element transitions) still pending
-- [ ] Empty states and shimmer loaders — empty states done, shimmer loaders pending
+- [x] Empty states and shimmer loaders
 - [x] Complete onboarding flow
 - [ ] Error handling and offline mode
 
