@@ -10,11 +10,18 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.ui.components.RatingRow
 
@@ -25,8 +32,26 @@ fun ChefDetailScreen(
     onBack: () -> Unit,
     onMealClick: (String) -> Unit
 ) {
-    val chef = SampleData.chefById(chefId) ?: return
-    val meals = SampleData.mealsForChef(chefId)
+    var chefState by remember(chefId) { mutableStateOf<ChefUi?>(SampleData.chefById(chefId)) }
+    var meals by remember(chefId) { mutableStateOf(SampleData.mealsForChef(chefId)) }
+    var isLoading by remember(chefId) { mutableStateOf(chefState == null) }
+
+    LaunchedEffect(chefId) {
+        FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chefState = it }
+        val firestoreMeals = FirestoreCatalogRepository.getMealsForChef(chefId)
+        if (firestoreMeals.isNotEmpty()) meals = firestoreMeals
+        isLoading = false
+    }
+
+    if (chefState == null) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+    val chef = chefState!!
 
     Scaffold(
         topBar = {

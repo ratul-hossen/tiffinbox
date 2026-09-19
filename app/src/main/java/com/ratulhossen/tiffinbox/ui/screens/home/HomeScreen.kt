@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,11 +22,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 
 @Composable
 fun HomeScreen(onChefClick: (String) -> Unit) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var chefs by remember { mutableStateOf(SampleData.chefs) }
+
+    LaunchedEffect(Unit) {
+        val firestoreChefs = FirestoreCatalogRepository.getChefs()
+        if (firestoreChefs.isNotEmpty()) chefs = firestoreChefs
+    }
 
     Column(
         modifier = Modifier
@@ -95,7 +103,7 @@ fun HomeScreen(onChefClick: (String) -> Unit) {
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(SampleData.chefs) { chef ->
+            items(chefs) { chef ->
                 ChefCard(
                     chef = chef,
                     modifier = Modifier.width(180.dp),
@@ -111,7 +119,7 @@ fun HomeScreen(onChefClick: (String) -> Unit) {
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(SampleData.chefs.reversed()) { chef ->
+            items(chefs.reversed()) { chef ->
                 ChefCard(
                     chef = chef,
                     modifier = Modifier.width(180.dp),

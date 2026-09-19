@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreMealRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
 
@@ -33,6 +35,13 @@ private data class ManagedMeal(val meal: MealUi, val isAvailable: Boolean)
 fun MenuManagerScreen(onBack: () -> Unit) {
     var meals by remember {
         mutableStateOf(SampleData.mealsForChef(DEMO_CHEF_ID).map { ManagedMeal(it, true) })
+    }
+
+    LaunchedEffect(Unit) {
+        val firestoreMeals = FirestoreCatalogRepository.getMealsForChef(DEMO_CHEF_ID)
+        if (firestoreMeals.isNotEmpty()) {
+            meals = firestoreMeals.map { ManagedMeal(it, true) }
+        }
     }
     var showAddDialog by remember { mutableStateOf(false) }
 

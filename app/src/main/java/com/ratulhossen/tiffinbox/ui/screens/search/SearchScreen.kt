@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.ui.components.MealCard
 
@@ -24,9 +26,15 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var vegOnly by remember { mutableStateOf(false) }
+    var allMeals by remember { mutableStateOf(SampleData.meals) }
 
-    val results = remember(query, selectedCategory, vegOnly) {
-        SampleData.meals.filter { meal ->
+    LaunchedEffect(Unit) {
+        val firestoreMeals = FirestoreCatalogRepository.getAllMeals()
+        if (firestoreMeals.isNotEmpty()) allMeals = firestoreMeals
+    }
+
+    val results = remember(query, selectedCategory, vegOnly, allMeals) {
+        allMeals.filter { meal ->
             val matchesQuery = query.isBlank() ||
                 meal.name.contains(query, ignoreCase = true) ||
                 meal.description.contains(query, ignoreCase = true) ||

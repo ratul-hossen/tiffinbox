@@ -29,6 +29,8 @@ object FirestoreSeedRepository {
                     hashMapOf(
                         "kitchenName" to chef.kitchenName,
                         "ownerName" to chef.ownerName,
+                        "emoji" to chef.emoji,
+                        "distanceKm" to chef.distanceKm,
                         "bio" to chef.bio,
                         "specialty" to chef.specialty,
                         "overallRating" to chef.overallRating,
@@ -50,6 +52,7 @@ object FirestoreSeedRepository {
                     hashMapOf(
                         "chefId" to meal.chefId,
                         "name" to meal.name,
+                        "emoji" to meal.emoji,
                         "description" to meal.description,
                         "price" to meal.price,
                         "category" to meal.category,

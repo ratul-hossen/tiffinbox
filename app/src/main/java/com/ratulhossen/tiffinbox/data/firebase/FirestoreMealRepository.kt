@@ -14,6 +14,7 @@ object FirestoreMealRepository {
             val data = hashMapOf(
                 "chefId" to meal.chefId,
                 "name" to meal.name,
+                "emoji" to meal.emoji,
                 "description" to meal.description,
                 "price" to meal.price,
                 "category" to meal.category,

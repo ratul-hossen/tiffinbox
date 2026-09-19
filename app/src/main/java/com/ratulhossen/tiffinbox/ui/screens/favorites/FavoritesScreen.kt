@@ -7,17 +7,30 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 
 @Composable
 fun FavoritesScreen(onChefClick: (String) -> Unit) {
-    val favoriteChefs = SampleData.chefs.filter { FavoritesStore.isFavorite(it.id) }
+    var allChefs by remember { mutableStateOf(SampleData.chefs) }
+
+    LaunchedEffect(Unit) {
+        val firestoreChefs = FirestoreCatalogRepository.getChefs()
+        if (firestoreChefs.isNotEmpty()) allChefs = firestoreChefs
+    }
+
+    val favoriteChefs = allChefs.filter { FavoritesStore.isFavorite(it.id) }
 
     if (favoriteChefs.isEmpty()) {
         Box(
