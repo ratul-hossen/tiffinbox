@@ -848,7 +848,7 @@ Honest self-assessment of the biggest risks:
 ### Phase 2 — Core Features
 - [x] Real-time order tracking — simulated auto-progress timeline, not backend-driven
 - [x] 4-dimension rating & review system
-- [ ] AI recommendation engine (hybrid scoring)
+- [x] AI recommendation engine (hybrid scoring) — proximity + rating live; budget/dietary/repeat-order signals default to neutral until real usage history exists
 - [x] Chef menu manager
 - [ ] Push notifications (FCM)
 - [x] Chef earnings dashboard

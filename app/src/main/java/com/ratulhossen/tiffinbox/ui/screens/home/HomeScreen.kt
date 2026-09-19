@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 
 @Composable
@@ -34,6 +35,9 @@ fun HomeScreen(onChefClick: (String) -> Unit) {
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
         if (firestoreChefs.isNotEmpty()) chefs = firestoreChefs
     }
+
+    val recommendedChefs = remember(chefs) { RecommendationEngine.recommend(chefs) }
+    val nearbyChefs = remember(chefs) { chefs.sortedBy { it.distanceKm } }
 
     Column(
         modifier = Modifier
@@ -103,7 +107,7 @@ fun HomeScreen(onChefClick: (String) -> Unit) {
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(chefs) { chef ->
+            items(recommendedChefs) { chef ->
                 ChefCard(
                     chef = chef,
                     modifier = Modifier.width(180.dp),
@@ -119,7 +123,7 @@ fun HomeScreen(onChefClick: (String) -> Unit) {
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(chefs.reversed()) { chef ->
+            items(nearbyChefs) { chef ->
                 ChefCard(
                     chef = chef,
                     modifier = Modifier.width(180.dp),
