@@ -1,5 +1,11 @@
 package com.ratulhossen.tiffinbox.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIntoContainer
+import androidx.compose.animation.slideOutOfContainer
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -26,7 +32,24 @@ import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
 fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
     var selectedRole = UserRole.CUSTOMER
 
-    NavHost(navController = navController, startDestination = Routes.SPLASH) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.SPLASH,
+        enterTransition = {
+            fadeIn(animationSpec = tween(250)) +
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(250))
+        },
+        exitTransition = {
+            fadeOut(animationSpec = tween(250))
+        },
+        popEnterTransition = {
+            fadeIn(animationSpec = tween(250))
+        },
+        popExitTransition = {
+            fadeOut(animationSpec = tween(250)) +
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(250))
+        }
+    ) {
 
         composable(Routes.SPLASH) {
             SplashScreen(onFinished = {
