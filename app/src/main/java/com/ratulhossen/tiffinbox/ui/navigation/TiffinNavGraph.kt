@@ -1,0 +1,106 @@
+package com.ratulhossen.tiffinbox.ui.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
+import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
+import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
+import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefDashboardScreen
+import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
+import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
+import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
+import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
+import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
+import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
+import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
+
+@Composable
+fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
+    var selectedRole = UserRole.CUSTOMER
+
+    NavHost(navController = navController, startDestination = Routes.SPLASH) {
+
+        composable(Routes.SPLASH) {
+            SplashScreen(onFinished = {
+                navController.navigate(Routes.ONBOARDING) { popUpTo(Routes.SPLASH) { inclusive = true } }
+            })
+        }
+
+        composable(Routes.ONBOARDING) {
+            OnboardingScreen(onFinished = {
+                navController.navigate(Routes.ROLE_SELECT) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+            })
+        }
+
+        composable(Routes.ROLE_SELECT) {
+            RoleSelectionScreen(onRoleSelected = { role ->
+                selectedRole = role
+                navController.navigate(Routes.LOGIN)
+            })
+        }
+
+        composable(Routes.LOGIN) {
+            LoginScreen(onLoginSuccess = {
+                val destination = if (selectedRole == UserRole.CHEF) Routes.CHEF_DASHBOARD else Routes.MAIN
+                navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
+            })
+        }
+
+        composable(Routes.MAIN) {
+            MainScreen(
+                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) },
+                onCartClick = { navController.navigate(Routes.CART) }
+            )
+        }
+
+        composable(Routes.CHEF_DASHBOARD) {
+            ChefDashboardScreen(onLogout = {
+                navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
+            })
+        }
+
+        composable(
+            route = Routes.CHEF_DETAIL,
+            arguments = listOf(navArgument("chefId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chefId = backStackEntry.arguments?.getString("chefId").orEmpty()
+            ChefDetailScreen(
+                chefId = chefId,
+                onBack = { navController.popBackStack() },
+                onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) }
+            )
+        }
+
+        composable(
+            route = Routes.MEAL_DETAIL,
+            arguments = listOf(navArgument("mealId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val mealId = backStackEntry.arguments?.getString("mealId").orEmpty()
+            MealDetailScreen(
+                mealId = mealId,
+                onBack = { navController.popBackStack() },
+                onAddedToCart = { navController.navigate(Routes.CART) }
+            )
+        }
+
+        composable(Routes.CART) {
+            CartScreen(
+                onBack = { navController.popBackStack() },
+                onPlaceOrder = {
+                    navController.navigate(Routes.ORDER_TRACKING) { popUpTo(Routes.MAIN) }
+                }
+            )
+        }
+
+        composable(Routes.ORDER_TRACKING) {
+            OrderTrackingScreen(onDone = {
+                navController.navigate(Routes.MAIN) { popUpTo(Routes.MAIN) { inclusive = true } }
+            })
+        }
+    }
+}
