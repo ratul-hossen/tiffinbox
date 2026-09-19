@@ -24,6 +24,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.ui.components.RatingRow
+import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,9 +46,7 @@ fun ChefDetailScreen(
 
     if (chefState == null) {
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            ChefDetailShimmer()
         }
         return
     }
@@ -134,6 +133,27 @@ fun ChefDetailScreen(
                 )
             }
             item { Spacer(modifier = Modifier.height(24.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun ChefDetailShimmer() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        ShimmerBox(modifier = Modifier.fillMaxWidth().height(140.dp), cornerRadius = 0.dp)
+        Column(modifier = Modifier.padding(20.dp)) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.6f).height(24.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.4f).height(14.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(14.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            repeat(3) {
+                ShimmerBox(modifier = Modifier.fillMaxWidth().height(64.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+            }
         }
     }
 }

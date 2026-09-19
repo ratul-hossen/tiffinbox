@@ -25,6 +25,7 @@ import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
+import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,9 +46,7 @@ fun MealDetailScreen(
 
     if (mealState == null) {
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            MealDetailShimmer()
         }
         return
     }
@@ -160,6 +159,22 @@ fun MealDetailScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MealDetailShimmer() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        ShimmerBox(modifier = Modifier.fillMaxWidth().height(180.dp), cornerRadius = 0.dp)
+        Column(modifier = Modifier.padding(20.dp)) {
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.7f).height(24.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.3f).height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth().height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            ShimmerBox(modifier = Modifier.fillMaxWidth(0.8f).height(14.dp))
         }
     }
 }
