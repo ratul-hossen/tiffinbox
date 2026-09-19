@@ -2,6 +2,8 @@ package com.ratulhossen.tiffinbox.data
 
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.model.MealUi
+import com.ratulhossen.tiffinbox.data.model.OrderStage
+import com.ratulhossen.tiffinbox.data.model.PastOrderUi
 
 object SampleData {
 
@@ -117,6 +119,36 @@ object SampleData {
             dietaryTags = listOf("Veg"),
             availableQuantity = 10,
             portionSize = "2 pieces"
+        )
+    )
+
+    val pastOrders = listOf(
+        PastOrderUi(
+            id = "order1",
+            chefName = "Rukhsana's Kitchen",
+            chefEmoji = "🍛",
+            itemsSummary = "১x ভাত, ডাল, মুরগির ঝোল",
+            total = 150,
+            status = OrderStage.DELIVERED,
+            placedOn = "গতকাল, ১:৩০ PM"
+        ),
+        PastOrderUi(
+            id = "order2",
+            chefName = "Amina's Home Food",
+            chefEmoji = "🍲",
+            itemsSummary = "২x লো-অয়েল ভেজিটেবল খিচুড়ি",
+            total = 210,
+            status = OrderStage.DELIVERED,
+            placedOn = "৩ দিন আগে"
+        ),
+        PastOrderUi(
+            id = "order3",
+            chefName = "Rukhsana's Kitchen",
+            chefEmoji = "🍛",
+            itemsSummary = "১x ইলিশ ভাজা স্পেশাল থালি",
+            total = 210,
+            status = OrderStage.OUT_FOR_DELIVERY,
+            placedOn = "আজ, ১২:৪৫ PM"
         )
     )
 

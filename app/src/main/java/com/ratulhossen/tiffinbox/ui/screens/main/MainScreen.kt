@@ -14,10 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.ui.screens.favorites.FavoritesScreen
 import com.ratulhossen.tiffinbox.ui.screens.home.HomeScreen
+import com.ratulhossen.tiffinbox.ui.screens.orders.OrdersScreen
+import com.ratulhossen.tiffinbox.ui.screens.profile.ProfileScreen
+import com.ratulhossen.tiffinbox.ui.screens.search.SearchScreen
 
 private data class Tab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
@@ -33,7 +36,9 @@ private val tabs = listOf(
 @Composable
 fun MainScreen(
     onChefClick: (String) -> Unit,
-    onCartClick: () -> Unit
+    onMealClick: (String) -> Unit,
+    onCartClick: () -> Unit,
+    onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val cartCount = CartStore.items.sumOf { it.quantity }
@@ -73,18 +78,11 @@ fun MainScreen(
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
                 0 -> HomeScreen(onChefClick = onChefClick)
-                else -> ComingSoon(tabs[selectedTab].label)
+                1 -> SearchScreen(onMealClick = onMealClick)
+                2 -> OrdersScreen()
+                3 -> FavoritesScreen(onChefClick = onChefClick)
+                4 -> ProfileScreen(onLogout = onLogout)
             }
         }
-    }
-}
-
-@Composable
-private fun ComingSoon(name: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("$name — শীঘ্রই আসছে")
     }
 }

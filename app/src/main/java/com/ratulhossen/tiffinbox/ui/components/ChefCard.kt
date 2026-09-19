@@ -7,6 +7,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -16,7 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+
+private val FavoriteRed = Color(0xFFE0303D)
 
 @Composable
 fun ChefCard(
@@ -38,6 +43,22 @@ fun ChefCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(chef.emoji, fontSize = 40.sp)
+                val isFavorite = FavoritesStore.isFavorite(chef.id)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                        .background(Color.White, CircleShape)
+                        .clickable { FavoritesStore.toggle(chef.id) }
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (isFavorite) FavoriteRed else Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 if (chef.isVerified) {
                     Row(
                         modifier = Modifier

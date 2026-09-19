@@ -45,3 +45,13 @@ enum class OrderStage(val label: String) {
     OUT_FOR_DELIVERY("Out for Delivery"),
     DELIVERED("Delivered")
 }
+
+data class PastOrderUi(
+    val id: String,
+    val chefName: String,
+    val chefEmoji: String,
+    val itemsSummary: String,
+    val total: Int,
+    val status: OrderStage,
+    val placedOn: String
+)

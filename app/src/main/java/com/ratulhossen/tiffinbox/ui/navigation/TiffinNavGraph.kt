@@ -54,7 +54,11 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         composable(Routes.MAIN) {
             MainScreen(
                 onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) },
-                onCartClick = { navController.navigate(Routes.CART) }
+                onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
+                onCartClick = { navController.navigate(Routes.CART) },
+                onLogout = {
+                    navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
+                }
             )
         }
 
