@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
 import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
@@ -29,7 +30,15 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.SPLASH) {
             SplashScreen(onFinished = {
-                navController.navigate(Routes.ONBOARDING) { popUpTo(Routes.SPLASH) { inclusive = true } }
+                // Skip straight back in if Firebase already has a signed-in
+                // user (e.g. app was reopened); defaults to the customer
+                // home since chef role isn't persisted anywhere yet.
+                val destination = if (FirebaseAuthRepository.currentUser != null) {
+                    Routes.MAIN
+                } else {
+                    Routes.ONBOARDING
+                }
+                navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
             })
         }
 
@@ -59,6 +68,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
                 onCartClick = { navController.navigate(Routes.CART) },
                 onLogout = {
+                    FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 }
             )
@@ -67,6 +77,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         composable(Routes.CHEF_DASHBOARD) {
             ChefDashboardScreen(
                 onLogout = {
+                    FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 },
                 onManageMenu = { navController.navigate(Routes.MENU_MANAGER) }
