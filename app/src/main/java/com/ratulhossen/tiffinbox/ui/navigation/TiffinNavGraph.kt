@@ -15,6 +15,7 @@ import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
 import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
 import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
+import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
@@ -103,6 +104,12 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.ORDER_TRACKING) {
             OrderTrackingScreen(onDone = {
+                navController.navigate(Routes.REVIEW) { popUpTo(Routes.ORDER_TRACKING) { inclusive = true } }
+            })
+        }
+
+        composable(Routes.REVIEW) {
+            ReviewScreen(onSubmitted = {
                 navController.navigate(Routes.MAIN) { popUpTo(Routes.MAIN) { inclusive = true } }
             })
         }

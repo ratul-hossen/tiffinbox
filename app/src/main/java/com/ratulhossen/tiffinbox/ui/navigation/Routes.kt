@@ -11,6 +11,7 @@ object Routes {
     const val MEAL_DETAIL = "meal_detail/{mealId}"
     const val CART = "cart"
     const val ORDER_TRACKING = "order_tracking"
+    const val REVIEW = "review"
 
     fun chefDetail(chefId: String) = "chef_detail/$chefId"
     fun mealDetail(mealId: String) = "meal_detail/$mealId"
