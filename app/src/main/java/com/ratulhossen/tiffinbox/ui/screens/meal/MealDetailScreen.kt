@@ -10,8 +10,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -21,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.model.MealUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,8 +33,26 @@ fun MealDetailScreen(
     onBack: () -> Unit,
     onAddedToCart: () -> Unit
 ) {
-    val meal = SampleData.mealById(mealId) ?: return
-    var quantity by remember { mutableIntStateOf(1) }
+    var mealState by remember(mealId) { mutableStateOf<MealUi?>(SampleData.mealById(mealId)) }
+    var isLoading by remember(mealId) { mutableStateOf(mealState == null) }
+
+    LaunchedEffect(mealId) {
+        if (mealState == null) {
+            mealState = FirestoreCatalogRepository.getMeal(mealId)
+        }
+        isLoading = false
+    }
+
+    if (mealState == null) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+    val meal = mealState!!
+    var quantity by remember(mealId) { mutableIntStateOf(1) }
 
     Scaffold(
         topBar = {
@@ -51,11 +73,17 @@ fun MealDetailScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                    IconButton(
+                        onClick = { if (quantity > 1) quantity-- },
+                        enabled = quantity > 1
+                    ) {
                         Icon(Icons.Filled.Remove, contentDescription = "Decrease")
                     }
                     Text("$quantity", style = MaterialTheme.typography.titleMedium)
-                    IconButton(onClick = { quantity++ }) {
+                    IconButton(
+                        onClick = { if (quantity < meal.availableQuantity) quantity++ },
+                        enabled = quantity < meal.availableQuantity
+                    ) {
                         Icon(Icons.Filled.Add, contentDescription = "Increase")
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -64,11 +92,18 @@ fun MealDetailScreen(
                             CartStore.add(meal, quantity)
                             onAddedToCart()
                         },
+                        enabled = meal.availableQuantity > 0,
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
                     ) {
-                        Text("Add to Cart • ৳${meal.price * quantity}")
+                        Text(
+                            if (meal.availableQuantity > 0) {
+                                "Add to Cart • ৳${meal.price * quantity}"
+                            } else {
+                                "আজকের জন্য শেষ"
+                            }
+                        )
                     }
                 }
             }
