@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +49,13 @@ fun CartScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
                             onClick = {
+                                FirestoreOrderRepository.placeOrder(
+                                    items = items.toList(),
+                                    subtotal = CartStore.subtotal,
+                                    deliveryFee = CartStore.DELIVERY_FEE,
+                                    platformFee = CartStore.PLATFORM_FEE,
+                                    total = CartStore.total
+                                )
                                 CartStore.clear()
                                 onPlaceOrder()
                             },

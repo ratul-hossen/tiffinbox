@@ -14,7 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
 import com.ratulhossen.tiffinbox.ui.components.StarRatingInput
+
+// The tracking/review demo flow doesn't carry a real order/chef id yet,
+// so this matches the single chef ("Rukhsana's Kitchen") used throughout
+// the rest of the dummy-data demo.
+private const val DEMO_CHEF_ID = "chef1"
 
 @Composable
 fun ReviewScreen(onSubmitted: () -> Unit) {
@@ -62,7 +68,17 @@ fun ReviewScreen(onSubmitted: () -> Unit) {
 
         Spacer(modifier = Modifier.height(28.dp))
         Button(
-            onClick = onSubmitted,
+            onClick = {
+                FirestoreReviewRepository.submitReview(
+                    chefId = DEMO_CHEF_ID,
+                    taste = taste,
+                    hygiene = hygiene,
+                    packaging = packaging,
+                    onTime = onTime,
+                    comment = comment
+                )
+                onSubmitted()
+            },
             enabled = canSubmit,
             modifier = Modifier
                 .fillMaxWidth()

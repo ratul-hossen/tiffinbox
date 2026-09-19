@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreMealRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
 
 private const val DEMO_CHEF_ID = "chef1"
@@ -106,6 +107,7 @@ fun MenuManagerScreen(onBack: () -> Unit) {
                     portionSize = "1 plate"
                 )
                 meals = meals + ManagedMeal(newMeal, true)
+                FirestoreMealRepository.addMeal(newMeal)
                 showAddDialog = false
             }
         )
