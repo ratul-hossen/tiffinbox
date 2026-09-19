@@ -690,10 +690,12 @@ cd tiffinbox
 **2. Set up Firebase**
 
 - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-- Enable **Authentication** (Email/Password, Google)
-- Enable **Cloud Firestore**
+- Add an Android app to it with package name **`com.ratulhossen.tiffinbox`** (must match exactly, or `google-services.json` won't resolve)
+- Enable **Authentication** → Email/Password (Google Sign-In is UI-only for now, not wired yet)
+- Enable **Cloud Firestore** (rules reference: `firestore.rules` at the repo root)
 - Enable **Storage**
-- Download `google-services.json` and place it in the `app/` directory
+- Download `google-services.json` and place it directly in the `app/` directory (next to `app/build.gradle.kts`)
+- Re-sync Gradle — `app/build.gradle.kts` applies the Google Services plugin automatically once that file is present, so nothing else needs to change
 
 **3. Configure API keys**
 

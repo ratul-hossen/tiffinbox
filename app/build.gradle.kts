@@ -63,6 +63,12 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
@@ -71,4 +77,12 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+// The Google Services plugin hard-fails Gradle sync if google-services.json is
+// missing, so it's only applied once that file actually exists. Add the file
+// (from your Firebase console project, package name com.ratulhossen.tiffinbox)
+// to this app/ directory, re-sync, and Firebase will initialize automatically.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

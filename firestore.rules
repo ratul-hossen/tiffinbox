@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Reference ruleset matching the data models in README.md (User, Chef, Meal,
+// Order, Review). Paste this into Firebase Console -> Firestore Database ->
+// Rules once the project and collections exist. Not consumed by the Android
+// build itself.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // users/{userId} — profile data (name, phone, role, addresses)
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId);
+    }
+
+    // chefs/{chefId} — public kitchen profiles, only the owning chef can edit
+    match /chefs/{chefId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // meals/{mealId} — public menu items, only the owning chef can edit
+    match /meals/{mealId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() &&
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid;
+    }
+
+    // orders/{orderId} — visible only to the customer who placed it or the
+    // chef who is fulfilling it
+    match /orders/{orderId} {
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read, update: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid
+      );
+    }
+
+    // reviews/{reviewId} — public read, only the verified buyer can create
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}
