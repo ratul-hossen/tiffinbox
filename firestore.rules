@@ -4,6 +4,12 @@ rules_version = '2';
 // Order, Review). Paste this into Firebase Console -> Firestore Database ->
 // Rules once the project and collections exist. Not consumed by the Android
 // build itself.
+//
+// Note: during initial testing the project is running the simpler
+// "allow read, write: if request.auth != null;" rule for all documents
+// instead of this one. Swap to the per-collection rules below once the
+// chef-ownership fields (chefs/meals docs' userId) are actually being set
+// by a real onboarding flow, rather than the dev-only seed script.
 service cloud.firestore {
   match /databases/{database}/documents {
 
