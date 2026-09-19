@@ -61,7 +61,7 @@ fun ChefDetailScreen(
                             Icon(
                                 Icons.Filled.CheckCircle,
                                 contentDescription = "Verified",
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -76,7 +76,7 @@ fun ChefDetailScreen(
                         Icon(
                             Icons.Filled.Star,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
+                            tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))

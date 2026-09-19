@@ -49,7 +49,7 @@ fun ChefCard(
                         Icon(
                             Icons.Filled.CheckCircle,
                             contentDescription = "Verified",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -79,7 +79,7 @@ fun ChefCard(
                     Icon(
                         Icons.Filled.Star,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
+                        tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(2.dp))
