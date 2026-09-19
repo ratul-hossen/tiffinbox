@@ -15,12 +15,17 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 
 private data class ProfileMenuItem(val icon: ImageVector, val label: String)
 
@@ -35,6 +40,8 @@ private val menuItems = listOf(
 
 @Composable
 fun ProfileScreen(onLogout: () -> Unit) {
+    var seedStatus by remember { mutableStateOf<String?>(null) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.padding(20.dp),
@@ -107,6 +114,33 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 "Logout",
                 color = MaterialTheme.colorScheme.error,
                 fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+        HorizontalDivider()
+        TextButton(
+            onClick = {
+                seedStatus = "পাঠানো হচ্ছে..."
+                FirestoreSeedRepository.seedSampleData { result ->
+                    seedStatus = when (result) {
+                        is FirestoreSeedRepository.SeedResult.Success -> "✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে"
+                        is FirestoreSeedRepository.SeedResult.Failure -> "❌ ${result.message}"
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text("Developer: Sample data Firestore-এ পাঠান", style = MaterialTheme.typography.labelSmall)
+        }
+        if (seedStatus != null) {
+            Text(
+                seedStatus.orEmpty(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
             )
         }
     }
