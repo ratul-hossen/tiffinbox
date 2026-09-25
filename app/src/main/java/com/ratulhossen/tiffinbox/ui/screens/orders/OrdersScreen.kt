@@ -74,14 +74,14 @@ private fun OrderRow(order: PastOrderUi) {
 private fun StatusChip(status: OrderStage) {
     val isDelivered = status == OrderStage.DELIVERED
     val containerColor = if (isDelivered) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
         MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.secondaryContainer
     }
     val contentColor = if (isDelivered) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else {
         MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSecondaryContainer
     }
     Surface(
         color = containerColor,

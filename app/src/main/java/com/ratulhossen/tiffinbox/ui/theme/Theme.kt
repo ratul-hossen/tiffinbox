@@ -8,14 +8,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val LightColors = lightColorScheme(
-    primary = TiffinOrange,
+    primary = TiffinEmerald,
     onPrimary = Color.White,
-    primaryContainer = TiffinOrangeLight,
-    onPrimaryContainer = TiffinOrangeDark,
-    secondary = TiffinGreen,
+    primaryContainer = TiffinEmeraldLight,
+    onPrimaryContainer = TiffinEmeraldDark,
+    secondary = TiffinGraphite,
     onSecondary = Color.White,
-    secondaryContainer = TiffinGreenLight,
-    onSecondaryContainer = TiffinGreenDark,
+    secondaryContainer = TiffinGraphiteLight,
+    onSecondaryContainer = TiffinGraphiteDark,
     tertiary = TiffinAmber,
     onTertiary = Color.White,
     tertiaryContainer = TiffinAmberLight,
@@ -35,14 +35,14 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = TiffinOrange,
-    onPrimary = Color.White,
-    primaryContainer = TiffinOrangeDark,
-    onPrimaryContainer = TiffinOrangeLight,
-    secondary = TiffinGreenLight,
-    onSecondary = TiffinGreenDark,
-    secondaryContainer = TiffinGreenDark,
-    onSecondaryContainer = TiffinGreenLight,
+    primary = TiffinEmeraldBright,
+    onPrimary = TiffinEmeraldOnBright,
+    primaryContainer = TiffinEmeraldDark,
+    onPrimaryContainer = TiffinEmeraldLight,
+    secondary = TiffinGraphiteLight,
+    onSecondary = TiffinGraphiteDark,
+    secondaryContainer = TiffinGraphiteDark,
+    onSecondaryContainer = TiffinGraphiteLight,
     tertiary = TiffinAmberLight,
     onTertiary = TiffinAmberDark,
     tertiaryContainer = TiffinAmberDark,

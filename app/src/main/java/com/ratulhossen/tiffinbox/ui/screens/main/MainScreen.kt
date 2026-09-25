@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.main
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -52,7 +53,11 @@ fun MainScreen(
                         BadgedBox(
                             badge = {
                                 if (cartCount > 0) {
-                                    Badge { Text("$cartCount") }
+                                    Badge {
+                                        AnimatedContent(targetState = cartCount, label = "cartCount") { count ->
+                                            Text("$count")
+                                        }
+                                    }
                                 }
                             }
                         ) {
