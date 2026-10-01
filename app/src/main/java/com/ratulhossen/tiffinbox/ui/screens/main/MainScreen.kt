@@ -40,6 +40,7 @@ fun MainScreen(
     onMealClick: (String) -> Unit,
     onCartClick: () -> Unit,
     onSubscriptionsClick: () -> Unit,
+    onSeeAllChefsClick: (String) -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -86,7 +87,8 @@ fun MainScreen(
                 0 -> HomeScreen(
                     onChefClick = onChefClick,
                     onSearchClick = { selectedTab = 1 },
-                    onProfileClick = { selectedTab = 4 }
+                    onProfileClick = { selectedTab = 4 },
+                    onSeeAllClick = onSeeAllChefsClick
                 )
                 1 -> SearchScreen(onMealClick = onMealClick)
                 2 -> OrdersScreen()

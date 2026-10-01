@@ -21,6 +21,7 @@ import com.ratulhossen.tiffinbox.ui.screens.chat.CustomerChatScreen
 import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefDashboardScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
+import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefListScreen
 import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
 import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
@@ -101,10 +102,23 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
                 onCartClick = { navController.navigate(Routes.CART) },
                 onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
+                onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 }
+            )
+        }
+
+        composable(
+            route = Routes.CHEF_LIST,
+            arguments = listOf(navArgument("sort") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sort = backStackEntry.arguments?.getString("sort").orEmpty()
+            ChefListScreen(
+                initialSort = sort,
+                onBack = { navController.popBackStack() },
+                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) }
             )
         }
 

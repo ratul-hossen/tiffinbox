@@ -34,7 +34,8 @@ import com.ratulhossen.tiffinbox.ui.components.ChefCard
 fun HomeScreen(
     onChefClick: (String) -> Unit,
     onSearchClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onSeeAllClick: (String) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf(SampleData.chefs) }
@@ -147,7 +148,10 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-        SectionHeader("আপনার জন্য Recommended")
+        SectionHeader(
+            title = "আপনার জন্য Recommended",
+            onSeeAllClick = { onSeeAllClick("recommended") }
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -163,7 +167,10 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-        SectionHeader("কাছাকাছি Home Chef")
+        SectionHeader(
+            title = "কাছাকাছি Home Chef",
+            onSeeAllClick = { onSeeAllClick("nearby") }
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
@@ -181,10 +188,20 @@ fun HomeScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(horizontal = 20.dp)
-    )
+private fun SectionHeader(title: String, onSeeAllClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.titleLarge)
+        Text(
+            "সব দেখুন",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable(onClick = onSeeAllClick)
+        )
+    }
 }
