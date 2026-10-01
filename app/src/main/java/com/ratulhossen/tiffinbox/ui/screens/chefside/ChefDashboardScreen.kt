@@ -23,7 +23,7 @@ private val dummyOrders = listOf(
 )
 
 @Composable
-fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit) {
+fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMessages: () -> Unit) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf(dummyOrders) }
 
@@ -69,6 +69,10 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(onClick = onManageMenu, modifier = Modifier.fillMaxWidth()) {
             Text("মেনু ম্যানেজ করুন")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(onClick = onOpenMessages, modifier = Modifier.fillMaxWidth()) {
+            Text("Messages")
         }
 
         Spacer(modifier = Modifier.height(16.dp))

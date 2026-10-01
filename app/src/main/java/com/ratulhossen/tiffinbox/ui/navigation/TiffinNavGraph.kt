@@ -14,6 +14,9 @@ import androidx.navigation.NavType
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
+import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatListScreen
+import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatScreen
+import com.ratulhossen.tiffinbox.ui.screens.chat.CustomerChatScreen
 import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefDashboardScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
@@ -101,12 +104,50 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 },
-                onManageMenu = { navController.navigate(Routes.MENU_MANAGER) }
+                onManageMenu = { navController.navigate(Routes.MENU_MANAGER) },
+                onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) }
             )
         }
 
         composable(Routes.MENU_MANAGER) {
             MenuManagerScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CHEF_CHAT_LIST) {
+            ChefChatListScreen(
+                chefId = "chef1",
+                onThreadClick = { customerId ->
+                    navController.navigate(Routes.chefChat(customerId, "chef1"))
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.CHEF_CHAT,
+            arguments = listOf(
+                navArgument("customerId") { type = NavType.StringType },
+                navArgument("chefId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val customerId = backStackEntry.arguments?.getString("customerId").orEmpty()
+            val chefId = backStackEntry.arguments?.getString("chefId").orEmpty()
+            ChefChatScreen(
+                customerId = customerId,
+                chefId = chefId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.CUSTOMER_CHAT,
+            arguments = listOf(navArgument("chefId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chefId = backStackEntry.arguments?.getString("chefId").orEmpty()
+            CustomerChatScreen(
+                chefId = chefId,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(
@@ -117,7 +158,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             ChefDetailScreen(
                 chefId = chefId,
                 onBack = { navController.popBackStack() },
-                onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) }
+                onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
+                onChatClick = { navController.navigate(Routes.customerChat(chefId)) }
             )
         }
 

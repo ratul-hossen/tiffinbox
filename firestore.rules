@@ -59,5 +59,19 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
       allow update, delete: if false;
     }
+
+    // chats/{chatId} — one thread per customer+chef pair, id = "<customerId>_<chefId>".
+    // There's no separate chef login yet (see data/firebase/FirestoreChatRepository.kt),
+    // so this only checks the customer side strictly; tighten further once chefs have
+    // their own Firebase Auth accounts.
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn() && (
+        resource == null || resource.data.customerId == request.auth.uid
+      );
+
+      match /messages/{messageId} {
+        allow read, create: if isSignedIn();
+      }
+    }
   }
 }

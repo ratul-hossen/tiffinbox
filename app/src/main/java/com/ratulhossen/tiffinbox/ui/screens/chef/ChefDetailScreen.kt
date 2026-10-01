@@ -5,7 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -31,7 +32,8 @@ import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 fun ChefDetailScreen(
     chefId: String,
     onBack: () -> Unit,
-    onMealClick: (String) -> Unit
+    onMealClick: (String) -> Unit,
+    onChatClick: () -> Unit
 ) {
     var chefState by remember(chefId) { mutableStateOf<ChefUi?>(SampleData.chefById(chefId)) }
     var meals by remember(chefId) { mutableStateOf(SampleData.mealsForChef(chefId)) }
@@ -58,7 +60,12 @@ fun ChefDetailScreen(
                 title = { Text(chef.kitchenName) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onChatClick) {
+                        Icon(Icons.Filled.Chat, contentDescription = "Chat")
                     }
                 }
             )
