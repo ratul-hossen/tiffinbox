@@ -10,6 +10,15 @@ rules_version = '2';
 // instead of this one. Swap to the per-collection rules below once the
 // chef-ownership fields (chefs/meals docs' userId) are actually being set
 // by a real onboarding flow, rather than the dev-only seed script.
+//
+// admin-web (see /admin-web) additions: an isAdmin() helper, an
+// admins/{adminId} collection, a subscriptions/{subscriptionId}
+// collection, and broadened admin read/write on chefs, meals, orders,
+// reviews, users and subscriptions, below. Until the console rule above
+// is actually tightened to match this reference file, the admin-web panel
+// already works fine under that loose "signed in = allowed" placeholder
+// rule regardless — these additions only matter once/if this reference
+// file is the one actually deployed.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -21,43 +30,86 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Admin-web helper: a uid with a document at admins/{uid} is treated as
+    // an admin everywhere below. Added for the admin-web panel
+    // (admin-web/) — see admins/{adminId} match block just below for how
+    // that collection itself is guarded.
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // admins/{adminId} — doc id = a Firebase Auth uid; its mere existence
+    // marks that uid as an admin (see isAdmin() above). Any signed-in user
+    // may read this collection (the admin-web "bootstrap" button needs to
+    // check whether it's still empty), but only an existing admin — or,
+    // once, whoever is bootstrapping themselves as the very first admin
+    // when the collection is empty — may write to it.
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == adminId && !exists(/databases/$(database)/documents/admins/$(adminId)))
+      );
+      allow update, delete: if isAdmin();
+    }
+
     // users/{userId} — profile data (name, phone, role, addresses)
+    // Admins (admin-web) can read/write any user doc for moderation.
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId);
+      allow create: if isOwner(userId) || isAdmin();
+      allow update, delete: if isOwner(userId) || isAdmin();
     }
 
     // chefs/{chefId} — public kitchen profiles, only the owning chef can edit
+    // Admins (admin-web) can also edit/delete any chef (verify, toggle
+    // availability, moderate).
     match /chefs/{chefId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
     // meals/{mealId} — public menu items, only the owning chef can edit
+    // Admins (admin-web) can also edit/delete any meal.
     match /meals/{mealId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() &&
-        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isSignedIn() &&
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid);
     }
 
     // orders/{orderId} — visible only to the customer who placed it or the
-    // chef who is fulfilling it
+    // chef who is fulfilling it. Admins (admin-web) can read/update any
+    // order (the main lever is changing `status`).
     match /orders/{orderId} {
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read, update: if isSignedIn() && (
+      allow read, update: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
         get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid
-      );
+      ));
     }
 
-    // reviews/{reviewId} — public read, only the verified buyer can create
+    // reviews/{reviewId} — public read, only the verified buyer can create.
+    // Admins (admin-web) can delete for moderation (flagging).
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // subscriptions/{subscriptionId} — a customer's recurring meal plan
+    // with a chef (see data/firebase/FirestoreSubscriptionRepository.kt).
+    // Added for the admin-web panel; lets the owning customer and admins
+    // manage it (admins can also force-cancel from admin-web).
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow update, delete: if isAdmin() ||
+        (isSignedIn() && resource.data.customerId == request.auth.uid);
     }
 
     // chats/{chatId} — one thread per customer+chef pair, id = "<customerId>_<chefId>".
