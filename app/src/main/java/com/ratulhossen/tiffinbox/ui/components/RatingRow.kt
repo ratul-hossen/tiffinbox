@@ -30,8 +30,9 @@ fun RatingRow(
             progress = { (value / 5.0).toFloat() },
             modifier = Modifier
                 .weight(1f)
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .height(10.dp)
+                .clip(RoundedCornerShape(5.dp)),
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(

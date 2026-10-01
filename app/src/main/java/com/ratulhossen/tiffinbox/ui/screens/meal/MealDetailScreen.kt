@@ -6,8 +6,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +23,7 @@ import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
+import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,19 +71,13 @@ fun MealDetailScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { if (quantity > 1) quantity-- },
-                        enabled = quantity > 1
-                    ) {
-                        Icon(Icons.Filled.Remove, contentDescription = "Decrease")
-                    }
-                    Text("$quantity", style = MaterialTheme.typography.titleMedium)
-                    IconButton(
-                        onClick = { if (quantity < meal.availableQuantity) quantity++ },
-                        enabled = quantity < meal.availableQuantity
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Increase")
-                    }
+                    QuantityStepper(
+                        quantity = quantity,
+                        onDecrease = { if (quantity > 1) quantity-- },
+                        onIncrease = { if (quantity < meal.availableQuantity) quantity++ },
+                        canDecrease = quantity > 1,
+                        canIncrease = quantity < meal.availableQuantity
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     Button(
                         onClick = {

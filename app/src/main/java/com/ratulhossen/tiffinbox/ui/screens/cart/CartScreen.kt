@@ -5,8 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,17 +104,15 @@ fun CartScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            IconButton(onClick = {
-                                CartStore.updateQuantity(cartItem.meal.id, cartItem.quantity - 1)
-                            }) {
-                                Icon(Icons.Filled.Remove, contentDescription = "Decrease")
-                            }
-                            Text("${cartItem.quantity}")
-                            IconButton(onClick = {
-                                CartStore.updateQuantity(cartItem.meal.id, cartItem.quantity + 1)
-                            }) {
-                                Icon(Icons.Filled.Add, contentDescription = "Increase")
-                            }
+                            QuantityStepper(
+                                quantity = cartItem.quantity,
+                                onDecrease = {
+                                    CartStore.updateQuantity(cartItem.meal.id, cartItem.quantity - 1)
+                                },
+                                onIncrease = {
+                                    CartStore.updateQuantity(cartItem.meal.id, cartItem.quantity + 1)
+                                }
+                            )
                         }
                     }
                 }
