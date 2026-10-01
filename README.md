@@ -866,7 +866,7 @@ Honest self-assessment of the biggest risks:
 - [ ] Google Maps integration
 - [x] In-app chat between customer and chef — live via Firestore; chef side uses a synthetic sender id since there's no separate chef login yet
 - [ ] Payment gateway (bKash, Nagad, Card)
-- [ ] Demand forecasting for chefs
+- [x] Demand forecasting for chefs — simple moving-average forecast from real Firestore order history; shows "not enough data yet" instead of a fabricated number until a chef has 3+ days of orders
 - [ ] Full Bangla / English localization
 
 ### Phase 5 — Future Vision
