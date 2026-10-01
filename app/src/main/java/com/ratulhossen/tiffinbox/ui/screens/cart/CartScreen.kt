@@ -13,14 +13,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.CartStore
-import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     onBack: () -> Unit,
-    onPlaceOrder: () -> Unit
+    onCheckout: () -> Unit
 ) {
     val items = CartStore.items
 
@@ -46,22 +45,12 @@ fun CartScreen(
                         SummaryRow("Total", CartStore.total, bold = true)
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
-                            onClick = {
-                                FirestoreOrderRepository.placeOrder(
-                                    items = items.toList(),
-                                    subtotal = CartStore.subtotal,
-                                    deliveryFee = CartStore.DELIVERY_FEE,
-                                    platformFee = CartStore.PLATFORM_FEE,
-                                    total = CartStore.total
-                                )
-                                CartStore.clear()
-                                onPlaceOrder()
-                            },
+                            onClick = onCheckout,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
                         ) {
-                            Text("Place Order • ৳${CartStore.total}")
+                            Text("Checkout • ৳${CartStore.total}")
                         }
                     }
                 }

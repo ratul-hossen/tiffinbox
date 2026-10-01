@@ -19,6 +19,7 @@ import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatListScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.CustomerChatScreen
 import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
+import com.ratulhossen.tiffinbox.ui.screens.checkout.CheckoutScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefDashboardScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
 import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefListScreen
@@ -219,7 +220,14 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         composable(Routes.CART) {
             CartScreen(
                 onBack = { navController.popBackStack() },
-                onPlaceOrder = {
+                onCheckout = { navController.navigate(Routes.CHECKOUT) }
+            )
+        }
+
+        composable(Routes.CHECKOUT) {
+            CheckoutScreen(
+                onBack = { navController.popBackStack() },
+                onOrderPlaced = {
                     navController.navigate(Routes.ORDER_TRACKING) { popUpTo(Routes.MAIN) }
                 }
             )

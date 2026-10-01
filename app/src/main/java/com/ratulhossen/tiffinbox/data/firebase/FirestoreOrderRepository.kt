@@ -19,7 +19,9 @@ object FirestoreOrderRepository {
         subtotal: Int,
         deliveryFee: Int,
         platformFee: Int,
-        total: Int
+        total: Int,
+        deliveryAddress: String,
+        paymentMethod: String
     ) {
         try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return
@@ -40,6 +42,8 @@ object FirestoreOrderRepository {
                 "deliveryFee" to deliveryFee,
                 "platformFee" to platformFee,
                 "totalPrice" to total,
+                "deliveryAddress" to deliveryAddress,
+                "paymentMethod" to paymentMethod,
                 "status" to "Placed",
                 "placedAt" to System.currentTimeMillis()
             )
