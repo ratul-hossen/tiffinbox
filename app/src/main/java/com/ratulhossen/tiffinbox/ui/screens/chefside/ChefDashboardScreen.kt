@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,6 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.domain.DemandForecastEngine
+
+private const val DEMO_CHEF_ID = "chef1"
 
 private data class IncomingOrder(val id: String, val customer: String, val items: String, val amount: Int)
 
@@ -26,6 +31,12 @@ private val dummyOrders = listOf(
 fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMessages: () -> Unit) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf(dummyOrders) }
+    var forecastPlates by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(Unit) {
+        val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(DEMO_CHEF_ID)
+        forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
+    }
 
     Column(
         modifier = Modifier
@@ -80,6 +91,32 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
             EarningStat("আজকের আয়", "৳ ৪২০", Modifier.weight(1f))
             EarningStat("এই সপ্তাহে", "৳ ২,৯৫০", Modifier.weight(1f))
             EarningStat("মোট অর্ডার", "128", Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("আগামীকালের চাহিদার পূর্বাভাস", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(6.dp))
+                val plates = forecastPlates
+                if (plates != null) {
+                    Text(
+                        "~$plates প্লেট রান্নার প্রস্তুতি নিন",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        "পূর্বাভাসের জন্য এখনো পর্যাপ্ত অর্ডার ইতিহাস নেই",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
