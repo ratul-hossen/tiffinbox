@@ -2,6 +2,8 @@ package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
+import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
+import com.ratulhossen.tiffinbox.data.model.EarningsSummary
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -79,6 +81,82 @@ object FirestoreOrderRepository {
                 .map { it.value.size }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    /**
+     * Shared fetch backing both the earnings summary and the incoming-orders
+     * list, so the dashboard only needs one Firestore query. Capped at 200
+     * most-recent-write-order docs (Firestore has no server-side orderBy
+     * here to dodge composite-index requirements — see the whereEqualTo-only
+     * filter above), which is a reasonable approximation for a chef who
+     * hasn't done thousands of orders yet.
+     */
+    private suspend fun fetchRecentOrders(chefId: String): List<ChefOrderUi> {
+        return try {
+            FirebaseFirestore.getInstance()
+                .collection("orders")
+                .whereEqualTo("chefId", chefId)
+                .limit(200)
+                .get()
+                .await()
+                .documents
+                .map { doc ->
+                    val itemNames = (doc.get("items") as? List<*>)
+                        ?.mapNotNull { (it as? Map<*, *>)?.get("mealName") as? String }
+                        .orEmpty()
+                    ChefOrderUi(
+                        id = doc.id,
+                        customerId = doc.getString("customerId").orEmpty(),
+                        itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
+                        totalPrice = (doc.getLong("totalPrice") ?: 0L).toInt(),
+                        status = doc.getString("status") ?: "Placed",
+                        placedAt = doc.getLong("placedAt") ?: 0L
+                    )
+                }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun getIncomingOrders(chefId: String): List<ChefOrderUi> {
+        return fetchRecentOrders(chefId)
+            .filter { it.status == "Placed" }
+            .sortedByDescending { it.placedAt }
+    }
+
+    suspend fun getEarningsSummary(chefId: String, chartDays: Int = 14): EarningsSummary {
+        val orders = fetchRecentOrders(chefId)
+        val dayFormat = SimpleDateFormat("MM/dd", Locale.US)
+        val now = System.currentTimeMillis()
+        val dayMillis = 24L * 60 * 60 * 1000
+        val todayKey = dayFormat.format(Date(now))
+        val weekCutoff = now - 7 * dayMillis
+        val chartCutoff = now - chartDays * dayMillis
+
+        val todayTotal = orders.filter { dayFormat.format(Date(it.placedAt)) == todayKey }
+            .sumOf { it.totalPrice }
+        val weekTotal = orders.filter { it.placedAt >= weekCutoff }.sumOf { it.totalPrice }
+
+        val dailyTotals = orders
+            .filter { it.placedAt >= chartCutoff }
+            .groupBy { dayFormat.format(Date(it.placedAt)) }
+            .toSortedMap()
+            .map { (day, dayOrders) -> day to dayOrders.sumOf { it.totalPrice } }
+
+        return EarningsSummary(
+            todayTotal = todayTotal,
+            weekTotal = weekTotal,
+            recentOrderCount = orders.size,
+            dailyTotals = dailyTotals
+        )
+    }
+
+    fun updateOrderStatus(orderId: String, status: String) {
+        try {
+            FirebaseFirestore.getInstance().collection("orders").document(orderId).update("status", status)
+        } catch (e: Exception) {
+            // Firebase not configured yet, or offline — safe to ignore.
         }
     }
 }

@@ -16,26 +16,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
+import com.ratulhossen.tiffinbox.data.model.EarningsSummary
 import com.ratulhossen.tiffinbox.domain.DemandForecastEngine
+import com.ratulhossen.tiffinbox.ui.components.EarningsChart
 
 private const val DEMO_CHEF_ID = "chef1"
-
-private data class IncomingOrder(val id: String, val customer: String, val items: String, val amount: Int)
-
-private val dummyOrders = listOf(
-    IncomingOrder("o1", "Rafi Ahmed", "2x ভাত-ডাল-মুরগি", 240),
-    IncomingOrder("o2", "Mim Akter", "1x ইলিশ থালি", 180)
-)
 
 @Composable
 fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMessages: () -> Unit) {
     var available by remember { mutableStateOf(true) }
-    var orders by remember { mutableStateOf(dummyOrders) }
+    var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
+    var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(DEMO_CHEF_ID)
         forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
+        orders = FirestoreOrderRepository.getIncomingOrders(DEMO_CHEF_ID)
+        earnings = FirestoreOrderRepository.getEarningsSummary(DEMO_CHEF_ID)
+    }
+
+    fun respondToOrder(orderId: String, newStatus: String) {
+        FirestoreOrderRepository.updateOrderStatus(orderId, newStatus)
+        orders = orders.filterNot { it.id == orderId }
     }
 
     Column(
@@ -87,10 +91,32 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+        val earningsSnapshot = earnings
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            EarningStat("আজকের আয়", "৳ ৪২০", Modifier.weight(1f))
-            EarningStat("এই সপ্তাহে", "৳ ২,৯৫০", Modifier.weight(1f))
-            EarningStat("মোট অর্ডার", "128", Modifier.weight(1f))
+            EarningStat("আজকের আয়", "৳${earningsSnapshot?.todayTotal ?: 0}", Modifier.weight(1f))
+            EarningStat("৭ দিনে আয়", "৳${earningsSnapshot?.weekTotal ?: 0}", Modifier.weight(1f))
+            EarningStat("সাম্প্রতিক অর্ডার", "${earningsSnapshot?.recentOrderCount ?: 0}", Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("দৈনিক আয় (গত ১৪ দিন)", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(10.dp))
+                val dailyTotals = earningsSnapshot?.dailyTotals.orEmpty()
+                if (dailyTotals.size >= 2) {
+                    EarningsChart(dailyTotals = dailyTotals)
+                } else {
+                    Text(
+                        "চার্ট দেখানোর জন্য যথেষ্ট অর্ডার ইতিহাস এখনো নেই",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -138,24 +164,24 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text(order.customer, style = MaterialTheme.typography.titleMedium)
+                    Text(order.itemsSummary, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        order.items,
+                        "Order #${order.id.take(6)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        "৳${order.amount}",
+                        "৳${order.totalPrice}",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { orders = orders.filterNot { it.id == order.id } }) {
+                        Button(onClick = { respondToOrder(order.id, "Accepted") }) {
                             Text("Accept")
                         }
-                        OutlinedButton(onClick = { orders = orders.filterNot { it.id == order.id } }) {
+                        OutlinedButton(onClick = { respondToOrder(order.id, "Cancelled") }) {
                             Text("Reject")
                         }
                     }

@@ -71,3 +71,19 @@ data class SubscriptionUi(
     val totalPrice: Int,
     val startedAt: Long
 )
+
+data class ChefOrderUi(
+    val id: String,
+    val customerId: String,
+    val itemsSummary: String,
+    val totalPrice: Int,
+    val status: String,
+    val placedAt: Long
+)
+
+data class EarningsSummary(
+    val todayTotal: Int,
+    val weekTotal: Int,
+    val recentOrderCount: Int,
+    val dailyTotals: List<Pair<String, Int>>
+)
