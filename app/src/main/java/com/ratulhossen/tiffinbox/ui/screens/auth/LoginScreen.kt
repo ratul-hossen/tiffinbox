@@ -19,10 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.firebase.AuthResult
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
     var isLoginMode by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -47,7 +48,17 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             }
             isLoading = false
             when (result) {
-                is AuthResult.Success -> onLoginSuccess()
+                is AuthResult.Success -> {
+                    if (!isLoginMode) {
+                        FirestoreUserRepository.upsertProfile(
+                            uid = result.user.uid,
+                            name = name.trim(),
+                            email = email.trim(),
+                            role = role
+                        )
+                    }
+                    onLoginSuccess()
+                }
                 is AuthResult.Failure -> errorMessage = result.message
             }
         }

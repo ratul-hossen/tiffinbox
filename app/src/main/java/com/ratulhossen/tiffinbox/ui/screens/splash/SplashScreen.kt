@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onFinished: () -> Unit) {
+fun SplashScreen(onFinished: suspend () -> Unit) {
     LaunchedEffect(Unit) {
         delay(1200)
         onFinished()

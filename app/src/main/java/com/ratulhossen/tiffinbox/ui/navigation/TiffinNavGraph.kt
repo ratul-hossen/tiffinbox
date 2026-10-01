@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatListScreen
@@ -33,8 +34,6 @@ import com.ratulhossen.tiffinbox.ui.screens.subscription.SubscribeScreen
 
 @Composable
 fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
-    var selectedRole = UserRole.CUSTOMER
-
     NavHost(
         navController = navController,
         startDestination = Routes.SPLASH,
@@ -57,10 +56,12 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         composable(Routes.SPLASH) {
             SplashScreen(onFinished = {
                 // Skip straight back in if Firebase already has a signed-in
-                // user (e.g. app was reopened); defaults to the customer
-                // home since chef role isn't persisted anywhere yet.
-                val destination = if (FirebaseAuthRepository.currentUser != null) {
-                    Routes.MAIN
+                // user (e.g. app was reopened), using their persisted role
+                // (users/{uid}.role) to decide which home screen to land on.
+                val user = FirebaseAuthRepository.currentUser
+                val destination = if (user != null) {
+                    val role = FirestoreUserRepository.getRole(user.uid)
+                    if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
                 } else {
                     Routes.ONBOARDING
                 }
@@ -76,16 +77,22 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.ROLE_SELECT) {
             RoleSelectionScreen(onRoleSelected = { role ->
-                selectedRole = role
-                navController.navigate(Routes.LOGIN)
+                navController.navigate(Routes.login(role.name))
             })
         }
 
-        composable(Routes.LOGIN) {
-            LoginScreen(onLoginSuccess = {
-                val destination = if (selectedRole == UserRole.CHEF) Routes.CHEF_DASHBOARD else Routes.MAIN
-                navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
-            })
+        composable(
+            route = Routes.LOGIN,
+            arguments = listOf(navArgument("role") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
+            LoginScreen(
+                role = role,
+                onLoginSuccess = {
+                    val destination = if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
+                    navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
+                }
+            )
         }
 
         composable(Routes.MAIN) {

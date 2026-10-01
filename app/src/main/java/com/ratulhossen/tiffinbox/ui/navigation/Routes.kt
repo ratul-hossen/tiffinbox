@@ -4,7 +4,7 @@ object Routes {
     const val SPLASH = "splash"
     const val ONBOARDING = "onboarding"
     const val ROLE_SELECT = "role_select"
-    const val LOGIN = "login"
+    const val LOGIN = "login/{role}"
     const val MAIN = "main"
     const val CHEF_DASHBOARD = "chef_dashboard"
     const val MENU_MANAGER = "menu_manager"
@@ -19,6 +19,7 @@ object Routes {
     const val SUBSCRIBE = "subscribe/{chefId}"
     const val MY_SUBSCRIPTIONS = "my_subscriptions"
 
+    fun login(role: String) = "login/$role"
     fun chefDetail(chefId: String) = "chef_detail/$chefId"
     fun mealDetail(mealId: String) = "meal_detail/$mealId"
     fun customerChat(chefId: String) = "chat/$chefId"
