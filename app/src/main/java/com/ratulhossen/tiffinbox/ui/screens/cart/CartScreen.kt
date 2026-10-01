@@ -62,7 +62,7 @@ fun CartScreen(
                                 .fillMaxWidth()
                                 .height(52.dp)
                         ) {
-                            Text("Place Order")
+                            Text("Place Order • ৳${CartStore.total}")
                         }
                     }
                 }
