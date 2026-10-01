@@ -646,7 +646,7 @@ Home • Chef List • Chef Details • Meal Details • Cart • Checkout • O
 ### Chef Side (6)
 Dashboard • Menu Manager • Order Management • Earnings • Chef Profile • Reviews
 
-> **Total: 27+ screens**
+> **Total: 27+ screens** (target/vision list above). **Actually implemented today (~16):** Splash, Onboarding, Role Selection, Login/Signup, Home, Search, Order History, Favorites, Profile, Chef Details, Meal Details, Cart, Order Tracking, Review, Chef Dashboard, Menu Manager. Not yet built: a separate Chef List screen (Home's horizontal rows stand in for it), Checkout as its own step, Subscription, Settings, Address Manager, Notifications, Help, and on the chef side: Order Management, Earnings (with real charts), Chef Profile, and Reviews as dedicated screens. See the Roadmap below for what's tracked where.
 
 ---
 
@@ -833,12 +833,12 @@ Honest self-assessment of the biggest risks:
 
 ## 🗺️ Roadmap
 
-> Checked Phase 1-3 items below are implemented as **Compose UI with dummy/local data only** — no Firebase, no real auth, no live backend yet. See `app/` for the current runnable Android Studio scaffold.
+> Firebase Auth (email/password) and Firestore are live and wired — see `data/firebase/` and `firestore.rules`. Home/Search/Chef Detail/Menu Manager read from Firestore when it has data, falling back to the bundled `SampleData` (dummy data) otherwise, so the app still runs with zero setup. Google Sign-In is still UI-only. See `app/` for the current runnable Android Studio project.
 
 ### Phase 1 — MVP Foundation
 - [x] Project setup and architecture design
-- [ ] Firebase project setup
-- [ ] Authentication (Email + Google) — UI screen built, not wired to a real backend
+- [x] Firebase project setup
+- [x] Authentication (Email) — real Firebase Auth; Google Sign-In button is still UI-only
 - [x] Role selection flow
 - [x] Home screen with chef discovery
 - [x] Chef & meal detail pages
@@ -851,7 +851,7 @@ Honest self-assessment of the biggest risks:
 - [x] AI recommendation engine (hybrid scoring) — proximity + rating live; budget/dietary/repeat-order signals default to neutral until real usage history exists
 - [x] Chef menu manager
 - [ ] Push notifications (FCM)
-- [x] Chef earnings dashboard
+- [ ] Chef earnings dashboard — dashboard screen exists but shows static placeholder numbers only; no charts (Vico isn't wired up) or real aggregation yet
 
 ### Phase 3 — Polish
 - [x] Dark mode
