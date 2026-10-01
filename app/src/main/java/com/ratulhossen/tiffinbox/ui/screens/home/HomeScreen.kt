@@ -27,7 +27,7 @@ import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 
 @Composable
-fun HomeScreen(onChefClick: (String) -> Unit) {
+fun HomeScreen(onChefClick: (String) -> Unit, onSearchClick: () -> Unit) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf(SampleData.chefs) }
 
@@ -71,17 +71,31 @@ fun HomeScreen(onChefClick: (String) -> Unit) {
             }
         }
 
-        OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            enabled = false,
-            placeholder = { Text("কম তেলে ১২০ টাকার দুপুরের খাবার...") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        Surface(
+            onClick = onSearchClick,
             shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-        )
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    "কম তেলে ১২০ টাকার দুপুরের খাবার...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

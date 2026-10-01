@@ -82,7 +82,7 @@ fun MainScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> HomeScreen(onChefClick = onChefClick)
+                0 -> HomeScreen(onChefClick = onChefClick, onSearchClick = { selectedTab = 1 })
                 1 -> SearchScreen(onMealClick = onMealClick)
                 2 -> OrdersScreen()
                 3 -> FavoritesScreen(onChefClick = onChefClick)
