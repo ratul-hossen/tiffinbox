@@ -864,7 +864,7 @@ Honest self-assessment of the biggest risks:
 - [ ] Subscription plans (weekly / monthly)
 - [ ] LLM-powered natural language search
 - [ ] Google Maps integration
-- [ ] In-app chat between customer and chef
+- [x] In-app chat between customer and chef — live via Firestore; chef side uses a synthetic sender id since there's no separate chef login yet
 - [ ] Payment gateway (bKash, Nagad, Card)
 - [ ] Demand forecasting for chefs
 - [ ] Full Bangla / English localization
