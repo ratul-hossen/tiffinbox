@@ -3,7 +3,6 @@ package com.ratulhossen.tiffinbox.ui.screens.orders
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,7 +35,10 @@ fun OrdersScreen() {
 
 @Composable
 private fun OrderRow(order: PastOrderUi) {
-    Card(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
         Row(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -86,7 +88,7 @@ private fun StatusChip(status: OrderStage) {
     Surface(
         color = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(8.dp)
+        shape = MaterialTheme.shapes.extraSmall
     ) {
         Text(
             status.label,

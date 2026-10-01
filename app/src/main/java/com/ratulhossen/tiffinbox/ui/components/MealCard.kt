@@ -45,7 +45,6 @@ fun MealCard(
                 indication = LocalIndication.current,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(

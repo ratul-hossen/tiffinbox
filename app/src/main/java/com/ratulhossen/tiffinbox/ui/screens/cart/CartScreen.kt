@@ -3,7 +3,6 @@ package com.ratulhossen.tiffinbox.ui.screens.cart
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -89,7 +88,7 @@ fun CartScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(items, key = { it.meal.id }) { cartItem ->
-                    Card(shape = RoundedCornerShape(14.dp)) {
+                    Card(elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()

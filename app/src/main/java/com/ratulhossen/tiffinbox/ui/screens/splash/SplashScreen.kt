@@ -33,14 +33,14 @@ fun SplashScreen(onFinished: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 "TiffinBox",
-                color = androidx.compose.ui.graphics.Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 "Home-Cooked Food, One Tap Away",
-                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                 fontSize = 13.sp
             )
         }

@@ -70,6 +70,7 @@ fun TiffinBoxTheme(
     MaterialTheme(
         colorScheme = colors,
         typography = TiffinTypography,
+        shapes = TiffinShapes,
         content = content
     )
 }

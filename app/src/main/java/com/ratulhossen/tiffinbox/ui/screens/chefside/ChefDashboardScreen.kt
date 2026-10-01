@@ -2,7 +2,6 @@ package com.ratulhossen.tiffinbox.ui.screens.chefside
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -51,7 +50,10 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Card(shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -89,10 +91,10 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit) {
 
         orders.forEach { order ->
             Card(
-                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp)
+                    .padding(vertical = 6.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(order.customer, style = MaterialTheme.typography.titleMedium)
@@ -124,7 +126,7 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit) {
 
 @Composable
 private fun EarningStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(shape = RoundedCornerShape(14.dp), modifier = modifier) {
+    Card(modifier = modifier, elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
         Column(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
