@@ -850,7 +850,7 @@ Honest self-assessment of the biggest risks:
 - [x] 4-dimension rating & review system
 - [x] AI recommendation engine (hybrid scoring) — proximity + rating live; budget/dietary/repeat-order signals default to neutral until real usage history exists
 - [x] Chef menu manager
-- [ ] Push notifications (FCM)
+- [x] Push notifications (FCM) — client-side only: token registration (saved to users/{uid}.fcmToken) and a notification channel/receiver are wired up, so the app can *receive* a push the moment something sends one. Nothing sends one yet — that needs a backend trigger (e.g. a Cloud Function on order-status changes), which is out of scope until hosting/backend is set up.
 - [ ] Chef earnings dashboard — dashboard screen exists but shows static placeholder numbers only; no charts (Vico isn't wired up) or real aggregation yet
 
 ### Phase 3 — Polish

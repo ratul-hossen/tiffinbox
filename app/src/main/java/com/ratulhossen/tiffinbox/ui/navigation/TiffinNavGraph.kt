@@ -62,6 +62,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 // (users/{uid}.role) to decide which home screen to land on.
                 val user = FirebaseAuthRepository.currentUser
                 val destination = if (user != null) {
+                    FirestoreUserRepository.registerFcmToken(user.uid)
                     val role = FirestoreUserRepository.getRole(user.uid)
                     if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
                 } else {

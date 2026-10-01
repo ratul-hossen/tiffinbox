@@ -57,6 +57,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
                             role = role
                         )
                     }
+                    FirestoreUserRepository.registerFcmToken(result.user.uid)
                     onLoginSuccess()
                 }
                 is AuthResult.Failure -> errorMessage = result.message
