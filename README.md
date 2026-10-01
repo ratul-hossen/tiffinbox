@@ -861,7 +861,7 @@ Honest self-assessment of the biggest risks:
 - [ ] Error handling and offline mode
 
 ### Phase 4 — Advanced
-- [ ] Subscription plans (weekly / monthly)
+- [x] Subscription plans (weekly / monthly) — plan + price preview and Firestore-backed sign-up/cancel; no automated recurring billing/delivery yet
 - [ ] LLM-powered natural language search
 - [ ] Google Maps integration
 - [x] In-app chat between customer and chef — live via Firestore; chef side uses a synthetic sender id since there's no separate chef login yet
