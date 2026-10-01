@@ -55,3 +55,19 @@ data class PastOrderUi(
     val status: OrderStage,
     val placedOn: String
 )
+
+enum class SubscriptionPlan(val label: String, val weeks: Int) {
+    WEEKLY("Weekly", 1),
+    MONTHLY("Monthly", 4)
+}
+
+data class SubscriptionUi(
+    val id: String,
+    val chefId: String,
+    val chefName: String,
+    val plan: SubscriptionPlan,
+    val mealsPerWeek: Int,
+    val pricePerMeal: Int,
+    val totalPrice: Int,
+    val startedAt: Long
+)

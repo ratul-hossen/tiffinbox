@@ -39,6 +39,7 @@ fun MainScreen(
     onChefClick: (String) -> Unit,
     onMealClick: (String) -> Unit,
     onCartClick: () -> Unit,
+    onSubscriptionsClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -86,7 +87,7 @@ fun MainScreen(
                 1 -> SearchScreen(onMealClick = onMealClick)
                 2 -> OrdersScreen()
                 3 -> FavoritesScreen(onChefClick = onChefClick)
-                4 -> ProfileScreen(onLogout = onLogout)
+                4 -> ProfileScreen(onLogout = onLogout, onSubscriptionsClick = onSubscriptionsClick)
             }
         }
     }

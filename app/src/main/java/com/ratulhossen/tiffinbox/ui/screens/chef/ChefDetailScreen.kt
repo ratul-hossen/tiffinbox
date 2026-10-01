@@ -33,7 +33,8 @@ fun ChefDetailScreen(
     chefId: String,
     onBack: () -> Unit,
     onMealClick: (String) -> Unit,
-    onChatClick: () -> Unit
+    onChatClick: () -> Unit,
+    onSubscribeClick: () -> Unit
 ) {
     var chefState by remember(chefId) { mutableStateOf<ChefUi?>(SampleData.chefById(chefId)) }
     var meals by remember(chefId) { mutableStateOf(SampleData.mealsForChef(chefId)) }
@@ -115,6 +116,11 @@ fun ChefDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(chef.bio, style = MaterialTheme.typography.bodyMedium)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(onClick = onSubscribeClick, modifier = Modifier.fillMaxWidth()) {
+                        Text("Weekly / Monthly Subscription দেখুন")
+                    }
 
                     Spacer(modifier = Modifier.height(20.dp))
                     Text("Rating Breakdown", style = MaterialTheme.typography.titleMedium)

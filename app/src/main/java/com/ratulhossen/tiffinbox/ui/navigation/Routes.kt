@@ -16,11 +16,14 @@ object Routes {
     const val CUSTOMER_CHAT = "chat/{chefId}"
     const val CHEF_CHAT_LIST = "chef_chat_list"
     const val CHEF_CHAT = "chef_chat/{customerId}/{chefId}"
+    const val SUBSCRIBE = "subscribe/{chefId}"
+    const val MY_SUBSCRIPTIONS = "my_subscriptions"
 
     fun chefDetail(chefId: String) = "chef_detail/$chefId"
     fun mealDetail(mealId: String) = "meal_detail/$mealId"
     fun customerChat(chefId: String) = "chat/$chefId"
     fun chefChat(customerId: String, chefId: String) = "chef_chat/$customerId/$chefId"
+    fun subscribe(chefId: String) = "subscribe/$chefId"
 }
 
 object BottomTab {

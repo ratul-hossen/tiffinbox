@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
@@ -27,20 +28,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 
-private data class ProfileMenuItem(val icon: ImageVector, val label: String)
-
-private val menuItems = listOf(
-    ProfileMenuItem(Icons.Filled.Receipt, "আমার অর্ডার"),
-    ProfileMenuItem(Icons.Filled.Favorite, "Favorites"),
-    ProfileMenuItem(Icons.Filled.LocationOn, "ঠিকানা ব্যবস্থাপনা"),
-    ProfileMenuItem(Icons.Filled.Payment, "Payment পদ্ধতি"),
-    ProfileMenuItem(Icons.Filled.Notifications, "Notifications"),
-    ProfileMenuItem(Icons.Filled.Settings, "Settings")
-)
+private data class ProfileMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit = {})
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
     var seedStatus by remember { mutableStateOf<String?>(null) }
+
+    val menuItems = listOf(
+        ProfileMenuItem(Icons.Filled.Receipt, "আমার অর্ডার"),
+        ProfileMenuItem(Icons.Filled.DateRange, "আমার Subscriptions", onSubscriptionsClick),
+        ProfileMenuItem(Icons.Filled.Favorite, "Favorites"),
+        ProfileMenuItem(Icons.Filled.LocationOn, "ঠিকানা ব্যবস্থাপনা"),
+        ProfileMenuItem(Icons.Filled.Payment, "Payment পদ্ধতি"),
+        ProfileMenuItem(Icons.Filled.Notifications, "Notifications"),
+        ProfileMenuItem(Icons.Filled.Settings, "Settings")
+    )
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -72,7 +74,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { }
+                    .clickable { item.onClick() }
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

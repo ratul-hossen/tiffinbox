@@ -28,6 +28,8 @@ import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
+import com.ratulhossen.tiffinbox.ui.screens.subscription.MySubscriptionsScreen
+import com.ratulhossen.tiffinbox.ui.screens.subscription.SubscribeScreen
 
 @Composable
 fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
@@ -91,10 +93,27 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) },
                 onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
                 onCartClick = { navController.navigate(Routes.CART) },
+                onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 }
+            )
+        }
+
+        composable(Routes.MY_SUBSCRIPTIONS) {
+            MySubscriptionsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Routes.SUBSCRIBE,
+            arguments = listOf(navArgument("chefId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chefId = backStackEntry.arguments?.getString("chefId").orEmpty()
+            SubscribeScreen(
+                chefId = chefId,
+                onBack = { navController.popBackStack() },
+                onSubscribed = { navController.popBackStack() }
             )
         }
 
@@ -159,7 +178,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 chefId = chefId,
                 onBack = { navController.popBackStack() },
                 onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
-                onChatClick = { navController.navigate(Routes.customerChat(chefId)) }
+                onChatClick = { navController.navigate(Routes.customerChat(chefId)) },
+                onSubscribeClick = { navController.navigate(Routes.subscribe(chefId)) }
             )
         }
 
