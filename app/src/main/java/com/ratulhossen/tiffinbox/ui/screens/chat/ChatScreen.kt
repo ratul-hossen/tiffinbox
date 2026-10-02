@@ -163,21 +163,29 @@ private fun ChatScreenContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages, key = { it.id }) { message ->
-                    val isMine = message.senderId == currentSenderId
-                    Row(
+                    val isMine = !message.isAdmin && message.senderId == currentSenderId
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
+                        horizontalAlignment = if (message.isAdmin || isMine) Alignment.End else Alignment.Start
                     ) {
+                        if (message.isAdmin) {
+                            Text(
+                                stringResource(R.string.chat_admin_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.padding(bottom = 2.dp, end = 2.dp)
+                            )
+                        }
                         Surface(
-                            color = if (isMine) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
+                            color = when {
+                                message.isAdmin -> MaterialTheme.colorScheme.tertiaryContainer
+                                isMine -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.surfaceVariant
                             },
-                            contentColor = if (isMine) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = when {
+                                message.isAdmin -> MaterialTheme.colorScheme.onTertiaryContainer
+                                isMine -> MaterialTheme.colorScheme.onPrimary
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
                             shape = MaterialTheme.shapes.medium
                         ) {

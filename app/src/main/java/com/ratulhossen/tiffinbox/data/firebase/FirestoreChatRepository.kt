@@ -9,7 +9,8 @@ data class ChatMessageUi(
     val id: String,
     val senderId: String,
     val text: String,
-    val sentAt: Long
+    val sentAt: Long,
+    val isAdmin: Boolean = false
 )
 
 data class ChatThreadUi(
@@ -79,7 +80,8 @@ object FirestoreChatRepository {
                         val senderId = doc.getString("senderId") ?: return@mapNotNull null
                         val text = doc.getString("text") ?: return@mapNotNull null
                         val sentAt = doc.getLong("sentAt") ?: 0L
-                        ChatMessageUi(doc.id, senderId, text, sentAt)
+                        val isAdmin = doc.getBoolean("isAdmin") ?: false
+                        ChatMessageUi(doc.id, senderId, text, sentAt, isAdmin)
                     } ?: emptyList()
                     onUpdate(messages)
                 }

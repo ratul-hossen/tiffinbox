@@ -141,16 +141,25 @@ service cloud.firestore {
     }
 
     // chats/{chatId} — one thread per customer+chef pair, id = "<customerId>_<chefId>".
-    // There's no separate chef login yet (see data/firebase/FirestoreChatRepository.kt),
-    // so this only checks the customer side strictly; tighten further once chefs have
-    // their own Firebase Auth accounts.
+    // Chefs now have their own real Firebase Auth uid (chefId == that uid,
+    // see FirestoreChefRepository.kt), so both sides of the conversation —
+    // and admin-web (see admin-web/src/components/ChatsPage.tsx), which can
+    // read and reply to any thread — are checked here. Messages are
+    // restricted to the thread's two participants or an admin (rather than
+    // "any signed-in user", which previously let anyone read any chat by
+    // guessing its id) via a lookup on the parent chat doc.
     match /chats/{chatId} {
-      allow read, write: if isSignedIn() && (
-        resource == null || resource.data.customerId == request.auth.uid
-      );
+      allow read, write: if isAdmin() || (isSignedIn() && (
+        resource == null ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.chefId == request.auth.uid
+      ));
 
       match /messages/{messageId} {
-        allow read, create: if isSignedIn();
+        allow read, create: if isAdmin() || (isSignedIn() && (
+          get(/databases/$(database)/documents/chats/$(chatId)).data.customerId == request.auth.uid ||
+          get(/databases/$(database)/documents/chats/$(chatId)).data.chefId == request.auth.uid
+        ));
       }
     }
   }

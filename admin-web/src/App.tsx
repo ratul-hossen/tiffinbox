@@ -5,6 +5,7 @@ import {
   History,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Package,
   Soup,
   Star,
@@ -26,6 +27,7 @@ import ReviewsPage from "./components/ReviewsPage";
 import SubscriptionsPage from "./components/SubscriptionsPage";
 import ActivityLogPage from "./components/ActivityLogPage";
 import AdminsPage from "./components/AdminsPage";
+import ChatsPage from "./components/ChatsPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -37,7 +39,8 @@ type Tab =
   | "reviews"
   | "subscriptions"
   | "activity"
-  | "admins";
+  | "admins"
+  | "chats";
 
 const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -53,6 +56,7 @@ const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: str
     searchPlaceholder: "Search subscriptions…",
   },
   { key: "activity", label: "Activity Log", icon: History, searchPlaceholder: "Search activity…" },
+  { key: "chats", label: "Chats", icon: MessageCircle, searchPlaceholder: "Search chats…" },
   { key: "admins", label: "Admins", icon: ShieldCheck },
 ];
 
@@ -150,6 +154,7 @@ export default function App() {
           {tab === "reviews" && <ReviewsPage search={search} />}
           {tab === "subscriptions" && <SubscriptionsPage search={search} />}
           {tab === "activity" && <ActivityLogPage search={search} />}
+          {tab === "chats" && <ChatsPage search={search} />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
         </main>
       </div>

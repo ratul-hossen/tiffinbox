@@ -177,6 +177,7 @@
     <string name="chat_message_placeholder">মেসেজ লিখুন...</string>
     <string name="chat_send_content_description">Send</string>
     <string name="chat_empty_state">কথোপকথন শুরু করুন</string>
+    <string name="chat_admin_label">অ্যাডমিন</string>
 
     <!-- ChefChatListScreen -->
     <string name="chef_chat_list_empty">এখনো কোনো মেসেজ আসেনি</string>

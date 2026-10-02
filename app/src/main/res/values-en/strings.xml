@@ -175,6 +175,7 @@
     <string name="chat_message_placeholder">Type a message...</string>
     <string name="chat_send_content_description">Send</string>
     <string name="chat_empty_state">Start a conversation</string>
+    <string name="chat_admin_label">Admin</string>
 
     <!-- ChefChatListScreen -->
     <string name="chef_chat_list_empty">No messages yet</string>

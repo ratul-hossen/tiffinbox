@@ -124,6 +124,28 @@ export interface Admin {
   note?: string;
 }
 
+// chats/{customerId_chefId} — mirrors FirestoreChatRepository.kt's schema.
+// sentAt/lastMessageAt are plain epoch-millis numbers (System.currentTimeMillis()
+// on the Android side), not Firestore server timestamps — admin-web writes
+// Date.now() for the same reason, so every client reads the same shape.
+export interface ChatThread {
+  id: string;
+  customerId?: string;
+  chefId?: string;
+  chefName?: string;
+  lastMessage?: string;
+  lastMessageAt?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId?: string;
+  text?: string;
+  sentAt?: number;
+  isAdmin?: boolean;
+  adminEmail?: string | null;
+}
+
 export interface Subscription {
   id: string;
   customerId?: string;
