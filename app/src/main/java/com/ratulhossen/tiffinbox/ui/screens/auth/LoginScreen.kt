@@ -12,34 +12,67 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.AuthResult
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
 
+/**
+ * Looks up the OAuth web client id that the Google Services Gradle plugin
+ * auto-generates (as R.string.default_web_client_id) once a real
+ * google-services.json is present. Looked up by name via the resources
+ * table — rather than referenced as R.string.default_web_client_id
+ * directly — so this file still compiles in a checkout that hasn't added
+ * google-services.json yet; it simply returns null and the Google button
+ * reports that it isn't configured instead of crashing the build.
+ */
+private fun defaultWebClientIdOrNull(context: android.content.Context): String? {
+    val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+    return if (resId != 0) context.getString(resId) else null
+}
+
 @Composable
-fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
+fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
     var isLoginMode by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var kitchenName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val emailPasswordRequiredMessage = stringResource(R.string.login_email_password_required)
+    val kitchenNameRequiredMessage = stringResource(R.string.login_kitchen_name_required)
+    val googleSignInFailedMessage = stringResource(R.string.login_google_signin_failed)
+    val googleSignInCancelledMessage = stringResource(R.string.login_google_signin_cancelled)
+    val isChefRole = role == UserRole.CHEF.name
 
     fun submit() {
         errorMessage = null
         if (email.isBlank() || password.isBlank()) {
             errorMessage = emailPasswordRequiredMessage
+            return
+        }
+        if (!isLoginMode && isChefRole && kitchenName.isBlank()) {
+            errorMessage = kitchenNameRequiredMessage
             return
         }
         isLoading = true
@@ -49,21 +82,125 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
             } else {
                 FirebaseAuthRepository.signUp(name.trim(), email.trim(), password)
             }
-            isLoading = false
             when (result) {
                 is AuthResult.Success -> {
-                    if (!isLoginMode) {
+                    val uid = result.user.uid
+                    val resolvedRole = if (isLoginMode) {
+                        val storedRole = FirestoreUserRepository.getRole(uid) ?: role
+                        if (storedRole == UserRole.CHEF.name && !FirestoreChefRepository.chefProfileExists(uid)) {
+                            // Self-heal: an account created before chef-profile
+                            // creation existed (or whose profile write failed)
+                            // gets a minimal one now, instead of silently
+                            // acting like chef "chef1" forever.
+                            FirestoreChefRepository.createChefProfile(
+                                uid = uid,
+                                kitchenName = result.user.displayName?.let { "$it's Kitchen" } ?: "My Kitchen",
+                                ownerName = result.user.displayName.orEmpty()
+                            )
+                        }
+                        storedRole
+                    } else {
                         FirestoreUserRepository.upsertProfile(
-                            uid = result.user.uid,
+                            uid = uid,
                             name = name.trim(),
                             email = email.trim(),
                             role = role
                         )
+                        if (isChefRole) {
+                            FirestoreChefRepository.createChefProfile(
+                                uid = uid,
+                                kitchenName = kitchenName.trim(),
+                                ownerName = name.trim()
+                            )
+                        }
+                        role
                     }
-                    FirestoreUserRepository.registerFcmToken(result.user.uid)
-                    onLoginSuccess()
+                    FirestoreUserRepository.registerFcmToken(uid)
+                    isLoading = false
+                    onLoginSuccess(resolvedRole)
                 }
-                is AuthResult.Failure -> errorMessage = result.message
+                is AuthResult.Failure -> {
+                    isLoading = false
+                    errorMessage = result.message
+                }
+            }
+        }
+    }
+
+    fun submitGoogle() {
+        errorMessage = null
+        val webClientId = defaultWebClientIdOrNull(context)
+        if (webClientId == null) {
+            errorMessage = googleSignInFailedMessage
+            return
+        }
+        isLoading = true
+        scope.launch {
+            try {
+                val option = GetSignInWithGoogleOption.Builder(webClientId).build()
+                val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
+                val response = CredentialManager.create(context).getCredential(context, request)
+                val credential = response.credential
+
+                if (credential !is CustomCredential ||
+                    credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                ) {
+                    isLoading = false
+                    errorMessage = googleSignInFailedMessage
+                    return@launch
+                }
+
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val authResult = FirebaseAuthRepository.signInWithGoogleIdToken(googleIdTokenCredential.idToken)
+
+                when (authResult) {
+                    is AuthResult.Success -> {
+                        val uid = authResult.user.uid
+                        val existingRole = FirestoreUserRepository.getRole(uid)
+                        val resolvedRole = if (existingRole != null) {
+                            if (existingRole == UserRole.CHEF.name && !FirestoreChefRepository.chefProfileExists(uid)) {
+                                val displayName = googleIdTokenCredential.displayName
+                                    ?: authResult.user.displayName.orEmpty()
+                                FirestoreChefRepository.createChefProfile(
+                                    uid = uid,
+                                    kitchenName = if (displayName.isNotBlank()) "$displayName's Kitchen" else "My Kitchen",
+                                    ownerName = displayName
+                                )
+                            }
+                            existingRole
+                        } else {
+                            val displayName = googleIdTokenCredential.displayName
+                                ?: authResult.user.displayName.orEmpty()
+                            FirestoreUserRepository.upsertProfile(
+                                uid = uid,
+                                name = displayName,
+                                email = authResult.user.email.orEmpty(),
+                                role = role
+                            )
+                            if (isChefRole) {
+                                FirestoreChefRepository.createChefProfile(
+                                    uid = uid,
+                                    kitchenName = if (displayName.isNotBlank()) "$displayName's Kitchen" else "My Kitchen",
+                                    ownerName = displayName
+                                )
+                            }
+                            role
+                        }
+                        FirestoreUserRepository.registerFcmToken(uid)
+                        isLoading = false
+                        onLoginSuccess(resolvedRole)
+                    }
+                    is AuthResult.Failure -> {
+                        isLoading = false
+                        errorMessage = authResult.message
+                    }
+                }
+            } catch (e: GetCredentialCancellationException) {
+                isLoading = false
+                errorMessage = googleSignInCancelledMessage
+            } catch (e: Exception) {
+                isLoading = false
+                errorMessage = googleSignInFailedMessage
             }
         }
     }
@@ -97,6 +234,17 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
+
+            if (isChefRole) {
+                OutlinedTextField(
+                    value = kitchenName,
+                    onValueChange = { kitchenName = it },
+                    label = { Text(stringResource(R.string.login_kitchen_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
         }
 
         OutlinedTextField(
@@ -141,7 +289,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
-            onClick = onLoginSuccess,
+            onClick = { submitGoogle() },
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) {

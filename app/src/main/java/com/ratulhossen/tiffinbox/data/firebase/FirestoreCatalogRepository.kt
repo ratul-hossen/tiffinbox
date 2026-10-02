@@ -25,6 +25,14 @@ object FirestoreCatalogRepository {
         }
     }
 
+    suspend fun getChef(chefId: String): ChefUi? {
+        return try {
+            db.collection("chefs").document(chefId).get().await().toChefUi()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun getAllMeals(): List<MealUi> {
         return try {
             db.collection("meals").get().await().documents.mapNotNull { it.toMealUi() }

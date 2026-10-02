@@ -28,9 +28,13 @@
     <string name="login_email_label">ইমেইল</string>
     <string name="login_password_label">Password</string>
     <string name="login_email_password_required">ইমেইল ও পাসওয়ার্ড দিন</string>
+    <string name="login_kitchen_name_label">কিচেনের নাম</string>
+    <string name="login_kitchen_name_required">আপনার কিচেনের একটা নাম দিন</string>
     <string name="login_button">Login</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
+    <string name="login_google_signin_failed">Google দিয়ে সাইন-ইন করা যায়নি, আবার চেষ্টা করুন</string>
+    <string name="login_google_signin_cancelled">Google সাইন-ইন বাতিল করা হয়েছে</string>
     <string name="login_toggle_to_signup">নতুন? Sign Up করুন</string>
     <string name="login_toggle_to_login">আগে থেকে Account আছে? Login করুন</string>
 

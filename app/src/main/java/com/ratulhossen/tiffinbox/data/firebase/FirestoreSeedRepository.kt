@@ -9,6 +9,12 @@ import com.ratulhossen.tiffinbox.data.SampleData
  * running it again just overwrites the same documents instead of
  * duplicating them. Useful for trying out the Firestore repositories
  * against real data before building real onboarding/menu-entry flows.
+ *
+ * Note: firestore.rules only allows creating a chefs/{chefId} doc when
+ * chefId == the caller's own uid (the real chef-signup flow always creates
+ * chefs/{uid}), so this only succeeds for an account that is already an
+ * admin — a plain signed-in user can no longer use this to inject arbitrary
+ * chef/meal documents.
  */
 object FirestoreSeedRepository {
 

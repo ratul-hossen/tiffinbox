@@ -73,12 +73,16 @@ service cloud.firestore {
       allow update, delete: if isOwner(userId) || isAdmin();
     }
 
-    // chefs/{chefId} — public kitchen profiles, only the owning chef can edit
-    // Admins (admin-web) can also edit/delete any chef (verify, toggle
-    // availability, moderate).
+    // chefs/{chefId} — public kitchen profiles, only the owning chef can edit.
+    // The signup flow (see FirestoreChefRepository.kt) always creates this
+    // doc at chefs/{uid} using the chef's own Firebase Auth uid as the doc
+    // id, so create is restricted to that exact match — otherwise any
+    // signed-in user could create or overwrite a kitchen profile under an id
+    // they don't own. Admins (admin-web) can also edit/delete any chef
+    // (verify, toggle availability, moderate).
     match /chefs/{chefId} {
       allow read: if true;
-      allow create: if isSignedIn();
+      allow create: if isOwner(chefId);
       allow update, delete: if isAdmin() ||
         (isSignedIn() && resource.data.userId == request.auth.uid);
     }

@@ -2,6 +2,7 @@ package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 
@@ -42,6 +43,18 @@ object FirebaseAuthRepository {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = result.user ?: return AuthResult.Failure("Login ব্যর্থ হয়েছে, আবার চেষ্টা করুন")
+            AuthResult.Success(user)
+        } catch (e: Exception) {
+            AuthResult.Failure(friendlyMessage(e))
+        }
+    }
+
+    /** Exchanges a Google ID token (from Credential Manager) for a real Firebase session. */
+    suspend fun signInWithGoogleIdToken(idToken: String): AuthResult {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            val user = result.user ?: return AuthResult.Failure("Google দিয়ে সাইন-ইন ব্যর্থ হয়েছে, আবার চেষ্টা করুন")
             AuthResult.Success(user)
         } catch (e: Exception) {
             AuthResult.Failure(friendlyMessage(e))

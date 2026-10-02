@@ -26,9 +26,13 @@
     <string name="login_email_label">Email</string>
     <string name="login_password_label">Password</string>
     <string name="login_email_password_required">Enter email and password</string>
+    <string name="login_kitchen_name_label">Kitchen name</string>
+    <string name="login_kitchen_name_required">Give your kitchen a name</string>
     <string name="login_button">Login</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
+    <string name="login_google_signin_failed">Google sign-in failed, please try again</string>
+    <string name="login_google_signin_cancelled">Google sign-in was cancelled</string>
     <string name="login_toggle_to_signup">New here? Sign Up</string>
     <string name="login_toggle_to_login">Already have an Account? Login</string>
 

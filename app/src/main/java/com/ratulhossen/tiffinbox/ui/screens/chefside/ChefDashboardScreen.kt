@@ -17,26 +17,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
 import com.ratulhossen.tiffinbox.domain.DemandForecastEngine
 import com.ratulhossen.tiffinbox.ui.components.EarningsChart
 
-private const val DEMO_CHEF_ID = "chef1"
-
 @Composable
-fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMessages: () -> Unit) {
+fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMessages: () -> Unit) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
     var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
+    var kitchenName by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(DEMO_CHEF_ID)
+    LaunchedEffect(chefId) {
+        val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
         forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
-        orders = FirestoreOrderRepository.getIncomingOrders(DEMO_CHEF_ID)
-        earnings = FirestoreOrderRepository.getEarningsSummary(DEMO_CHEF_ID)
+        orders = FirestoreOrderRepository.getIncomingOrders(chefId)
+        earnings = FirestoreOrderRepository.getEarningsSummary(chefId)
+        kitchenName = FirestoreCatalogRepository.getChef(chefId)?.kitchenName
     }
 
     fun respondToOrder(orderId: String, newStatus: String) {
@@ -58,7 +59,7 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
             Column {
                 Text(stringResource(R.string.chef_dashboard_title), style = MaterialTheme.typography.headlineSmall)
                 Text(
-                    stringResource(R.string.chef_dashboard_kitchen_name),
+                    kitchenName ?: stringResource(R.string.chef_dashboard_kitchen_name),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

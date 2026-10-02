@@ -27,22 +27,18 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreMealRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
 
-private const val DEMO_CHEF_ID = "chef1"
-
 private data class ManagedMeal(val meal: MealUi, val isAvailable: Boolean)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MenuManagerScreen(onBack: () -> Unit) {
-    var meals by remember {
-        mutableStateOf(SampleData.mealsForChef(DEMO_CHEF_ID).map { ManagedMeal(it, true) })
+fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
+    var meals by remember(chefId) {
+        mutableStateOf(SampleData.mealsForChef(chefId).map { ManagedMeal(it, true) })
     }
 
-    LaunchedEffect(Unit) {
-        val firestoreMeals = FirestoreCatalogRepository.getMealsForChef(DEMO_CHEF_ID)
-        if (firestoreMeals.isNotEmpty()) {
-            meals = firestoreMeals.map { ManagedMeal(it, true) }
-        }
+    LaunchedEffect(chefId) {
+        val firestoreMeals = FirestoreCatalogRepository.getMealsForChef(chefId)
+        meals = firestoreMeals.map { ManagedMeal(it, true) }
     }
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -107,7 +103,7 @@ fun MenuManagerScreen(onBack: () -> Unit) {
             onAdd = { name, price ->
                 val newMeal = MealUi(
                     id = "meal_${System.currentTimeMillis()}",
-                    chefId = DEMO_CHEF_ID,
+                    chefId = chefId,
                     name = name,
                     emoji = "🍽️",
                     description = "নতুন যোগ করা মিল",

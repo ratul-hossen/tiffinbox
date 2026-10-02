@@ -91,8 +91,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
             LoginScreen(
                 role = role,
-                onLoginSuccess = {
-                    val destination = if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
+                onLoginSuccess = { resolvedRole ->
+                    val destination = if (resolvedRole == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
                     navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
                 }
             )
@@ -141,7 +141,9 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Routes.CHEF_DASHBOARD) {
+            val chefId = FirebaseAuthRepository.currentUser?.uid.orEmpty()
             ChefDashboardScreen(
+                chefId = chefId,
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -152,14 +154,16 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Routes.MENU_MANAGER) {
-            MenuManagerScreen(onBack = { navController.popBackStack() })
+            val chefId = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+            MenuManagerScreen(chefId = chefId, onBack = { navController.popBackStack() })
         }
 
         composable(Routes.CHEF_CHAT_LIST) {
+            val chefId = FirebaseAuthRepository.currentUser?.uid.orEmpty()
             ChefChatListScreen(
-                chefId = "chef1",
+                chefId = chefId,
                 onThreadClick = { customerId ->
-                    navController.navigate(Routes.chefChat(customerId, "chef1"))
+                    navController.navigate(Routes.chefChat(customerId, chefId))
                 },
                 onBack = { navController.popBackStack() }
             )
