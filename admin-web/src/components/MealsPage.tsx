@@ -3,8 +3,15 @@ import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal } from "../types";
+import { logActivity } from "../lib/activityLog";
+import { formatCurrency } from "../lib/format";
+import Badge from "./ui/Badge";
 
-export default function MealsPage() {
+interface Props {
+  search: string;
+}
+
+export default function MealsPage({ search }: Props) {
   const { data: meals, loading, error } = useCollection<Meal>("meals");
   const { data: chefs } = useCollection<Chef>("chefs");
   const [chefFilter, setChefFilter] = useState<string>("all");
@@ -18,10 +25,14 @@ export default function MealsPage() {
   const chefName = (chefId?: string) =>
     chefs.find((c) => c.id === chefId)?.kitchenName ?? chefId ?? "(unknown chef)";
 
-  const filtered = useMemo(
-    () => (chefFilter === "all" ? meals : meals.filter((m) => m.chefId === chefFilter)),
-    [meals, chefFilter],
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return meals.filter((m) => {
+      if (chefFilter !== "all" && m.chefId !== chefFilter) return false;
+      if (q && !(m.name ?? "").toLowerCase().includes(q) && !m.id.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [meals, chefFilter, search]);
 
   function startEdit(meal: Meal) {
     setEditingId(meal.id);
@@ -34,10 +45,10 @@ export default function MealsPage() {
   async function saveEdit(mealId: string) {
     setBusyId(mealId);
     try {
-      await updateDoc(doc(db, "meals", mealId), {
-        price: Number(draft.price) || 0,
-        availableQuantity: Number(draft.availableQuantity) || 0,
-      });
+      const price = Number(draft.price) || 0;
+      const availableQuantity = Number(draft.availableQuantity) || 0;
+      await updateDoc(doc(db, "meals", mealId), { price, availableQuantity });
+      await logActivity("Edited meal", "meals", mealId, { price, availableQuantity });
       setEditingId(null);
     } finally {
       setBusyId(null);
@@ -47,7 +58,9 @@ export default function MealsPage() {
   async function toggleAvailable(meal: Meal) {
     setBusyId(meal.id);
     try {
-      await updateDoc(doc(db, "meals", meal.id), { isAvailable: !meal.isAvailable });
+      const next = !meal.isAvailable;
+      await updateDoc(doc(db, "meals", meal.id), { isAvailable: next });
+      await logActivity("Toggled meal availability", "meals", meal.id, { isAvailable: next });
     } finally {
       setBusyId(null);
     }
@@ -58,22 +71,23 @@ export default function MealsPage() {
     setBusyId(mealId);
     try {
       await deleteDoc(doc(db, "meals", mealId));
+      await logActivity("Deleted meal", "meals", mealId);
     } finally {
       setBusyId(null);
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Loading meals…</p>;
-  if (error) return <p className="text-sm text-red-600">Error: {error}</p>;
+  if (loading) return <p className="text-sm text-apple-secondary">Loading meals…</p>;
+  if (error) return <p className="text-sm text-apple-red">Error: {error}</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-semibold text-slate-900">Meals ({filtered.length})</h2>
+        <h2 className="text-2xl font-bold text-apple-text tracking-tight">Meals ({filtered.length})</h2>
         <select
           value={chefFilter}
           onChange={(e) => setChefFilter(e.target.value)}
-          className="text-sm border border-slate-300 rounded px-2 py-1"
+          className="text-sm border border-black/10 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
         >
           <option value="all">All chefs</option>
           {chefs.map((c) => (
@@ -84,44 +98,44 @@ export default function MealsPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-slate-500 border-b border-slate-100">
-              <th className="px-4 py-2">Meal</th>
-              <th className="px-4 py-2">Chef</th>
-              <th className="px-4 py-2">Category</th>
-              <th className="px-4 py-2">Price</th>
-              <th className="px-4 py-2">Qty</th>
-              <th className="px-4 py-2">Available</th>
-              <th className="px-4 py-2"></th>
+            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+              <th className="px-4 py-3">Meal</th>
+              <th className="px-4 py-3">Chef</th>
+              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Price</th>
+              <th className="px-4 py-3">Qty</th>
+              <th className="px-4 py-3">Available</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((meal) => (
-              <tr key={meal.id} className="border-b border-slate-50 last:border-0">
-                <td className="px-4 py-2">
+              <tr key={meal.id} className="border-b border-black/5 last:border-0">
+                <td className="px-4 py-3">
                   {meal.emoji ?? "🍽️"} {meal.name}
                 </td>
-                <td className="px-4 py-2 text-slate-500">{chefName(meal.chefId)}</td>
-                <td className="px-4 py-2 text-slate-500">
+                <td className="px-4 py-3 text-apple-secondary">{chefName(meal.chefId)}</td>
+                <td className="px-4 py-3 text-apple-secondary">
                   {meal.category} {meal.isVeg ? "🌱" : ""}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   {editingId === meal.id ? (
                     <input
-                      className="w-20 border border-slate-300 rounded px-1 py-0.5 text-sm"
+                      className="w-20 border border-black/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
                       value={draft.price}
                       onChange={(e) => setDraft({ ...draft, price: e.target.value })}
                     />
                   ) : (
-                    `৳${meal.price ?? 0}`
+                    formatCurrency(meal.price ?? 0)
                   )}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   {editingId === meal.id ? (
                     <input
-                      className="w-16 border border-slate-300 rounded px-1 py-0.5 text-sm"
+                      className="w-16 border border-black/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
                       value={draft.availableQuantity}
                       onChange={(e) => setDraft({ ...draft, availableQuantity: e.target.value })}
                     />
@@ -129,46 +143,44 @@ export default function MealsPage() {
                     meal.availableQuantity ?? 0
                   )}
                 </td>
-                <td className="px-4 py-2">
-                  <button
+                <td className="px-4 py-3">
+                  <Badge
+                    tone={meal.isAvailable ? "green" : "neutral"}
                     onClick={() => toggleAvailable(meal)}
                     disabled={busyId === meal.id}
-                    className={`text-xs rounded-full px-2 py-1 font-medium ${
-                      meal.isAvailable ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
-                    }`}
                   >
                     {meal.isAvailable ? "Yes" : "No"}
-                  </button>
+                  </Badge>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap">
+                <td className="px-4 py-3 whitespace-nowrap">
                   {editingId === meal.id ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 text-xs">
                       <button
                         onClick={() => saveEdit(meal.id)}
                         disabled={busyId === meal.id}
-                        className="text-xs text-brand-700 hover:text-brand-900 underline"
+                        className="text-apple-blue hover:text-apple-blue-dark font-medium transition-colors duration-150"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
-                        className="text-xs text-slate-500 underline"
+                        className="text-apple-secondary transition-colors duration-150"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 text-xs">
                       <button
                         onClick={() => startEdit(meal)}
-                        className="text-xs text-slate-600 hover:text-slate-900 underline"
+                        className="text-apple-secondary hover:text-apple-text transition-colors duration-150"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(meal.id)}
                         disabled={busyId === meal.id}
-                        className="text-xs text-red-600 hover:text-red-800 underline"
+                        className="text-apple-red hover:opacity-80 transition-opacity duration-150"
                       >
                         Delete
                       </button>
@@ -180,7 +192,7 @@ export default function MealsPage() {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <p className="text-sm text-slate-400 px-4 py-6">No meals found.</p>
+          <p className="text-sm text-apple-secondary px-4 py-6">No meals found.</p>
         )}
       </div>
     </div>

@@ -6,16 +6,41 @@ directly to Firestore via the client SDK — there is no backend server.
 
 It lets an admin:
 
-- Log in with Firebase Auth (email/password)
+- Log in with Firebase Auth (email/password, or **Sign in with Google** — see
+  setup note below)
 - View & manage **Chefs** (verify, toggle today's availability, edit
-  name/bio/specialty, delete)
+  name/bio/specialty, delete, open a detail view with their meals/orders/reviews)
 - View & manage **Meals** (filter by chef, edit price/quantity/available,
   delete)
-- View **Customers/Users** (read-only; sparse until the signup flow backfills it)
-- View & manage **Orders** (filter by status/chef, change status, revenue total)
+- View **Customers/Users** (read-only; sparse until the signup flow backfills
+  it; open a detail view with role/createdAt and — for customers — order history)
+- View & manage **Orders** (filter by status/chef, change status, revenue
+  total, open an itemized detail view with a status timeline, export the
+  current filtered list as CSV)
 - View **Reviews** (filter by chef, flag/delete for moderation)
 - View & manage **Subscriptions** (filter by active, force-cancel)
-- See a **Dashboard** with stat cards and a 14-day orders chart
+- See a **Dashboard** with stat cards, a 14-day orders chart, an order-status
+  breakdown chart, and a top-chefs leaderboard
+- See an **Activity Log** of every mutating admin action (who did what, to
+  what, and when) — a durable, append-only audit trail
+
+A global search box in the top bar filters whichever page is currently open.
+
+## 0. Google Sign-In setup (one-time, in Firebase Console)
+
+The admin-web Login screen now offers "Sign in with Google" alongside
+email/password. For it to work:
+
+1. Firebase Console → **Authentication → Sign-in method** → enable the
+   **Google** provider (one toggle — Firebase handles the OAuth client for
+   web automatically; this is **not** the same as the Android app's SHA-1
+   fingerprint setup, and needs no extra configuration here).
+2. Once this admin panel is deployed somewhere (Vercel, etc. — a separate
+   step, not covered by this repo), add that deployed domain to
+   **Authentication → Settings → Authorized domains**. If you skip this, the
+   Google sign-in popup will fail with an `auth/unauthorized-domain` error
+   once it's live on the public URL (it works fine on `localhost` during
+   local dev without this step).
 
 ## 1. Set up the Firebase Web App config
 
@@ -84,8 +109,10 @@ Firebase Auth uid**, with any field (e.g. `{ addedAt: <timestamp> }`).
 
 `../firestore.rules` has been extended (not restructured) with an
 `isAdmin()` helper and an `admins` collection, plus broadened admin
-read/write on `chefs`, `meals`, `orders`, `reviews`, `users` and the new
-`subscriptions` collection. That file is a **reference** ruleset — per its
+read/write on `chefs`, `meals`, `orders`, `reviews`, `users` and the
+`subscriptions` collection, plus an append-only `admin_activity_log`
+collection (admins can read and create entries; update/delete are always
+denied, so the Activity Log tab stays a trustworthy audit trail). That file is a **reference** ruleset — per its
 own existing header comment, the Firebase project is currently actually
 running the much looser `allow read, write: if request.auth != null;` rule
 in the console, so this admin panel already works today regardless of
@@ -100,3 +127,9 @@ already there waiting.
 - All writes go straight to Firestore from the browser via the client SDK;
   there is no admin backend/API.
 - Do not commit `.env.local` — it's gitignored.
+- Visual design follows an "Apple-premium" system: Inter (Google Fonts) as
+  the primary typeface, and a set of design tokens (`apple-bg`,
+  `apple-surface`, `apple-text`, `apple-secondary`, `apple-blue`,
+  `apple-green`, `apple-amber`, `apple-red`) defined once in
+  `tailwind.config.js` rather than hardcoded hex values scattered through
+  components. Icons are from `lucide-react`.

@@ -112,6 +112,19 @@ service cloud.firestore {
         (isSignedIn() && resource.data.customerId == request.auth.uid);
     }
 
+    // admin_activity_log/{logId} — append-only audit trail written by
+    // admin-web (see admin-web/src/lib/activityLog.ts) every time an admin
+    // toggles/edits/deletes something or changes an order's status. Admins
+    // can read it (to review the log in the "Activity Log" tab) and create
+    // new entries, but nothing may ever be updated or deleted — that's what
+    // makes it a trustworthy audit trail rather than just another mutable
+    // collection.
+    match /admin_activity_log/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     // chats/{chatId} — one thread per customer+chef pair, id = "<customerId>_<chefId>".
     // There's no separate chef login yet (see data/firebase/FirestoreChatRepository.kt),
     // so this only checks the customer side strictly; tighten further once chefs have

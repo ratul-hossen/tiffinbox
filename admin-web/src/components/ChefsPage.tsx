@@ -1,11 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
-import type { Chef } from "../types";
+import type { Chef, Meal, Order, Review } from "../types";
+import { logActivity } from "../lib/activityLog";
+import Badge from "./ui/Badge";
+import ChefDetail from "./ChefDetail";
 
-export default function ChefsPage() {
+interface Props {
+  search: string;
+}
+
+export default function ChefsPage({ search }: Props) {
   const { data: chefs, loading, error } = useCollection<Chef>("chefs");
+  const { data: meals } = useCollection<Meal>("meals");
+  const { data: orders } = useCollection<Order>("orders");
+  const { data: reviews } = useCollection<Review>("reviews");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ kitchenName: string; bio: string; specialty: string }>({
     kitchenName: "",
@@ -13,6 +23,18 @@ export default function ChefsPage() {
     specialty: "",
   });
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [detailChefId, setDetailChefId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return chefs;
+    return chefs.filter(
+      (c) =>
+        (c.kitchenName ?? "").toLowerCase().includes(q) ||
+        (c.ownerName ?? "").toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q),
+    );
+  }, [chefs, search]);
 
   function startEdit(chef: Chef) {
     setEditingId(chef.id);
@@ -26,13 +48,18 @@ export default function ChefsPage() {
   async function saveEdit(chefId: string) {
     setBusyId(chefId);
     try {
+      const specialty = draft.specialty
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       await updateDoc(doc(db, "chefs", chefId), {
         kitchenName: draft.kitchenName,
         bio: draft.bio,
-        specialty: draft.specialty
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        specialty,
+      });
+      await logActivity("Edited chef profile", "chefs", chefId, {
+        kitchenName: draft.kitchenName,
+        specialty,
       });
       setEditingId(null);
     } finally {
@@ -43,7 +70,14 @@ export default function ChefsPage() {
   async function toggleField(chef: Chef, field: "isVerified" | "isAvailableToday") {
     setBusyId(chef.id);
     try {
-      await updateDoc(doc(db, "chefs", chef.id), { [field]: !chef[field] });
+      const next = !chef[field];
+      await updateDoc(doc(db, "chefs", chef.id), { [field]: next });
+      await logActivity(
+        field === "isVerified" ? "Toggled chef verification" : "Toggled chef availability",
+        "chefs",
+        chef.id,
+        { [field]: next },
+      );
     } finally {
       setBusyId(null);
     }
@@ -54,38 +88,44 @@ export default function ChefsPage() {
     setBusyId(chefId);
     try {
       await deleteDoc(doc(db, "chefs", chefId));
+      await logActivity("Deleted chef", "chefs", chefId);
     } finally {
       setBusyId(null);
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">Loading chefs…</p>;
-  if (error) return <p className="text-sm text-red-600">Error: {error}</p>;
+  if (loading) return <p className="text-sm text-apple-secondary">Loading chefs…</p>;
+  if (error) return <p className="text-sm text-apple-red">Error: {error}</p>;
+
+  const detailChef = chefs.find((c) => c.id === detailChefId) ?? null;
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-slate-900">Chefs ({chefs.length})</h2>
+      <h2 className="text-2xl font-bold text-apple-text tracking-tight">Chefs ({filtered.length})</h2>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {chefs.map((chef) => (
-          <div key={chef.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        {filtered.map((chef) => (
+          <div
+            key={chef.id}
+            className="bg-apple-surface rounded-2xl border border-black/5 p-5 shadow-card hover:shadow-card-hover transition-shadow duration-200"
+          >
             {editingId === chef.id ? (
               <div className="space-y-2">
                 <input
-                  className="w-full text-sm border border-slate-300 rounded px-2 py-1"
+                  className="w-full text-sm border border-black/10 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   value={draft.kitchenName}
                   onChange={(e) => setDraft({ ...draft, kitchenName: e.target.value })}
                   placeholder="Kitchen name"
                 />
                 <textarea
-                  className="w-full text-sm border border-slate-300 rounded px-2 py-1"
+                  className="w-full text-sm border border-black/10 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   value={draft.bio}
                   onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
                   placeholder="Bio"
                   rows={2}
                 />
                 <input
-                  className="w-full text-sm border border-slate-300 rounded px-2 py-1"
+                  className="w-full text-sm border border-black/10 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   value={draft.specialty}
                   onChange={(e) => setDraft({ ...draft, specialty: e.target.value })}
                   placeholder="Specialty (comma separated)"
@@ -94,13 +134,13 @@ export default function ChefsPage() {
                   <button
                     onClick={() => saveEdit(chef.id)}
                     disabled={busyId === chef.id}
-                    className="text-xs bg-brand-600 hover:bg-brand-700 text-white rounded px-3 py-1"
+                    className="text-xs bg-apple-blue hover:bg-apple-blue-dark disabled:opacity-60 text-white rounded-lg px-3 py-1.5 font-medium transition-colors duration-150"
                   >
                     Save
                   </button>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="text-xs bg-slate-100 hover:bg-slate-200 rounded px-3 py-1"
+                    className="text-xs bg-black/5 hover:bg-black/10 rounded-lg px-3 py-1.5 transition-colors duration-150"
                   >
                     Cancel
                   </button>
@@ -110,68 +150,69 @@ export default function ChefsPage() {
               <>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-medium text-slate-900">
+                    <div className="font-semibold text-apple-text">
                       {chef.emoji ?? "👨‍🍳"} {chef.kitchenName ?? "(unnamed kitchen)"}
                     </div>
-                    <div className="text-xs text-slate-500">{chef.ownerName}</div>
+                    <div className="text-xs text-apple-secondary">{chef.ownerName}</div>
                   </div>
-                  <div className="text-xs text-slate-400">{chef.id}</div>
+                  <div className="text-xs text-apple-secondary/70">{chef.id.slice(0, 6)}</div>
                 </div>
 
-                <p className="text-sm text-slate-600 mt-2 line-clamp-2">{chef.bio}</p>
+                <p className="text-sm text-apple-secondary mt-2 line-clamp-2">{chef.bio}</p>
 
                 {chef.specialty && chef.specialty.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {chef.specialty.map((s) => (
-                      <span key={s} className="text-xs bg-brand-50 text-brand-700 rounded-full px-2 py-0.5">
+                      <span
+                        key={s}
+                        className="text-xs bg-apple-blue/10 text-apple-blue rounded-full px-2 py-0.5"
+                      >
                         {s}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 mt-3">
+                <div className="grid grid-cols-3 gap-2 text-xs text-apple-secondary mt-3">
                   <div>Rating: {chef.overallRating ?? "–"}</div>
                   <div>Orders: {chef.totalOrders ?? 0}</div>
-                  <div>Distance: {chef.distanceKm ?? "–"} km</div>
+                  <div>Dist: {chef.distanceKm ?? "–"} km</div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <button
+                  <Badge
+                    tone={chef.isVerified ? "green" : "neutral"}
                     onClick={() => toggleField(chef, "isVerified")}
                     disabled={busyId === chef.id}
-                    className={`text-xs rounded-full px-2 py-1 font-medium ${
-                      chef.isVerified
-                        ? "bg-green-100 text-green-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
                   >
-                    {chef.isVerified ? "✓ Verified" : "Not verified"}
-                  </button>
-                  <button
+                    {chef.isVerified ? "Verified" : "Not verified"}
+                  </Badge>
+                  <Badge
+                    tone={chef.isAvailableToday ? "blue" : "neutral"}
                     onClick={() => toggleField(chef, "isAvailableToday")}
                     disabled={busyId === chef.id}
-                    className={`text-xs rounded-full px-2 py-1 font-medium ${
-                      chef.isAvailableToday
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
                   >
                     {chef.isAvailableToday ? "Available today" : "Unavailable"}
-                  </button>
+                  </Badge>
                 </div>
 
-                <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                <div className="flex gap-3 mt-3 pt-3 border-t border-black/5 text-xs">
+                  <button
+                    onClick={() => setDetailChefId(chef.id)}
+                    className="text-apple-blue hover:text-apple-blue-dark font-medium transition-colors duration-150"
+                  >
+                    View details
+                  </button>
                   <button
                     onClick={() => startEdit(chef)}
-                    className="text-xs text-slate-600 hover:text-slate-900 underline"
+                    className="text-apple-secondary hover:text-apple-text transition-colors duration-150"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(chef.id)}
                     disabled={busyId === chef.id}
-                    className="text-xs text-red-600 hover:text-red-800 underline"
+                    className="text-apple-red hover:opacity-80 transition-opacity duration-150"
                   >
                     Delete
                   </button>
@@ -182,9 +223,15 @@ export default function ChefsPage() {
         ))}
       </div>
 
-      {chefs.length === 0 && (
-        <p className="text-sm text-slate-400">No chefs yet.</p>
-      )}
+      {filtered.length === 0 && <p className="text-sm text-apple-secondary">No chefs found.</p>}
+
+      <ChefDetail
+        chef={detailChef}
+        meals={meals}
+        orders={orders}
+        reviews={reviews}
+        onClose={() => setDetailChefId(null)}
+      />
     </div>
   );
 }

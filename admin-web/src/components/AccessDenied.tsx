@@ -69,49 +69,49 @@ export default function AccessDenied({ user, onBootstrapped }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-apple-bg px-4">
+      <div className="w-full max-w-md bg-apple-surface rounded-2xl shadow-card border border-black/5 p-8 text-center">
         <div className="text-3xl mb-2">🚫</div>
-        <h1 className="text-xl font-semibold text-slate-900">Access denied</h1>
-        <p className="text-sm text-slate-500 mt-2">
-          Signed in as <span className="font-medium">{user.email}</span>, but
+        <h1 className="text-xl font-bold text-apple-text tracking-tight">Access denied</h1>
+        <p className="text-sm text-apple-secondary mt-2">
+          Signed in as <span className="font-medium text-apple-text">{user.email}</span>, but
           this account is not an admin.
         </p>
 
         {checkingEmpty ? (
-          <p className="text-sm text-slate-400 mt-4">Checking admin setup…</p>
+          <p className="text-sm text-apple-secondary mt-4">Checking admin setup…</p>
         ) : collectionEmpty ? (
-          <div className="mt-6 border border-amber-200 bg-amber-50 rounded-lg p-4 text-left">
-            <p className="text-sm text-amber-800">
+          <div className="mt-6 border border-apple-amber/20 bg-apple-amber/10 rounded-xl p-4 text-left">
+            <p className="text-sm text-apple-text">
               No admins have been set up yet for this project. Since you're
               signed in, you can make yourself the first admin:
             </p>
             <button
               onClick={handleBootstrap}
               disabled={bootstrapping}
-              className="mt-3 w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white rounded-lg py-2 text-sm font-medium transition-colors"
+              className="mt-3 w-full bg-apple-amber hover:brightness-95 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-medium transition-all duration-150"
             >
               {bootstrapping ? "Adding you as admin…" : "Make me the first admin (dev bootstrap)"}
             </button>
           </div>
         ) : (
-          <p className="text-sm text-slate-500 mt-4">
+          <p className="text-sm text-apple-secondary mt-4">
             Ask the project owner to add a document for your Firebase Auth
-            uid (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">{user.uid}</code>) to
-            the <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">admins</code> collection
+            uid (<code className="text-xs bg-black/5 px-1 py-0.5 rounded">{user.uid}</code>) to
+            the <code className="text-xs bg-black/5 px-1 py-0.5 rounded">admins</code> collection
             in Firestore.
           </p>
         )}
 
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-4">
+          <div className="text-sm text-apple-red bg-apple-red/10 border border-apple-red/20 rounded-xl px-3 py-2 mt-4">
             {error}
           </div>
         )}
 
         <button
           onClick={handleSignOut}
-          className="mt-6 text-sm text-slate-500 hover:text-slate-700 underline"
+          className="mt-6 text-sm text-apple-secondary hover:text-apple-text underline transition-colors duration-150"
         >
           Sign out
         </button>

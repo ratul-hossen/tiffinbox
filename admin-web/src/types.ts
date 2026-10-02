@@ -78,6 +78,8 @@ export interface Order {
   deliveryFee?: number;
   platformFee?: number;
   totalPrice?: number;
+  deliveryAddress?: string;
+  paymentMethod?: string;
   status?: OrderStatus | string;
   placedAt?: number; // epoch millis
 }
@@ -93,6 +95,25 @@ export interface Review {
   overallRating?: number;
   comment?: string;
   createdAt?: number;
+}
+
+// A Firestore Timestamp as it comes back from onSnapshot (serverTimestamp()
+// resolves to an object with toDate()/toMillis(), not a plain number).
+export interface FirestoreTimestampLike {
+  toMillis?: () => number;
+  toDate?: () => Date;
+  seconds?: number;
+}
+
+export interface AdminActivityLogEntry {
+  id: string;
+  adminUid?: string | null;
+  adminEmail?: string | null;
+  action?: string;
+  targetCollection?: string;
+  targetId?: string;
+  details?: Record<string, unknown> | null;
+  timestamp?: FirestoreTimestampLike | number | null;
 }
 
 export interface Subscription {
