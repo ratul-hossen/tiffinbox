@@ -18,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.notifications.ensureNotificationChannel
 import com.ratulhossen.tiffinbox.ui.navigation.TiffinNavGraph
@@ -51,7 +52,7 @@ fun TiffinBoxApp() {
                 AnimatedVisibility(visible = !isOnline) {
                     Surface(color = MaterialTheme.colorScheme.errorContainer) {
                         Text(
-                            "ইন্টারনেট সংযোগ নেই — কিছু তথ্য পুরনো হতে পারে",
+                            stringResource(R.string.offline_banner),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier

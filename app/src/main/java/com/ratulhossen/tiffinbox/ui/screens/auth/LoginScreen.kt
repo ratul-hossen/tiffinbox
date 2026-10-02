@@ -12,11 +12,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.AuthResult
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
@@ -32,11 +34,12 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+    val emailPasswordRequiredMessage = stringResource(R.string.login_email_password_required)
 
     fun submit() {
         errorMessage = null
         if (email.isBlank() || password.isBlank()) {
-            errorMessage = "ইমেইল ও পাসওয়ার্ড দিন"
+            errorMessage = emailPasswordRequiredMessage
             return
         }
         isLoading = true
@@ -73,13 +76,13 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            if (isLoginMode) "স্বাগতম!" else "নতুন Account তৈরি করুন",
+            if (isLoginMode) stringResource(R.string.login_welcome_back) else stringResource(R.string.login_create_account_title),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "ঘরের রান্না, এক Tap দূরে",
+            stringResource(R.string.login_subtitle),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp
         )
@@ -89,7 +92,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("নাম") },
+                label = { Text(stringResource(R.string.login_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -99,7 +102,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("ইমেইল") },
+            label = { Text(stringResource(R.string.login_email_label)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
@@ -108,7 +111,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.login_password_label)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
@@ -132,7 +135,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
                     strokeWidth = 2.dp
                 )
             } else {
-                Text(if (isLoginMode) "Login" else "Sign Up")
+                Text(if (isLoginMode) stringResource(R.string.login_button) else stringResource(R.string.signup_button))
             }
         }
 
@@ -142,7 +145,7 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) {
-            Text("Continue with Google")
+            Text(stringResource(R.string.login_continue_with_google_button))
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -154,8 +157,8 @@ fun LoginScreen(role: String, onLoginSuccess: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                if (isLoginMode) "নতুন? Sign Up করুন"
-                else "আগে থেকে Account আছে? Login করুন"
+                if (isLoginMode) stringResource(R.string.login_toggle_to_signup)
+                else stringResource(R.string.login_toggle_to_login)
             )
         }
     }

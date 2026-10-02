@@ -11,9 +11,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 
 enum class UserRole { CUSTOMER, CHEF }
 
@@ -28,13 +30,13 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            "আপনি কে হিসেবে যুক্ত হতে চান?",
+            stringResource(R.string.role_select_title),
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            "পরে আপনি এটা পরিবর্তন করতে পারবেন",
+            stringResource(R.string.role_select_subtitle),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp
         )
@@ -42,16 +44,16 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
 
         RoleCard(
             emoji = "🍽️",
-            title = "আমি একজন Customer",
-            description = "কাছাকাছি home chef থেকে খাবার অর্ডার করতে চাই",
+            title = stringResource(R.string.role_customer_title),
+            description = stringResource(R.string.role_customer_desc),
             selected = selected == UserRole.CUSTOMER,
             onClick = { selected = UserRole.CUSTOMER }
         )
         Spacer(modifier = Modifier.height(16.dp))
         RoleCard(
             emoji = "👩‍🍳",
-            title = "আমি একজন Home Chef",
-            description = "আমার রান্না বিক্রি করে আয় করতে চাই",
+            title = stringResource(R.string.role_chef_title),
+            description = stringResource(R.string.role_chef_desc),
             selected = selected == UserRole.CHEF,
             onClick = { selected = UserRole.CHEF }
         )
@@ -62,7 +64,7 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
             enabled = selected != null,
             modifier = Modifier.fillMaxWidth().height(52.dp)
         ) {
-            Text("Continue")
+            Text(stringResource(R.string.role_select_continue_button))
         }
     }
 }

@@ -10,35 +10,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import kotlinx.coroutines.launch
 
 private data class OnboardingPage(val emoji: String, val title: String, val description: String)
 
-private val pages = listOf(
-    OnboardingPage(
-        "🏠",
-        "ঘরের খাবার, এক Tap দূরে",
-        "আপনার আশেপাশের ভেরিফাইড home chef-দের কাছ থেকে অর্ডার করুন।"
-    ),
-    OnboardingPage(
-        "✅",
-        "যাচাইকৃত ও বিশ্বস্ত",
-        "প্রতিটা chef পরিচয় ও hygiene checklist দিয়ে ভেরিফাইড।"
-    ),
-    OnboardingPage(
-        "🤖",
-        "AI আপনার পছন্দ বোঝে",
-        "বাজেট, ডায়েট আর স্বাদ অনুযায়ী সেরা মিল সাজেশন পান।"
-    )
-)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(onFinished: () -> Unit) {
+    val pages = listOf(
+        OnboardingPage(
+            "🏠",
+            stringResource(R.string.onboarding_page1_title),
+            stringResource(R.string.onboarding_page1_desc)
+        ),
+        OnboardingPage(
+            "✅",
+            stringResource(R.string.onboarding_page2_title),
+            stringResource(R.string.onboarding_page2_desc)
+        ),
+        OnboardingPage(
+            "🤖",
+            stringResource(R.string.onboarding_page3_title),
+            stringResource(R.string.onboarding_page3_desc)
+        )
+    )
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val scope = rememberCoroutineScope()
 
@@ -47,7 +48,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             onClick = onFinished,
             modifier = Modifier.align(Alignment.End).padding(top = 16.dp, end = 8.dp)
         ) {
-            Text("Skip")
+            Text(stringResource(R.string.onboarding_skip_button))
         }
 
         HorizontalPager(
@@ -113,7 +114,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text(if (pagerState.currentPage < pages.lastIndex) "Next" else "শুরু করি")
+            Text(if (pagerState.currentPage < pages.lastIndex) stringResource(R.string.onboarding_next_button) else stringResource(R.string.onboarding_start_button))
         }
     }
 }
