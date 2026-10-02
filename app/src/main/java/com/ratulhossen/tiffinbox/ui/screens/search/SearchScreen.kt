@@ -15,7 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
@@ -50,7 +52,7 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("কম তেলে ১২০ টাকার দুপুরের খাবার...") },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -65,7 +67,7 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
                 FilterChip(
                     selected = vegOnly,
                     onClick = { vegOnly = !vegOnly },
-                    label = { Text("শুধু Veg") }
+                    label = { Text(stringResource(R.string.search_veg_only_chip)) }
                 )
             }
             items(SampleData.categories) { category ->
@@ -108,7 +110,7 @@ private fun EmptySearchState() {
             Text("🍽️", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "কিছু পাওয়া যায়নি, অন্য কিছু খুঁজে দেখুন",
+                stringResource(R.string.search_empty_state_message),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

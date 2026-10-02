@@ -14,16 +14,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 
-private enum class ChefSort(val label: String) {
-    RECOMMENDED("Recommended"),
-    NEARBY("Nearby"),
-    RATING("Top Rated")
+private enum class ChefSort {
+    RECOMMENDED,
+    NEARBY,
+    RATING
+}
+
+@Composable
+private fun ChefSort.label(): String = when (this) {
+    ChefSort.RECOMMENDED -> stringResource(R.string.chef_sort_recommended)
+    ChefSort.NEARBY -> stringResource(R.string.chef_sort_nearby)
+    ChefSort.RATING -> stringResource(R.string.chef_sort_top_rated)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,10 +69,10 @@ fun ChefListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("সব Home Chef") },
+                title = { Text(stringResource(R.string.chef_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -80,14 +89,14 @@ fun ChefListScreen(
                     FilterChip(
                         selected = sort == option,
                         onClick = { sort = option },
-                        label = { Text(option.label) }
+                        label = { Text(option.label()) }
                     )
                 }
             }
             if (sortedChefs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "কোনো Chef পাওয়া যায়নি",
+                        stringResource(R.string.chef_list_empty),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

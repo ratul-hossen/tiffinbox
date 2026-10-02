@@ -18,8 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.ChefUi
@@ -61,12 +63,12 @@ fun ChefDetailScreen(
                 title = { Text(chef.kitchenName) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = onChatClick) {
-                        Icon(Icons.Filled.Chat, contentDescription = "Chat")
+                        Icon(Icons.Filled.Chat, contentDescription = stringResource(R.string.content_description_chat))
                     }
                 }
             )
@@ -92,14 +94,14 @@ fun ChefDetailScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 Icons.Filled.CheckCircle,
-                                contentDescription = "Verified",
+                                contentDescription = stringResource(R.string.content_description_verified),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                     Text(
-                        "by ${chef.ownerName}",
+                        stringResource(R.string.chef_detail_owner_by, chef.ownerName),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -112,29 +114,36 @@ fun ChefDetailScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("${chef.overallRating}  (${chef.totalOrders} orders)  •  ${chef.distanceKm} km away")
+                        Text(
+                            stringResource(
+                                R.string.chef_rating_summary,
+                                chef.overallRating.toString(),
+                                chef.totalOrders.toString(),
+                                chef.distanceKm.toString()
+                            )
+                        )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(chef.bio, style = MaterialTheme.typography.bodyMedium)
 
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedButton(onClick = onSubscribeClick, modifier = Modifier.fillMaxWidth()) {
-                        Text("Weekly / Monthly Subscription দেখুন")
+                        Text(stringResource(R.string.chef_detail_view_subscription_button))
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text("Rating Breakdown", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.chef_detail_rating_breakdown_title), style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(10.dp))
-                    RatingRow("🍽️ স্বাদ", chef.taste)
+                    RatingRow(stringResource(R.string.rating_taste_label), chef.taste)
                     Spacer(modifier = Modifier.height(6.dp))
-                    RatingRow("🧼 Hygiene", chef.hygiene)
+                    RatingRow(stringResource(R.string.rating_hygiene_label), chef.hygiene)
                     Spacer(modifier = Modifier.height(6.dp))
-                    RatingRow("📦 Packaging", chef.packaging)
+                    RatingRow(stringResource(R.string.rating_packaging_label), chef.packaging)
                     Spacer(modifier = Modifier.height(6.dp))
-                    RatingRow("⏱️ On-Time", chef.onTime)
+                    RatingRow(stringResource(R.string.rating_on_time_label), chef.onTime)
 
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text("Menu", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.chef_detail_menu_title), style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }

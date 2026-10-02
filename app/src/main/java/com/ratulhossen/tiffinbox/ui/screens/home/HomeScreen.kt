@@ -22,9 +22,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
@@ -76,12 +78,12 @@ fun HomeScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ashulia, Dhaka", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.home_location), style = MaterialTheme.typography.labelLarge)
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "আজ কী খেতে ইচ্ছে করছে?",
+                    stringResource(R.string.home_greeting),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -97,7 +99,7 @@ fun HomeScreen(
             ) {
                 Icon(
                     Icons.Filled.Person,
-                    contentDescription = "Profile",
+                    contentDescription = stringResource(R.string.home_profile_content_description),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(22.dp)
                 )
@@ -118,12 +120,12 @@ fun HomeScreen(
             ) {
                 Icon(
                     Icons.Filled.Search,
-                    contentDescription = "Search",
+                    contentDescription = stringResource(R.string.home_search_content_description),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    "কম তেলে ১২০ টাকার দুপুরের খাবার...",
+                    stringResource(R.string.search_placeholder),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -149,7 +151,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
         SectionHeader(
-            title = "আপনার জন্য Recommended",
+            title = stringResource(R.string.home_section_recommended),
             onSeeAllClick = { onSeeAllClick("recommended") }
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -168,7 +170,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
         SectionHeader(
-            title = "কাছাকাছি Home Chef",
+            title = stringResource(R.string.home_section_nearby),
             onSeeAllClick = { onSeeAllClick("nearby") }
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -198,7 +200,7 @@ private fun SectionHeader(title: String, onSeeAllClick: () -> Unit) {
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge)
         Text(
-            "সব দেখুন",
+            stringResource(R.string.home_see_all),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable(onClick = onSeeAllClick)

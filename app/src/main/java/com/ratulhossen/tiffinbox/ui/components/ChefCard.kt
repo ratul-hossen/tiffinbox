@@ -23,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 
@@ -83,7 +85,7 @@ fun ChefCard(
                     )
                     Icon(
                         if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Favorite",
+                        contentDescription = stringResource(R.string.content_description_favorite),
                         tint = if (isFavorite) FavoriteRed else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(16.dp)
@@ -100,7 +102,7 @@ fun ChefCard(
                     ) {
                         Icon(
                             Icons.Filled.CheckCircle,
-                            contentDescription = "Verified",
+                            contentDescription = stringResource(R.string.content_description_verified),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -115,7 +117,7 @@ fun ChefCard(
                             .padding(vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("আজ বন্ধ", color = Color.White, fontSize = 11.sp)
+                        Text(stringResource(R.string.chef_card_closed_today), color = Color.White, fontSize = 11.sp)
                     }
                 }
             }
@@ -136,12 +138,12 @@ fun ChefCard(
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
-                        "${chef.overallRating} (${chef.totalOrders})",
+                        stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
                         style = MaterialTheme.typography.labelSmall
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "${chef.distanceKm} km",
+                        stringResource(R.string.chef_card_distance_km, chef.distanceKm.toString()),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
