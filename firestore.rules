@@ -66,7 +66,7 @@ service cloud.firestore {
       allow update: if isSuperAdmin() || (
         isOwner(adminId) &&
         request.auth.token.email == "hossen240504@gmail.com" &&
-        resource.data.role != "super_admin" &&
+        resource.data.get("role", null) != "super_admin" &&
         request.resource.data.role == "super_admin"
       );
       allow delete: if isSuperAdmin() && adminId != request.auth.uid;
