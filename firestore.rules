@@ -1,24 +1,17 @@
 rules_version = '2';
 
 // Reference ruleset matching the data models in README.md (User, Chef, Meal,
-// Order, Review). Paste this into Firebase Console -> Firestore Database ->
-// Rules once the project and collections exist. Not consumed by the Android
-// build itself.
+// Order, Review). This is the ruleset actually published in Firebase
+// Console -> Firestore Database -> Rules for the tiffinbox-2cb8b project
+// (not auto-synced — any further change to this file must be manually
+// re-pasted and re-published there to take effect). Not consumed by the
+// Android build itself; this file is the source of truth to keep in sync
+// with what's deployed.
 //
-// Note: during initial testing the project is running the simpler
-// "allow read, write: if request.auth != null;" rule for all documents
-// instead of this one. Swap to the per-collection rules below once the
-// chef-ownership fields (chefs/meals docs' userId) are actually being set
-// by a real onboarding flow, rather than the dev-only seed script.
-//
-// admin-web (see /admin-web) additions: an isAdmin() helper, an
-// admins/{adminId} collection, a subscriptions/{subscriptionId}
+// admin-web (see /admin-web) additions: an isAdmin()/isSuperAdmin() helper,
+// an admins/{adminId} collection, a subscriptions/{subscriptionId}
 // collection, and broadened admin read/write on chefs, meals, orders,
-// reviews, users and subscriptions, below. Until the console rule above
-// is actually tightened to match this reference file, the admin-web panel
-// already works fine under that loose "signed in = allowed" placeholder
-// rule regardless — these additions only matter once/if this reference
-// file is the one actually deployed.
+// reviews, users and subscriptions, below.
 service cloud.firestore {
   match /databases/{database}/documents {
 
