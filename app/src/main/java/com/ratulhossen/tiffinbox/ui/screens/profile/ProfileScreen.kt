@@ -23,9 +23,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 
 private data class ProfileMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit = {})
@@ -35,14 +37,17 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
     var seedStatus by remember { mutableStateOf<String?>(null) }
 
     val menuItems = listOf(
-        ProfileMenuItem(Icons.Filled.Receipt, "আমার অর্ডার"),
-        ProfileMenuItem(Icons.Filled.DateRange, "আমার Subscriptions", onSubscriptionsClick),
-        ProfileMenuItem(Icons.Filled.Favorite, "Favorites"),
-        ProfileMenuItem(Icons.Filled.LocationOn, "ঠিকানা ব্যবস্থাপনা"),
-        ProfileMenuItem(Icons.Filled.Payment, "Payment পদ্ধতি"),
-        ProfileMenuItem(Icons.Filled.Notifications, "Notifications"),
-        ProfileMenuItem(Icons.Filled.Settings, "Settings")
+        ProfileMenuItem(Icons.Filled.Receipt, stringResource(R.string.profile_menu_my_orders)),
+        ProfileMenuItem(Icons.Filled.DateRange, stringResource(R.string.profile_menu_my_subscriptions), onSubscriptionsClick),
+        ProfileMenuItem(Icons.Filled.Favorite, stringResource(R.string.profile_menu_favorites)),
+        ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management)),
+        ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method)),
+        ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications)),
+        ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings))
     )
+    val seedingSendingMessage = stringResource(R.string.profile_seeding_status_sending)
+    val seedingSuccessMessage = stringResource(R.string.profile_seeding_status_success)
+    val seedingFailureTemplate = stringResource(R.string.profile_seeding_status_failure)
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -59,9 +64,9 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text("Rafi Ahmed", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.profile_demo_user_name), style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "+880 1XXXXXXXXX",
+                    stringResource(R.string.profile_demo_phone),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -108,12 +113,12 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.Logout,
-                contentDescription = "Logout",
+                contentDescription = stringResource(R.string.action_logout),
                 tint = MaterialTheme.colorScheme.error
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                "Logout",
+                stringResource(R.string.action_logout),
                 color = MaterialTheme.colorScheme.error,
                 fontWeight = FontWeight.Medium
             )
@@ -123,11 +128,11 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
         HorizontalDivider()
         TextButton(
             onClick = {
-                seedStatus = "পাঠানো হচ্ছে..."
+                seedStatus = seedingSendingMessage
                 FirestoreSeedRepository.seedSampleData { result ->
                     seedStatus = when (result) {
-                        is FirestoreSeedRepository.SeedResult.Success -> "✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে"
-                        is FirestoreSeedRepository.SeedResult.Failure -> "❌ ${result.message}"
+                        is FirestoreSeedRepository.SeedResult.Success -> seedingSuccessMessage
+                        is FirestoreSeedRepository.SeedResult.Failure -> String.format(seedingFailureTemplate, result.message)
                     }
                 }
             },
@@ -135,7 +140,7 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
-            Text("Developer: Sample data Firestore-এ পাঠান", style = MaterialTheme.typography.labelSmall)
+            Text(stringResource(R.string.profile_dev_seed_button), style = MaterialTheme.typography.labelSmall)
         }
         if (seedStatus != null) {
             Text(

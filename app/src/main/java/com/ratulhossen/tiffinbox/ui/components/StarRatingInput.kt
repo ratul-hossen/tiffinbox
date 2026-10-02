@@ -11,7 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 
 @Composable
 fun StarRatingInput(
@@ -33,7 +35,7 @@ fun StarRatingInput(
             for (star in 1..5) {
                 Icon(
                     imageVector = if (star <= rating) Icons.Filled.Star else Icons.Filled.StarBorder,
-                    contentDescription = "$star star",
+                    contentDescription = stringResource(R.string.star_rating_content_description, star),
                     tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier
                         .size(28.dp)

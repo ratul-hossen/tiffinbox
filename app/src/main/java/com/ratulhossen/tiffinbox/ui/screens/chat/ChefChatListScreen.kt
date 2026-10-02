@@ -16,8 +16,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.ChatThreadUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChatRepository
 
@@ -38,10 +40,10 @@ fun ChefChatListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Messages") },
+                title = { Text(stringResource(R.string.messages_label)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -63,7 +65,7 @@ fun ChefChatListScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "এখনো কোনো মেসেজ আসেনি",
+                        stringResource(R.string.chef_chat_list_empty),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -80,7 +82,7 @@ fun ChefChatListScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Customer ${thread.customerId.take(6)}",
+                                stringResource(R.string.chef_chat_list_customer_label, thread.customerId.take(6)),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(

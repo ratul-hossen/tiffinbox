@@ -14,8 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -41,12 +43,12 @@ fun FavoritesScreen(onChefClick: (String) -> Unit) {
                 Text("❤️", fontSize = 40.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "এখনো কোনো Favorite chef যোগ করেননি",
+                    stringResource(R.string.favorites_empty_title),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "chef কার্ডের হার্ট আইকনে ট্যাপ করে যোগ করুন",
+                    stringResource(R.string.favorites_empty_subtitle),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

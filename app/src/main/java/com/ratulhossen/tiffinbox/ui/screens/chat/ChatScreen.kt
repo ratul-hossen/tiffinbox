@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.ChatMessageUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
@@ -27,7 +29,8 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreChatRepository
 @Composable
 fun CustomerChatScreen(chefId: String, onBack: () -> Unit) {
     val customerId = FirebaseAuthRepository.currentUser?.uid ?: "guest"
-    var chefName by remember(chefId) { mutableStateOf(SampleData.chefById(chefId)?.kitchenName ?: "Chef") }
+    val chefFallbackName = stringResource(R.string.chat_chef_fallback_name)
+    var chefName by remember(chefId) { mutableStateOf(SampleData.chefById(chefId)?.kitchenName ?: chefFallbackName) }
 
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chefName = it.kitchenName }
@@ -48,7 +51,8 @@ fun CustomerChatScreen(chefId: String, onBack: () -> Unit) {
 
 @Composable
 fun ChefChatScreen(customerId: String, chefId: String, onBack: () -> Unit) {
-    var chefName by remember(chefId) { mutableStateOf(SampleData.chefById(chefId)?.kitchenName ?: "Chef") }
+    val chefFallbackName = stringResource(R.string.chat_chef_fallback_name)
+    var chefName by remember(chefId) { mutableStateOf(SampleData.chefById(chefId)?.kitchenName ?: chefFallbackName) }
 
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chefName = it.kitchenName }
@@ -60,7 +64,7 @@ fun ChefChatScreen(customerId: String, chefId: String, onBack: () -> Unit) {
     ChatScreenContent(
         chatId = chatId,
         currentSenderId = senderId,
-        title = "Customer (${customerId.take(6)})",
+        title = stringResource(R.string.chat_customer_title, customerId.take(6)),
         onBack = onBack,
         onSend = { text ->
             FirestoreChatRepository.sendMessage(chatId, customerId, chefId, chefName, senderId, text)
@@ -98,7 +102,7 @@ private fun ChatScreenContent(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -114,7 +118,7 @@ private fun ChatScreenContent(
                     OutlinedTextField(
                         value = input,
                         onValueChange = { input = it },
-                        placeholder = { Text("মেসেজ লিখুন...") },
+                        placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -129,7 +133,7 @@ private fun ChatScreenContent(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
+                            contentDescription = stringResource(R.string.chat_send_content_description),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -145,7 +149,7 @@ private fun ChatScreenContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "কথোপকথন শুরু করুন",
+                    stringResource(R.string.chat_empty_state),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

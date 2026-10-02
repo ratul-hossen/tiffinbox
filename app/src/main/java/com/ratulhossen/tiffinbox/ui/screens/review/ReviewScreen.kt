@@ -11,9 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
 import com.ratulhossen.tiffinbox.ui.components.StarRatingInput
 
@@ -40,28 +42,28 @@ fun ReviewScreen(onSubmitted: () -> Unit) {
     ) {
         Text("🍽️", fontSize = 40.sp)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("খাবার কেমন লাগলো?", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.review_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "Rukhsana's Kitchen — ৪টা আলাদা দিক থেকে রেটিং দিন",
+            stringResource(R.string.review_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(28.dp))
-        StarRatingInput("🍽️ স্বাদ", taste, { taste = it })
+        StarRatingInput(stringResource(R.string.rating_taste_label), taste, { taste = it })
         Spacer(modifier = Modifier.height(16.dp))
-        StarRatingInput("🧼 Hygiene", hygiene, { hygiene = it })
+        StarRatingInput(stringResource(R.string.rating_hygiene_label), hygiene, { hygiene = it })
         Spacer(modifier = Modifier.height(16.dp))
-        StarRatingInput("📦 Packaging", packaging, { packaging = it })
+        StarRatingInput(stringResource(R.string.rating_packaging_label), packaging, { packaging = it })
         Spacer(modifier = Modifier.height(16.dp))
-        StarRatingInput("⏱️ On-Time", onTime, { onTime = it })
+        StarRatingInput(stringResource(R.string.rating_on_time_label), onTime, { onTime = it })
 
         Spacer(modifier = Modifier.height(24.dp))
         OutlinedTextField(
             value = comment,
             onValueChange = { comment = it },
-            label = { Text("মন্তব্য (ঐচ্ছিক)") },
+            label = { Text(stringResource(R.string.review_comment_label)) },
             minLines = 3,
             modifier = Modifier.fillMaxWidth()
         )
@@ -84,12 +86,12 @@ fun ReviewScreen(onSubmitted: () -> Unit) {
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            Text("রিভিউ Submit করুন", fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.review_submit_button), fontWeight = FontWeight.Medium)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onSubmitted, modifier = Modifier.fillMaxWidth()) {
-            Text("এখন না, Skip করুন")
+            Text(stringResource(R.string.review_skip_button))
         }
     }
 }
