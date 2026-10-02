@@ -1,17 +1,4 @@
 import { useMemo } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { ChefHat, Package, Repeat, Soup, Users as UsersIcon, Wallet } from "lucide-react";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, AppUser, Order, OrderStatus, Subscription } from "../types";
@@ -96,6 +83,7 @@ export default function Dashboard() {
   }, [orders, chefs]);
 
   const maxTopChefOrders = Math.max(1, ...topChefs.map((c) => c.orders));
+  const maxDailyOrders = Math.max(1, ...ordersPerDay.map((d) => d.count));
 
   return (
     <div className="space-y-6">
@@ -116,18 +104,19 @@ export default function Dashboard() {
           {ordersLoading ? (
             <p className="text-sm text-apple-secondary">Loading…</p>
           ) : (
-            <div style={{ width: "100%", height: 240 }}>
-              <ResponsiveContainer>
-                <BarChart data={ordersPerDay} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e1e0d9" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#6e6e73" }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#6e6e73" }} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "1px solid rgba(0,0,0,0.06)", fontSize: 12 }}
+            <div className="flex items-end gap-1.5" style={{ height: 200 }}>
+              {ordersPerDay.map((d) => (
+                <div key={d.date} className="flex-1 flex flex-col items-center gap-1.5 group">
+                  <span className="text-[10px] text-apple-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    {d.count}
+                  </span>
+                  <div
+                    className="w-full bg-apple-blue rounded-t-md transition-all duration-200 group-hover:bg-apple-blue-dark"
+                    style={{ height: `${Math.max(4, (d.count / maxDailyOrders) * 160)}px` }}
                   />
-                  <Bar dataKey="count" fill="#0071e3" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+                  <span className="text-[10px] text-apple-secondary whitespace-nowrap">{d.label}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -137,35 +126,7 @@ export default function Dashboard() {
           {statusBreakdown.length === 0 ? (
             <p className="text-sm text-apple-secondary">No orders yet.</p>
           ) : (
-            <div style={{ width: "100%", height: 240 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={statusBreakdown}
-                    dataKey="count"
-                    nameKey="status"
-                    innerRadius="55%"
-                    outerRadius="85%"
-                    paddingAngle={2}
-                    strokeWidth={2}
-                    stroke="#ffffff"
-                  >
-                    {statusBreakdown.map((d) => (
-                      <Cell key={d.status} fill={d.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "1px solid rgba(0,0,0,0.06)", fontSize: 12 }}
-                  />
-                  <Legend
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: 11, color: "#6e6e73" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <StatusDonut data={statusBreakdown} />
           )}
         </div>
       </div>
@@ -199,6 +160,50 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function StatusDonut({ data }: { data: { status: string; count: number; fill: string }[] }) {
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  let offsetSoFar = 0;
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <svg viewBox="0 0 100 100" width={160} height={160} className="-rotate-90">
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="#00000010" strokeWidth={14} />
+        {data.map((d) => {
+          const fraction = total === 0 ? 0 : d.count / total;
+          const dash = fraction * circumference;
+          const gap = circumference - dash;
+          const strokeDashoffset = -offsetSoFar;
+          offsetSoFar += dash;
+          return (
+            <circle
+              key={d.status}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke={d.fill}
+              strokeWidth={14}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="butt"
+            />
+          );
+        })}
+      </svg>
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+        {data.map((d) => (
+          <div key={d.status} className="flex items-center gap-1.5 text-xs text-apple-secondary">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.fill }} />
+            {d.status} ({d.count})
+          </div>
+        ))}
       </div>
     </div>
   );
