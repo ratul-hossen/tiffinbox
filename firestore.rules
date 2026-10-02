@@ -39,19 +39,37 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    // Super-admin: an admin whose own admins/{uid} doc has role ==
+    // "super_admin". Only super admins may add or remove other admins (see
+    // admins/{adminId} below) — this is the "extra power" the project owner
+    // asked for hossen240504@gmail.com specifically.
+    function isSuperAdmin() {
+      return isAdmin() &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "super_admin";
+    }
+
     // admins/{adminId} — doc id = a Firebase Auth uid; its mere existence
-    // marks that uid as an admin (see isAdmin() above). Any signed-in user
-    // may read this collection (the admin-web "bootstrap" button needs to
-    // check whether it's still empty), but only an existing admin — or,
-    // once, whoever is bootstrapping themselves as the very first admin
-    // when the collection is empty — may write to it.
+    // marks that uid as an admin (see isAdmin() above), and its `role` field
+    // ("super_admin" | "admin") marks the extra-power tier (see
+    // isSuperAdmin() above). All admins may read this list (admin-web's
+    // "Admins" page). Only a super admin may create a NEW admin (inviting
+    // someone) or delete one (never themselves). The one narrow exception is
+    // a one-time self-heal: the hardcoded super-admin email may set
+    // role="super_admin" on their OWN existing doc if it doesn't have that
+    // role yet — this is how the original bootstrap-created doc for
+    // hossen240504@gmail.com (created before this role system existed) gets
+    // upgraded, without ever allowing arbitrary signed-in users to grant
+    // themselves admin access the way the old open bootstrap rule did.
     match /admins/{adminId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && (
-        isAdmin() ||
-        (request.auth.uid == adminId && !exists(/databases/$(database)/documents/admins/$(adminId)))
+      allow read: if isAdmin();
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || (
+        isOwner(adminId) &&
+        request.auth.token.email == "hossen240504@gmail.com" &&
+        resource.data.role != "super_admin" &&
+        request.resource.data.role == "super_admin"
       );
-      allow update, delete: if isAdmin();
+      allow delete: if isSuperAdmin() && adminId != request.auth.uid;
     }
 
     // users/{userId} — profile data (name, phone, role, addresses)

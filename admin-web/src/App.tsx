@@ -9,6 +9,7 @@ import {
   Soup,
   Star,
   Repeat,
+  ShieldCheck,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import OrdersPage from "./components/OrdersPage";
 import ReviewsPage from "./components/ReviewsPage";
 import SubscriptionsPage from "./components/SubscriptionsPage";
 import ActivityLogPage from "./components/ActivityLogPage";
+import AdminsPage from "./components/AdminsPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -34,7 +36,8 @@ type Tab =
   | "orders"
   | "reviews"
   | "subscriptions"
-  | "activity";
+  | "activity"
+  | "admins";
 
 const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -50,10 +53,11 @@ const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: str
     searchPlaceholder: "Search subscriptions…",
   },
   { key: "activity", label: "Activity Log", icon: History, searchPlaceholder: "Search activity…" },
+  { key: "admins", label: "Admins", icon: ShieldCheck },
 ];
 
 export default function App() {
-  const { status, user, recheck } = useAdminAuth();
+  const { status, user, isSuperAdmin, recheck } = useAdminAuth();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [search, setSearch] = useState("");
 
@@ -146,6 +150,7 @@ export default function App() {
           {tab === "reviews" && <ReviewsPage search={search} />}
           {tab === "subscriptions" && <SubscriptionsPage search={search} />}
           {tab === "activity" && <ActivityLogPage search={search} />}
+          {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
         </main>
       </div>
     </div>

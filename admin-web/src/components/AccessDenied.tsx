@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import { signOut, type User } from "firebase/auth";
-import { collection, doc, getDocs, query, serverTimestamp, setDoc, limit } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 
 interface Props {
   user: User;
@@ -9,57 +7,13 @@ interface Props {
 }
 
 /**
- * Shown when a signed-in Firebase user has no admins/{uid} doc. Mirrors the
- * Android app's "dev seed button" pattern (see
- * app/src/main/java/com/ratulhossen/tiffinbox/data/firebase/FirestoreSeedRepository.kt):
- * a plainly-labelled, dev-convenience button that performs one easily
- * understood write and reports success/failure inline, rather than a silent
- * or hidden tool. Only offered while the `admins` collection is still empty,
- * so it can bootstrap the very first admin but can't be used to self-grant
- * access once a real admin already exists.
+ * Shown when a signed-in Firebase user has no admins/{uid} doc. There is no
+ * self-bootstrap path anymore — firestore.rules only lets an existing super
+ * admin create admins/{adminId} docs (see the "Admins" tab) — so this just
+ * surfaces the signed-in user's own uid for them to hand to an existing
+ * admin.
  */
 export default function AccessDenied({ user, onBootstrapped }: Props) {
-  const [checkingEmpty, setCheckingEmpty] = useState(true);
-  const [collectionEmpty, setCollectionEmpty] = useState(false);
-  const [bootstrapping, setBootstrapping] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const snap = await getDocs(query(collection(db, "admins"), limit(1)));
-        if (!cancelled) setCollectionEmpty(snap.empty);
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Could not check the admins collection.");
-        }
-      } finally {
-        if (!cancelled) setCheckingEmpty(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function handleBootstrap() {
-    setBootstrapping(true);
-    setError(null);
-    try {
-      await setDoc(doc(db, "admins", user.uid), {
-        addedAt: serverTimestamp(),
-        email: user.email ?? null,
-        note: "self-bootstrapped via admin-web dev button",
-      });
-      onBootstrapped();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to bootstrap admin access.");
-    } finally {
-      setBootstrapping(false);
-    }
-  }
-
   async function handleSignOut() {
     try {
       await signOut(auth);
@@ -78,43 +32,29 @@ export default function AccessDenied({ user, onBootstrapped }: Props) {
           this account is not an admin.
         </p>
 
-        {checkingEmpty ? (
-          <p className="text-sm text-apple-secondary mt-4">Checking admin setup…</p>
-        ) : collectionEmpty ? (
-          <div className="mt-6 border border-apple-amber/20 bg-apple-amber/10 rounded-xl p-4 text-left">
-            <p className="text-sm text-apple-text">
-              No admins have been set up yet for this project. Since you're
-              signed in, you can make yourself the first admin:
-            </p>
-            <button
-              onClick={handleBootstrap}
-              disabled={bootstrapping}
-              className="mt-3 w-full bg-apple-amber hover:brightness-95 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-medium transition-all duration-150"
-            >
-              {bootstrapping ? "Adding you as admin…" : "Make me the first admin (dev bootstrap)"}
-            </button>
-          </div>
-        ) : (
-          <p className="text-sm text-apple-secondary mt-4">
-            Ask the project owner to add a document for your Firebase Auth
-            uid (<code className="text-xs bg-black/5 px-1 py-0.5 rounded">{user.uid}</code>) to
-            the <code className="text-xs bg-black/5 px-1 py-0.5 rounded">admins</code> collection
-            in Firestore.
-          </p>
-        )}
-
-        {error && (
-          <div className="text-sm text-apple-red bg-apple-red/10 border border-apple-red/20 rounded-xl px-3 py-2 mt-4">
-            {error}
-          </div>
-        )}
+        <p className="text-sm text-apple-secondary mt-4">
+          Ask an existing admin to add you from the "Admins" tab, using your
+          Firebase Auth uid:
+        </p>
+        <code className="block text-xs bg-black/5 px-2 py-1.5 rounded mt-2 break-all">
+          {user.uid}
+        </code>
 
         <button
-          onClick={handleSignOut}
-          className="mt-6 text-sm text-apple-secondary hover:text-apple-text underline transition-colors duration-150"
+          onClick={onBootstrapped}
+          className="mt-4 text-sm text-apple-blue hover:underline transition-colors duration-150"
         >
-          Sign out
+          I've been added — check again
         </button>
+
+        <div>
+          <button
+            onClick={handleSignOut}
+            className="mt-4 text-sm text-apple-secondary hover:text-apple-text underline transition-colors duration-150"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   );

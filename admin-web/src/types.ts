@@ -116,6 +116,14 @@ export interface AdminActivityLogEntry {
   timestamp?: FirestoreTimestampLike | number | null;
 }
 
+export interface Admin {
+  id: string; // Firebase Auth uid
+  email?: string;
+  role?: "super_admin" | "admin";
+  addedAt?: number | FirestoreTimestampLike | null;
+  note?: string;
+}
+
 export interface Subscription {
   id: string;
   customerId?: string;
