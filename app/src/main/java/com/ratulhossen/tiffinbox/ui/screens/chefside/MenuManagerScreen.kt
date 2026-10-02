@@ -16,10 +16,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreMealRepository
@@ -47,17 +49,17 @@ fun MenuManagerScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Menu Manager") },
+                title = { Text(stringResource(R.string.menu_manager_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "নতুন মিল যোগ করুন")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.menu_manager_add_meal_content_description))
             }
         }
     ) { padding ->
@@ -80,7 +82,7 @@ fun MenuManagerScreen(onBack: () -> Unit) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(item.meal.name, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "৳${item.meal.price}  •  ${item.meal.availableQuantity} plates",
+                                stringResource(R.string.menu_manager_item_price_quantity, item.meal.price, item.meal.availableQuantity),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -135,13 +137,13 @@ private fun AddMealDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("নতুন মিল যোগ করুন") },
+        title = { Text(stringResource(R.string.menu_manager_add_meal_content_description)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("মিলের নাম") },
+                    label = { Text(stringResource(R.string.menu_manager_add_meal_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -149,7 +151,7 @@ private fun AddMealDialog(
                 OutlinedTextField(
                     value = price,
                     onValueChange = { price = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("দাম (৳)") },
+                    label = { Text(stringResource(R.string.menu_manager_add_meal_price_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -165,11 +167,11 @@ private fun AddMealDialog(
                     }
                 }
             ) {
-                Text("যোগ করুন", fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.menu_manager_add_button), fontWeight = FontWeight.Medium)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("বাতিল") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.menu_manager_cancel_button)) }
         }
     )
 }

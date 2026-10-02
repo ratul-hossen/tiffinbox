@@ -16,6 +16,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.ui.screens.favorites.FavoritesScreen
 import com.ratulhossen.tiffinbox.ui.screens.home.HomeScreen
@@ -24,14 +26,6 @@ import com.ratulhossen.tiffinbox.ui.screens.profile.ProfileScreen
 import com.ratulhossen.tiffinbox.ui.screens.search.SearchScreen
 
 private data class Tab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
-
-private val tabs = listOf(
-    Tab("Home", Icons.Filled.Home),
-    Tab("Search", Icons.Filled.Search),
-    Tab("Orders", Icons.Filled.Receipt),
-    Tab("Favorites", Icons.Filled.Favorite),
-    Tab("Profile", Icons.Filled.Person)
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,11 +39,18 @@ fun MainScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val cartCount = CartStore.items.sumOf { it.quantity }
+    val tabs = listOf(
+        Tab(stringResource(R.string.nav_home), Icons.Filled.Home),
+        Tab(stringResource(R.string.nav_search), Icons.Filled.Search),
+        Tab(stringResource(R.string.nav_orders), Icons.Filled.Receipt),
+        Tab(stringResource(R.string.nav_favorites), Icons.Filled.Favorite),
+        Tab(stringResource(R.string.nav_profile), Icons.Filled.Person)
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("TiffinBox") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onCartClick) {
                         BadgedBox(
@@ -63,7 +64,7 @@ fun MainScreen(
                                 }
                             }
                         ) {
-                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Cart")
+                            Icon(Icons.Filled.ShoppingCart, contentDescription = stringResource(R.string.content_description_cart))
                         }
                     }
                 }

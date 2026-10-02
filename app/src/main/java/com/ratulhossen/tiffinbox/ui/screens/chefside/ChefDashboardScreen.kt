@@ -12,9 +12,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
@@ -54,14 +56,14 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("Chef Dashboard", style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.chef_dashboard_title), style = MaterialTheme.typography.headlineSmall)
                 Text(
-                    "Rukhsana's Kitchen",
+                    stringResource(R.string.chef_dashboard_kitchen_name),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            TextButton(onClick = onLogout) { Text("Logout") }
+            TextButton(onClick = onLogout) { Text(stringResource(R.string.action_logout)) }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -76,26 +78,26 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("আজ Available আছি", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.chef_dashboard_available_toggle), style = MaterialTheme.typography.titleMedium)
                 Switch(checked = available, onCheckedChange = { available = it })
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(onClick = onManageMenu, modifier = Modifier.fillMaxWidth()) {
-            Text("মেনু ম্যানেজ করুন")
+            Text(stringResource(R.string.chef_dashboard_manage_menu_button))
         }
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(onClick = onOpenMessages, modifier = Modifier.fillMaxWidth()) {
-            Text("Messages")
+            Text(stringResource(R.string.messages_label))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
         val earningsSnapshot = earnings
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            EarningStat("আজকের আয়", "৳${earningsSnapshot?.todayTotal ?: 0}", Modifier.weight(1f))
-            EarningStat("৭ দিনে আয়", "৳${earningsSnapshot?.weekTotal ?: 0}", Modifier.weight(1f))
-            EarningStat("সাম্প্রতিক অর্ডার", "${earningsSnapshot?.recentOrderCount ?: 0}", Modifier.weight(1f))
+            EarningStat(stringResource(R.string.chef_dashboard_earning_today), stringResource(R.string.price_tag, earningsSnapshot?.todayTotal ?: 0), Modifier.weight(1f))
+            EarningStat(stringResource(R.string.chef_dashboard_earning_week), stringResource(R.string.price_tag, earningsSnapshot?.weekTotal ?: 0), Modifier.weight(1f))
+            EarningStat(stringResource(R.string.chef_dashboard_earning_recent_orders), "${earningsSnapshot?.recentOrderCount ?: 0}", Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -104,14 +106,14 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("দৈনিক আয় (গত ১৪ দিন)", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.chef_dashboard_chart_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(10.dp))
                 val dailyTotals = earningsSnapshot?.dailyTotals.orEmpty()
                 if (dailyTotals.size >= 2) {
                     EarningsChart(dailyTotals = dailyTotals)
                 } else {
                     Text(
-                        "চার্ট দেখানোর জন্য যথেষ্ট অর্ডার ইতিহাস এখনো নেই",
+                        stringResource(R.string.chef_dashboard_chart_empty),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -125,19 +127,19 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("আগামীকালের চাহিদার পূর্বাভাস", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.chef_dashboard_forecast_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 val plates = forecastPlates
                 if (plates != null) {
                     Text(
-                        "~$plates প্লেট রান্নার প্রস্তুতি নিন",
+                        stringResource(R.string.chef_dashboard_forecast_result, plates),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                 } else {
                     Text(
-                        "পূর্বাভাসের জন্য এখনো পর্যাপ্ত অর্ডার ইতিহাস নেই",
+                        stringResource(R.string.chef_dashboard_forecast_empty),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -146,12 +148,12 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Text("নতুন অর্ডার", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.chef_dashboard_new_orders_title), style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(10.dp))
 
         if (orders.isEmpty()) {
             Text(
-                "এই মুহূর্তে কোনো নতুন অর্ডার নেই।",
+                stringResource(R.string.chef_dashboard_no_new_orders),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -166,23 +168,23 @@ fun ChefDashboardScreen(onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMe
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(order.itemsSummary, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Order #${order.id.take(6)}",
+                        stringResource(R.string.chef_dashboard_order_number, order.id.take(6)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        "৳${order.totalPrice}",
+                        stringResource(R.string.price_tag, order.totalPrice),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { respondToOrder(order.id, "Accepted") }) {
-                            Text("Accept")
+                            Text(stringResource(R.string.chef_dashboard_accept_button))
                         }
                         OutlinedButton(onClick = { respondToOrder(order.id, "Cancelled") }) {
-                            Text("Reject")
+                            Text(stringResource(R.string.chef_dashboard_reject_button))
                         }
                     }
                 }
