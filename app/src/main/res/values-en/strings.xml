@@ -1,0 +1,237 @@
+<resources>
+    <!-- Shared / generic -->
+    <string name="content_description_back">Back</string>
+    <string name="content_description_cart">Cart</string>
+    <string name="content_description_chat">Chat</string>
+    <string name="content_description_verified">Verified</string>
+    <string name="content_description_favorite">Favorite</string>
+    <string name="content_description_decrease">Decrease</string>
+    <string name="content_description_increase">Increase</string>
+    <string name="action_logout">Logout</string>
+    <string name="messages_label">Messages</string>
+    <string name="price_tag">৳%1$d</string>
+
+    <!-- MainActivity -->
+    <string name="offline_banner">No internet connection — some info may be outdated</string>
+
+    <!-- NotificationHelper -->
+    <string name="notification_channel_name">Order Updates</string>
+    <string name="notification_channel_description">Updates for order placed, accepted, cooking, delivered status</string>
+
+    <!-- LoginScreen -->
+    <string name="login_welcome_back">Welcome!</string>
+    <string name="login_create_account_title">Create a new Account</string>
+    <string name="login_subtitle">Home-cooked food, one tap away</string>
+    <string name="login_name_label">Name</string>
+    <string name="login_email_label">Email</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_email_password_required">Enter email and password</string>
+    <string name="login_button">Login</string>
+    <string name="signup_button">Sign Up</string>
+    <string name="login_continue_with_google_button">Continue with Google</string>
+    <string name="login_toggle_to_signup">New here? Sign Up</string>
+    <string name="login_toggle_to_login">Already have an Account? Login</string>
+
+    <!-- OnboardingScreen -->
+    <string name="onboarding_skip_button">Skip</string>
+    <string name="onboarding_page1_title">Home-cooked food, one tap away</string>
+    <string name="onboarding_page1_desc">Order from verified home chefs near you.</string>
+    <string name="onboarding_page2_title">Verified &amp; Trusted</string>
+    <string name="onboarding_page2_desc">Every chef is verified with identity and hygiene checklists.</string>
+    <string name="onboarding_page3_title">AI understands your taste</string>
+    <string name="onboarding_page3_desc">Get the best meal suggestions based on budget, diet and taste.</string>
+    <string name="onboarding_next_button">Next</string>
+    <string name="onboarding_start_button">Get Started</string>
+
+    <!-- RoleSelectionScreen -->
+    <string name="role_select_title">Who do you want to join as?</string>
+    <string name="role_select_subtitle">You can change this later</string>
+    <string name="role_customer_title">I am a Customer</string>
+    <string name="role_customer_desc">I want to order food from nearby home chefs</string>
+    <string name="role_chef_title">I am a Home Chef</string>
+    <string name="role_chef_desc">I want to earn by selling my cooking</string>
+    <string name="role_select_continue_button">Continue</string>
+
+    <!-- SplashScreen -->
+    <string name="splash_tagline">Home-Cooked Food, One Tap Away</string>
+
+    <!-- HomeScreen -->
+    <string name="home_location">Ashulia, Dhaka</string>
+    <string name="home_greeting">What do you feel like eating today?</string>
+    <string name="home_profile_content_description">Profile</string>
+    <string name="home_search_content_description">Search</string>
+    <string name="search_placeholder">Lunch under ৳120, less oil...</string>
+    <string name="home_section_recommended">Recommended for you</string>
+    <string name="home_section_nearby">Home Chefs Nearby</string>
+    <string name="home_see_all">See all</string>
+
+    <!-- SearchScreen -->
+    <string name="search_veg_only_chip">Veg only</string>
+    <string name="search_empty_state_message">Nothing found, try searching something else</string>
+
+    <!-- ChefListScreen -->
+    <string name="chef_list_title">All Home Chefs</string>
+    <string name="chef_sort_recommended">Recommended</string>
+    <string name="chef_sort_nearby">Nearby</string>
+    <string name="chef_sort_top_rated">Top Rated</string>
+    <string name="chef_list_empty">No chefs found</string>
+
+    <!-- ChefDetailScreen -->
+    <string name="chef_detail_owner_by">by %1$s</string>
+    <string name="chef_rating_summary">%1$s  (%2$s orders)  •  %3$s km away</string>
+    <string name="chef_detail_view_subscription_button">View Weekly / Monthly Subscription</string>
+    <string name="chef_detail_rating_breakdown_title">Rating Breakdown</string>
+    <string name="chef_detail_menu_title">Menu</string>
+    <string name="rating_taste_label">🍽️ Taste</string>
+    <string name="rating_hygiene_label">🧼 Hygiene</string>
+    <string name="rating_packaging_label">📦 Packaging</string>
+    <string name="rating_on_time_label">⏱️ On-Time</string>
+
+    <!-- ChefCard -->
+    <string name="chef_card_closed_today">Closed Today</string>
+    <string name="chef_card_rating_orders">%1$s (%2$s)</string>
+    <string name="chef_card_distance_km">%1$s km</string>
+
+    <!-- MealDetailScreen -->
+    <string name="meal_detail_title">Meal Details</string>
+    <string name="meal_add_to_cart_button">Add to Cart • ৳%1$d</string>
+    <string name="meal_sold_out_today">Sold out for today</string>
+    <string name="meal_price_portion">৳%1$d  •  %2$s</string>
+    <string name="meal_dietary_tags_title">Dietary Tags</string>
+    <string name="meal_allergens_title">Allergens</string>
+    <string name="meal_general_tag">General</string>
+    <string name="meal_plates_left">● %1$d plates left today</string>
+
+    <!-- CartScreen -->
+    <string name="cart_top_bar_title">Your Cart</string>
+    <string name="cart_summary_subtotal">Subtotal</string>
+    <string name="cart_summary_delivery_fee">Delivery Fee</string>
+    <string name="cart_summary_platform_fee">Platform Fee</string>
+    <string name="cart_summary_total">Total</string>
+    <string name="cart_checkout_button">Checkout • ৳%1$d</string>
+    <string name="cart_empty_message">Your Cart is empty 🍽️</string>
+    <string name="cart_item_price_each">৳%1$d each</string>
+
+    <!-- CheckoutScreen -->
+    <string name="checkout_title">Checkout</string>
+    <string name="checkout_place_order_button">Place Order • ৳%1$d</string>
+    <string name="checkout_delivery_address_title">Delivery Address</string>
+    <string name="checkout_address_placeholder">Enter your address</string>
+    <string name="checkout_payment_method_title">Payment Method</string>
+    <string name="payment_method_cod">Cash on Delivery</string>
+    <string name="payment_method_bkash">bKash</string>
+    <string name="payment_method_nagad">Nagad</string>
+    <string name="payment_method_card">Card</string>
+    <string name="checkout_coming_soon_chip">Coming soon</string>
+    <string name="checkout_order_summary_title">Order Summary</string>
+
+    <!-- OrderTrackingScreen -->
+    <string name="order_tracking_title">Order Tracking</string>
+    <string name="order_tracking_subtitle">Your food is coming from Rukhsana\'s Kitchen</string>
+    <string name="order_stage_placed">Placed</string>
+    <string name="order_stage_accepted">Accepted</string>
+    <string name="order_stage_cooking">Cooking</string>
+    <string name="order_stage_out_for_delivery">Out for Delivery</string>
+    <string name="order_stage_delivered">Delivered</string>
+    <string name="order_tracking_in_progress">In progress...</string>
+    <string name="order_tracking_review_button">Give a Review</string>
+
+    <!-- OrdersScreen -->
+    <string name="orders_empty_message">No orders yet</string>
+
+    <!-- FavoritesScreen -->
+    <string name="favorites_empty_title">You haven\'t added any favorite chefs yet</string>
+    <string name="favorites_empty_subtitle">Tap the heart icon on a chef card to add</string>
+
+    <!-- ProfileScreen -->
+    <string name="profile_menu_my_orders">My Orders</string>
+    <string name="profile_menu_my_subscriptions">My Subscriptions</string>
+    <string name="profile_menu_favorites">Favorites</string>
+    <string name="profile_menu_address_management">Address Management</string>
+    <string name="profile_menu_payment_method">Payment Method</string>
+    <string name="profile_menu_notifications">Notifications</string>
+    <string name="profile_menu_settings">Settings</string>
+    <string name="profile_demo_user_name">Rafi Ahmed</string>
+    <string name="profile_demo_phone">+880 1XXXXXXXXX</string>
+    <string name="profile_seeding_status_sending">Sending...</string>
+    <string name="profile_seeding_status_success">✅ Sample chefs/meals sent to Firestore</string>
+    <string name="profile_seeding_status_failure">❌ %1$s</string>
+    <string name="profile_dev_seed_button">Developer: Send sample data to Firestore</string>
+
+    <!-- ReviewScreen -->
+    <string name="review_title">How was the food?</string>
+    <string name="review_subtitle">Rukhsana\'s Kitchen — rate 4 different aspects</string>
+    <string name="review_comment_label">Comment (optional)</string>
+    <string name="review_submit_button">Submit Review</string>
+    <string name="review_skip_button">Not now, Skip</string>
+
+    <!-- ChatScreen -->
+    <string name="chat_chef_fallback_name">Chef</string>
+    <string name="chat_customer_title">Customer (%1$s)</string>
+    <string name="chat_message_placeholder">Type a message...</string>
+    <string name="chat_send_content_description">Send</string>
+    <string name="chat_empty_state">Start a conversation</string>
+
+    <!-- ChefChatListScreen -->
+    <string name="chef_chat_list_empty">No messages yet</string>
+    <string name="chef_chat_list_customer_label">Customer %1$s</string>
+
+    <!-- ChefDashboardScreen -->
+    <string name="chef_dashboard_title">Chef Dashboard</string>
+    <string name="chef_dashboard_kitchen_name">Rukhsana\'s Kitchen</string>
+    <string name="chef_dashboard_available_toggle">Available Today</string>
+    <string name="chef_dashboard_manage_menu_button">Manage Menu</string>
+    <string name="chef_dashboard_earning_today">Today\'s Earnings</string>
+    <string name="chef_dashboard_earning_week">7-Day Earnings</string>
+    <string name="chef_dashboard_earning_recent_orders">Recent Orders</string>
+    <string name="chef_dashboard_chart_title">Daily Earnings (Last 14 Days)</string>
+    <string name="chef_dashboard_chart_empty">Not enough order history yet to show a chart</string>
+    <string name="chef_dashboard_forecast_title">Tomorrow\'s Demand Forecast</string>
+    <string name="chef_dashboard_forecast_result">~%1$d plates — prepare accordingly</string>
+    <string name="chef_dashboard_forecast_empty">Not enough order history yet for a forecast</string>
+    <string name="chef_dashboard_new_orders_title">New Orders</string>
+    <string name="chef_dashboard_no_new_orders">No new orders right now.</string>
+    <string name="chef_dashboard_order_number">Order #%1$s</string>
+    <string name="chef_dashboard_accept_button">Accept</string>
+    <string name="chef_dashboard_reject_button">Reject</string>
+
+    <!-- MenuManagerScreen -->
+    <string name="menu_manager_title">Menu Manager</string>
+    <string name="menu_manager_add_meal_content_description">Add new meal</string>
+    <string name="menu_manager_item_price_quantity">৳%1$d  •  %2$d plates</string>
+    <string name="menu_manager_add_meal_name_label">Meal Name</string>
+    <string name="menu_manager_add_meal_price_label">Price (৳)</string>
+    <string name="menu_manager_add_button">Add</string>
+    <string name="menu_manager_cancel_button">Cancel</string>
+
+    <!-- SubscribeScreen -->
+    <string name="subscribe_title">Subscription Plan</string>
+    <string name="subscribe_header">Regular meals with %1$s</string>
+    <string name="subscribe_subtitle">Choose a plan instead of ordering separately every time</string>
+    <string name="subscribe_choose_plan_title">Choose a Plan</string>
+    <string name="subscription_plan_weekly">Weekly</string>
+    <string name="subscription_plan_monthly">Monthly</string>
+    <string name="subscribe_meals_per_week_title">How many meals per week</string>
+    <string name="subscribe_summary_price_per_meal">Estimated price per meal</string>
+    <string name="subscribe_summary_meals_per_week">Meals per week</string>
+    <string name="subscribe_summary_duration">Duration</string>
+    <string name="subscribe_summary_duration_value">%1$d weeks</string>
+    <string name="subscribe_summary_total">Total (%1$s)</string>
+    <string name="subscribe_button">Subscribe</string>
+
+    <!-- MySubscriptionsScreen -->
+    <string name="my_subscriptions_title">My Subscriptions</string>
+    <string name="my_subscriptions_empty">No active Subscriptions</string>
+    <string name="my_subscriptions_plan_summary">%1$s • %2$d meals/week</string>
+    <string name="my_subscriptions_cancel_button">Cancel</string>
+
+    <!-- MainScreen -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_orders">Orders</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- StarRatingInput -->
+    <string name="star_rating_content_description">%1$d star</string>
+</resources>
