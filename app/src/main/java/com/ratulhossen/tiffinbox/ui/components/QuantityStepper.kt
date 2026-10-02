@@ -14,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 
 @Composable
 fun QuantityStepper(
@@ -33,7 +35,7 @@ fun QuantityStepper(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onDecrease, enabled = canDecrease) {
-                Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.content_description_decrease))
             }
             Text(
                 "$quantity",
@@ -42,7 +44,7 @@ fun QuantityStepper(
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             IconButton(onClick = onIncrease, enabled = canIncrease) {
-                Icon(Icons.Filled.Add, contentDescription = "Increase")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.content_description_increase))
             }
         }
     }

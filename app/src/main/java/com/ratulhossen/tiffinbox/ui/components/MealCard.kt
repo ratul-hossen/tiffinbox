@@ -17,9 +17,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.model.MealUi
 
 @Composable
@@ -77,7 +79,7 @@ fun MealCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "৳${meal.price}",
+                    stringResource(R.string.price_tag, meal.price),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )

@@ -867,7 +867,7 @@ Honest self-assessment of the biggest risks:
 - [x] In-app chat between customer and chef — live via Firestore; chef side uses a synthetic sender id since there's no separate chef login yet
 - [ ] Payment gateway (bKash, Nagad, Card)
 - [x] Demand forecasting for chefs — simple moving-average forecast from real Firestore order history; shows "not enough data yet" instead of a fabricated number until a chef has 3+ days of orders
-- [ ] Full Bangla / English localization
+- [x] Full Bangla / English localization — all screen-level UI text (181 strings) moved to `res/values/strings.xml` (default, same Bangla/English mix as before) with a full `res/values-en/strings.xml` translation, so the app now responds to the device's language setting. Scope note: a handful of deep repository-layer error messages (Firebase auth/seed failure text in `data/firebase/`) are still hardcoded Bangla, since those objects don't have Android `Context` access to resolve a string resource — a small follow-up if full coverage is ever needed.
 
 ### Phase 5 — Future Vision
 - [ ] iOS version
