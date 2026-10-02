@@ -1,5 +1,9 @@
 package com.ratulhossen.tiffinbox.data.model
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.ratulhossen.tiffinbox.R
+
 data class ChefUi(
     val id: String,
     val kitchenName: String,
@@ -38,12 +42,21 @@ data class CartItemUi(
     val quantity: Int
 )
 
-enum class OrderStage(val label: String) {
-    PLACED("Placed"),
-    ACCEPTED("Accepted"),
-    COOKING("Cooking"),
-    OUT_FOR_DELIVERY("Out for Delivery"),
-    DELIVERED("Delivered")
+enum class OrderStage {
+    PLACED,
+    ACCEPTED,
+    COOKING,
+    OUT_FOR_DELIVERY,
+    DELIVERED
+}
+
+@Composable
+fun OrderStage.label(): String = when (this) {
+    OrderStage.PLACED -> stringResource(R.string.order_stage_placed)
+    OrderStage.ACCEPTED -> stringResource(R.string.order_stage_accepted)
+    OrderStage.COOKING -> stringResource(R.string.order_stage_cooking)
+    OrderStage.OUT_FOR_DELIVERY -> stringResource(R.string.order_stage_out_for_delivery)
+    OrderStage.DELIVERED -> stringResource(R.string.order_stage_delivered)
 }
 
 data class PastOrderUi(
@@ -56,9 +69,15 @@ data class PastOrderUi(
     val placedOn: String
 )
 
-enum class SubscriptionPlan(val label: String, val weeks: Int) {
-    WEEKLY("Weekly", 1),
-    MONTHLY("Monthly", 4)
+enum class SubscriptionPlan(val weeks: Int) {
+    WEEKLY(1),
+    MONTHLY(4)
+}
+
+@Composable
+fun SubscriptionPlan.label(): String = when (this) {
+    SubscriptionPlan.WEEKLY -> stringResource(R.string.subscription_plan_weekly)
+    SubscriptionPlan.MONTHLY -> stringResource(R.string.subscription_plan_monthly)
 }
 
 data class SubscriptionUi(

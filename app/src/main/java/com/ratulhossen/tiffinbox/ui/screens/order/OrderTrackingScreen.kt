@@ -14,10 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.model.OrderStage
+import com.ratulhossen.tiffinbox.data.model.label
 import kotlinx.coroutines.delay
 
 @Composable
@@ -37,10 +40,10 @@ fun OrderTrackingScreen(onDone: () -> Unit) {
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        Text("অর্ডার ট্র্যাকিং", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.order_tracking_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "Rukhsana's Kitchen থেকে আপনার খাবার আসছে",
+            stringResource(R.string.order_tracking_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -84,7 +87,7 @@ fun OrderTrackingScreen(onDone: () -> Unit) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.padding(bottom = if (index != stages.lastIndex) 24.dp else 0.dp)) {
                     Text(
-                        stage.label,
+                        stage.label(),
                         fontWeight = if (index == currentStage) FontWeight.Bold else FontWeight.Normal,
                         fontSize = 16.sp,
                         color = if (done) MaterialTheme.colorScheme.onSurface
@@ -92,7 +95,7 @@ fun OrderTrackingScreen(onDone: () -> Unit) {
                     )
                     if (index == currentStage && index != stages.lastIndex) {
                         Text(
-                            "চলছে...",
+                            stringResource(R.string.order_tracking_in_progress),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -107,7 +110,7 @@ fun OrderTrackingScreen(onDone: () -> Unit) {
                 onClick = onDone,
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
-                Text("রিভিউ দিন")
+                Text(stringResource(R.string.order_tracking_review_button))
             }
         }
     }

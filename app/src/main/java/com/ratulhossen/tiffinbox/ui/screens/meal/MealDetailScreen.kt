@@ -16,9 +16,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -55,10 +57,10 @@ fun MealDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Meal Details") },
+                title = { Text(stringResource(R.string.meal_detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -91,9 +93,9 @@ fun MealDetailScreen(
                     ) {
                         Text(
                             if (meal.availableQuantity > 0) {
-                                "Add to Cart • ৳${meal.price * quantity}"
+                                stringResource(R.string.meal_add_to_cart_button, meal.price * quantity)
                             } else {
-                                "আজকের জন্য শেষ"
+                                stringResource(R.string.meal_sold_out_today)
                             }
                         )
                     }
@@ -119,7 +121,7 @@ fun MealDetailScreen(
                 Text(meal.name, style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "৳${meal.price}  •  ${meal.portionSize}",
+                    stringResource(R.string.meal_price_portion, meal.price, meal.portionSize),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
@@ -128,16 +130,17 @@ fun MealDetailScreen(
                 Text(meal.description, style = MaterialTheme.typography.bodyMedium)
 
                 Spacer(modifier = Modifier.height(20.dp))
-                Text("Dietary Tags", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.meal_dietary_tags_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
+                val generalTag = stringResource(R.string.meal_general_tag)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(meal.dietaryTags.ifEmpty { listOf("General") }) { tag ->
+                    items(meal.dietaryTags.ifEmpty { listOf(generalTag) }) { tag ->
                         AssistChip(onClick = {}, label = { Text(tag) })
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Allergens", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.meal_allergens_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(meal.allergens) { allergen ->
@@ -147,7 +150,7 @@ fun MealDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "● ${meal.availableQuantity} plates left today",
+                    stringResource(R.string.meal_plates_left, meal.availableQuantity),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )

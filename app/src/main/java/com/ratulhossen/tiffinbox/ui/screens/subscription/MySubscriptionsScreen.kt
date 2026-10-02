@@ -14,10 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
 import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
+import com.ratulhossen.tiffinbox.data.model.label
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,10 +36,10 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("আমার Subscriptions") },
+                title = { Text(stringResource(R.string.my_subscriptions_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -50,7 +53,7 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "কোনো সক্রিয় Subscription নেই",
+                    stringResource(R.string.my_subscriptions_empty),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -66,13 +69,13 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
                             Text(subscription.chefName, style = MaterialTheme.typography.titleMedium)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                "${subscription.plan.label} • সপ্তাহে ${subscription.mealsPerWeek} মিল",
+                                stringResource(R.string.my_subscriptions_plan_summary, subscription.plan.label(), subscription.mealsPerWeek),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                "৳${subscription.totalPrice}",
+                                stringResource(R.string.price_tag, subscription.totalPrice),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -84,7 +87,7 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("বাতিল করুন")
+                                Text(stringResource(R.string.my_subscriptions_cancel_button))
                             }
                         }
                     }

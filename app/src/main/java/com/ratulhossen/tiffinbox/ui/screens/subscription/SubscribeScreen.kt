@@ -15,14 +15,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
+import com.ratulhossen.tiffinbox.data.model.label
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,10 +56,10 @@ fun SubscribeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Subscription Plan") },
+                title = { Text(stringResource(R.string.subscribe_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -69,38 +72,38 @@ fun SubscribeScreen(
                 .fillMaxSize()
         ) {
             Text(
-                "${chef?.kitchenName.orEmpty()}-এর সাথে নিয়মিত খাবার",
+                stringResource(R.string.subscribe_header, chef?.kitchenName.orEmpty()),
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "প্রতিবার আলাদা অর্ডার না করে একটা প্ল্যান নিন",
+                stringResource(R.string.subscribe_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(28.dp))
-            Text("Plan বেছে নিন", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.subscribe_choose_plan_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SubscriptionPlan.entries.forEach { option ->
                     FilterChip(
                         selected = plan == option,
                         onClick = { plan = option },
-                        label = { Text(option.label) }
+                        label = { Text(option.label()) }
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("সপ্তাহে কয়টা মিল চান", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.subscribe_meals_per_week_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { if (mealsPerWeek > 1) mealsPerWeek-- },
                     enabled = mealsPerWeek > 1
                 ) {
-                    Icon(Icons.Filled.Remove, contentDescription = "Decrease")
+                    Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.content_description_decrease))
                 }
                 Text(
                     "$mealsPerWeek",
@@ -111,18 +114,22 @@ fun SubscribeScreen(
                     onClick = { if (mealsPerWeek < 14) mealsPerWeek++ },
                     enabled = mealsPerWeek < 14
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Increase")
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.content_description_increase))
                 }
             }
 
             Spacer(modifier = Modifier.height(28.dp))
             Card(elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    SummaryRow("প্রতি মিল আনুমানিক", "৳$pricePerMeal")
-                    SummaryRow("সপ্তাহে মিল", "$mealsPerWeek")
-                    SummaryRow("মেয়াদ", "${plan.weeks} সপ্তাহ")
+                    SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), stringResource(R.string.price_tag, pricePerMeal))
+                    SummaryRow(stringResource(R.string.subscribe_summary_meals_per_week), "$mealsPerWeek")
+                    SummaryRow(stringResource(R.string.subscribe_summary_duration), stringResource(R.string.subscribe_summary_duration_value, plan.weeks))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    SummaryRow("মোট (${plan.label})", "৳$totalPrice", bold = true)
+                    SummaryRow(
+                        stringResource(R.string.subscribe_summary_total, plan.label()),
+                        stringResource(R.string.price_tag, totalPrice),
+                        bold = true
+                    )
                 }
             }
 
@@ -142,7 +149,7 @@ fun SubscribeScreen(
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text("Subscribe করুন")
+                Text(stringResource(R.string.subscribe_button))
             }
         }
     }

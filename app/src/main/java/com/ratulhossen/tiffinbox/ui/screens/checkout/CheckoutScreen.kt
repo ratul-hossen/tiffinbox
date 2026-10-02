@@ -14,16 +14,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 
-private enum class PaymentMethod(val label: String, val available: Boolean) {
-    CASH_ON_DELIVERY("Cash on Delivery", available = true),
-    BKASH("bKash", available = false),
-    NAGAD("Nagad", available = false),
-    CARD("Card", available = false)
+private enum class PaymentMethod(val available: Boolean) {
+    CASH_ON_DELIVERY(available = true),
+    BKASH(available = false),
+    NAGAD(available = false),
+    CARD(available = false)
+}
+
+@Composable
+private fun PaymentMethod.label(): String = when (this) {
+    PaymentMethod.CASH_ON_DELIVERY -> stringResource(R.string.payment_method_cod)
+    PaymentMethod.BKASH -> stringResource(R.string.payment_method_bkash)
+    PaymentMethod.NAGAD -> stringResource(R.string.payment_method_nagad)
+    PaymentMethod.CARD -> stringResource(R.string.payment_method_card)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,17 +42,18 @@ fun CheckoutScreen(
     onBack: () -> Unit,
     onOrderPlaced: () -> Unit
 ) {
-    var address by remember { mutableStateOf("Ashulia, Dhaka") }
+    val defaultAddress = stringResource(R.string.home_location)
+    var address by remember { mutableStateOf(defaultAddress) }
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH_ON_DELIVERY) }
     val items = CartStore.items
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Checkout") },
+                title = { Text(stringResource(R.string.checkout_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
                     }
                 }
             )
@@ -69,7 +80,7 @@ fun CheckoutScreen(
                             .fillMaxWidth()
                             .height(52.dp)
                     ) {
-                        Text("Place Order • ৳${CartStore.total}")
+                        Text(stringResource(R.string.checkout_place_order_button, CartStore.total))
                     }
                 }
             }
@@ -81,18 +92,18 @@ fun CheckoutScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            Text("Delivery Address", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.checkout_delivery_address_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
-                placeholder = { Text("আপনার ঠিকানা লিখুন") },
+                placeholder = { Text(stringResource(R.string.checkout_address_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Payment Method", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.checkout_payment_method_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             PaymentMethod.entries.forEach { method ->
                 Surface(
@@ -119,7 +130,7 @@ fun CheckoutScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            method.label,
+                            method.label(),
                             modifier = Modifier.weight(1f),
                             color = if (method.available) {
                                 MaterialTheme.colorScheme.onSurface
@@ -128,20 +139,20 @@ fun CheckoutScreen(
                             }
                         )
                         if (!method.available) {
-                            AssistChip(onClick = {}, enabled = false, label = { Text("আসছে") })
+                            AssistChip(onClick = {}, enabled = false, label = { Text(stringResource(R.string.checkout_coming_soon_chip)) })
                         }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Order Summary", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.checkout_order_summary_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            SummaryRow("Subtotal", CartStore.subtotal)
-            SummaryRow("Delivery Fee", CartStore.DELIVERY_FEE)
-            SummaryRow("Platform Fee", CartStore.PLATFORM_FEE)
+            SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
+            SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.DELIVERY_FEE)
+            SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
             Divider(modifier = Modifier.padding(vertical = 6.dp))
-            SummaryRow("Total", CartStore.total, bold = true)
+            SummaryRow(stringResource(R.string.cart_summary_total), CartStore.total, bold = true)
         }
     }
 }
@@ -153,6 +164,6 @@ private fun SummaryRow(label: String, amount: Int, bold: Boolean = false) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
-        Text("৳$amount", fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
+        Text(stringResource(R.string.price_tag, amount), fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
     }
 }

@@ -7,18 +7,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.PastOrderUi
+import com.ratulhossen.tiffinbox.data.model.label
 
 @Composable
 fun OrdersScreen() {
     if (SampleData.pastOrders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("এখনো কোনো অর্ডার নেই", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.orders_empty_message), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -61,7 +64,7 @@ private fun OrderRow(order: PastOrderUi) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    "৳${order.total}",
+                    stringResource(R.string.price_tag, order.total),
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -91,7 +94,7 @@ private fun StatusChip(status: OrderStage) {
         shape = MaterialTheme.shapes.extraSmall
     ) {
         Text(
-            status.label,
+            status.label(),
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
