@@ -1,9 +1,13 @@
 package com.ratulhossen.tiffinbox.ui.screens.chat
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -17,14 +21,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.ChatMessageUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChatRepository
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private val WhatsAppGreen = Color(0xFF25D366)
+private val ChatWallpaperLight = Color(0xFFECE5DD)
+private val ChatWallpaperDark = Color(0xFF0B141A)
+private val OutgoingBubbleLight = Color(0xFFDCF8C6)
+private val OutgoingBubbleDark = Color(0xFF005C4B)
+
+private fun formatMessageTime(epochMillis: Long): String {
+    if (epochMillis <= 0L) return ""
+    return SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(epochMillis))
+}
 
 @Composable
 fun CustomerChatScreen(chefId: String, onBack: () -> Unit) {
@@ -96,10 +117,35 @@ private fun ChatScreenContent(
         }
     }
 
+    val isDark = isSystemInDarkTheme()
+    val wallpaper = if (isDark) ChatWallpaperDark else ChatWallpaperLight
+    val outgoingBubble = if (isDark) OutgoingBubbleDark else OutgoingBubbleLight
+    val outgoingText = if (isDark) Color.White else Color(0xFF111B21)
+    val incomingBubble = if (isDark) Color(0xFF202C33) else Color.White
+    val incomingText = if (isDark) Color.White else Color(0xFF111B21)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = CircleShape,
+                            color = WhatsAppGreen.copy(alpha = 0.18f),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    title.firstOrNull()?.uppercase() ?: "?",
+                                    color = WhatsAppGreen,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(title)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
@@ -112,30 +158,37 @@ private fun ChatScreenContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
                         value = input,
                         onValueChange = { input = it },
                         placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
+                        shape = RoundedCornerShape(24.dp),
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = {
-                            val text = input.trim()
-                            if (text.isNotEmpty()) {
-                                onSend(text)
-                                input = ""
-                            }
-                        }
+                    Surface(
+                        shape = CircleShape,
+                        color = WhatsAppGreen,
+                        modifier = Modifier.size(46.dp)
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Send,
-                            contentDescription = stringResource(R.string.chat_send_content_description),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        IconButton(
+                            onClick = {
+                                val text = input.trim()
+                                if (text.isNotEmpty()) {
+                                    onSend(text)
+                                    input = ""
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = stringResource(R.string.chat_send_content_description),
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -145,7 +198,8 @@ private fun ChatScreenContent(
             Box(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .background(wallpaper),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -158,9 +212,10 @@ private fun ChatScreenContent(
                 state = listState,
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .background(wallpaper),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(messages, key = { it.id }) { message ->
                     val isMine = !message.isAdmin && message.senderId == currentSenderId
@@ -179,21 +234,36 @@ private fun ChatScreenContent(
                         Surface(
                             color = when {
                                 message.isAdmin -> MaterialTheme.colorScheme.tertiaryContainer
-                                isMine -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.surfaceVariant
+                                isMine -> outgoingBubble
+                                else -> incomingBubble
                             },
                             contentColor = when {
                                 message.isAdmin -> MaterialTheme.colorScheme.onTertiaryContainer
-                                isMine -> MaterialTheme.colorScheme.onPrimary
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                isMine -> outgoingText
+                                else -> incomingText
                             },
-                            shape = MaterialTheme.shapes.medium
+                            shape = RoundedCornerShape(
+                                topStart = 14.dp,
+                                topEnd = 14.dp,
+                                bottomStart = if (isMine || message.isAdmin) 14.dp else 2.dp,
+                                bottomEnd = if (isMine || message.isAdmin) 2.dp else 14.dp
+                            ),
+                            shadowElevation = 1.dp,
+                            modifier = Modifier.widthIn(max = 280.dp)
                         ) {
-                            Text(
-                                message.text,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text(
+                                    message.text,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    formatMessageTime(message.sentAt),
+                                    fontSize = 11.sp,
+                                    color = LocalContentColor.current.copy(alpha = 0.6f),
+                                    modifier = Modifier.align(Alignment.End)
+                                )
+                            }
                         }
                     }
                 }

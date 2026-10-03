@@ -31,6 +31,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
+import com.ratulhossen.tiffinbox.util.normalizeBangladeshPhone
 import kotlinx.coroutines.launch
 
 /**
@@ -48,12 +49,18 @@ private fun defaultWebClientIdOrNull(context: android.content.Context): String? 
 }
 
 @Composable
-fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
+fun LoginScreen(
+    role: String,
+    onLoginSuccess: (resolvedRole: String) -> Unit,
+    onNeedsPhoneVerification: (normalizedPhone: String, role: String) -> Unit
+) {
     var isLoginMode by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var kitchenName by remember { mutableStateOf("") }
+    var whatsappNumber by remember { mutableStateOf("") }
+    var bkashNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -61,6 +68,9 @@ fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
     val context = LocalContext.current
     val emailPasswordRequiredMessage = stringResource(R.string.login_email_password_required)
     val kitchenNameRequiredMessage = stringResource(R.string.login_kitchen_name_required)
+    val whatsappRequiredMessage = stringResource(R.string.login_whatsapp_number_required)
+    val whatsappInvalidMessage = stringResource(R.string.login_whatsapp_number_invalid)
+    val bkashRequiredMessage = stringResource(R.string.login_bkash_number_required)
     val googleSignInFailedMessage = stringResource(R.string.login_google_signin_failed)
     val googleSignInCancelledMessage = stringResource(R.string.login_google_signin_cancelled)
     val isChefRole = role == UserRole.CHEF.name
@@ -71,9 +81,25 @@ fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
             errorMessage = emailPasswordRequiredMessage
             return
         }
-        if (!isLoginMode && isChefRole && kitchenName.isBlank()) {
-            errorMessage = kitchenNameRequiredMessage
-            return
+        var normalizedPhone: String? = null
+        if (!isLoginMode) {
+            if (isChefRole && kitchenName.isBlank()) {
+                errorMessage = kitchenNameRequiredMessage
+                return
+            }
+            if (whatsappNumber.isBlank()) {
+                errorMessage = whatsappRequiredMessage
+                return
+            }
+            normalizedPhone = normalizeBangladeshPhone(whatsappNumber)
+            if (normalizedPhone == null) {
+                errorMessage = whatsappInvalidMessage
+                return
+            }
+            if (isChefRole && bkashNumber.isBlank()) {
+                errorMessage = bkashRequiredMessage
+                return
+            }
         }
         isLoading = true
         scope.launch {
@@ -85,7 +111,7 @@ fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
             when (result) {
                 is AuthResult.Success -> {
                     val uid = result.user.uid
-                    val resolvedRole = if (isLoginMode) {
+                    if (isLoginMode) {
                         val storedRole = FirestoreUserRepository.getRole(uid) ?: role
                         if (storedRole == UserRole.CHEF.name && !FirestoreChefRepository.chefProfileExists(uid)) {
                             // Self-heal: an account created before chef-profile
@@ -98,26 +124,30 @@ fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
                                 ownerName = result.user.displayName.orEmpty()
                             )
                         }
-                        storedRole
+                        FirestoreUserRepository.registerFcmToken(uid)
+                        isLoading = false
+                        onLoginSuccess(storedRole)
                     } else {
                         FirestoreUserRepository.upsertProfile(
                             uid = uid,
                             name = name.trim(),
                             email = email.trim(),
-                            role = role
+                            role = role,
+                            whatsappNumber = normalizedPhone.orEmpty()
                         )
                         if (isChefRole) {
                             FirestoreChefRepository.createChefProfile(
                                 uid = uid,
                                 kitchenName = kitchenName.trim(),
-                                ownerName = name.trim()
+                                ownerName = name.trim(),
+                                whatsappNumber = normalizedPhone.orEmpty(),
+                                bkashNumber = bkashNumber.trim()
                             )
                         }
-                        role
+                        FirestoreUserRepository.registerFcmToken(uid)
+                        isLoading = false
+                        onNeedsPhoneVerification(normalizedPhone.orEmpty(), role)
                     }
-                    FirestoreUserRepository.registerFcmToken(uid)
-                    isLoading = false
-                    onLoginSuccess(resolvedRole)
                 }
                 is AuthResult.Failure -> {
                     isLoading = false
@@ -241,6 +271,28 @@ fun LoginScreen(role: String, onLoginSuccess: (resolvedRole: String) -> Unit) {
                     onValueChange = { kitchenName = it },
                     label = { Text(stringResource(R.string.login_kitchen_name_label)) },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            OutlinedTextField(
+                value = whatsappNumber,
+                onValueChange = { whatsappNumber = it },
+                label = { Text(stringResource(R.string.login_whatsapp_number_label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (isChefRole) {
+                OutlinedTextField(
+                    value = bkashNumber,
+                    onValueChange = { bkashNumber = it },
+                    label = { Text(stringResource(R.string.login_bkash_number_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))

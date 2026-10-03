@@ -28,12 +28,26 @@
     <string name="login_email_password_required">Enter email and password</string>
     <string name="login_kitchen_name_label">Kitchen name</string>
     <string name="login_kitchen_name_required">Give your kitchen a name</string>
+    <string name="login_whatsapp_number_label">WhatsApp number</string>
+    <string name="login_whatsapp_number_required">Enter your WhatsApp number</string>
+    <string name="login_whatsapp_number_invalid">Enter a valid Bangladeshi number (e.g. 01XXXXXXXXX)</string>
+    <string name="login_bkash_number_label">bKash number</string>
+    <string name="login_bkash_number_required">Enter your bKash number (to receive payments)</string>
     <string name="login_button">Login</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
     <string name="login_google_signin_failed">Google sign-in failed, please try again</string>
     <string name="login_google_signin_cancelled">Google sign-in was cancelled</string>
     <string name="login_toggle_to_signup">New here? Sign Up</string>
+
+    <!-- PhoneVerificationScreen -->
+    <string name="phone_verification_title">Verify your phone number</string>
+    <string name="phone_verification_subtitle">An OTP code was sent to %1$s</string>
+    <string name="phone_verification_code_label">6-digit code</string>
+    <string name="phone_verification_code_required">Enter the full 6-digit code</string>
+    <string name="phone_verification_verify_button">Verify</string>
+    <string name="phone_verification_resend_button">Resend code</string>
+    <string name="phone_verification_send_failed">Couldn\'t send the code, please try again</string>
     <string name="login_toggle_to_login">Already have an Account? Login</string>
 
     <!-- OnboardingScreen -->
@@ -127,6 +141,13 @@
     <string name="payment_method_nagad">Nagad</string>
     <string name="payment_method_card">Card</string>
     <string name="checkout_coming_soon_chip">Coming soon</string>
+    <string name="checkout_bkash_number_notice">Send Money to this bKash number: %1$s</string>
+    <string name="checkout_bkash_transaction_id_label">Transaction ID</string>
+    <string name="checkout_bkash_transaction_id_required">Transaction ID is required</string>
+    <string name="checkout_bkash_select_screenshot_button">Upload Screenshot</string>
+    <string name="checkout_bkash_screenshot_selected">Screenshot selected ✓</string>
+    <string name="checkout_bkash_screenshot_required">Payment screenshot is required</string>
+    <string name="checkout_bkash_upload_failed">Screenshot upload failed, please try again</string>
     <string name="checkout_order_summary_title">Order Summary</string>
 
     <!-- OrderTrackingScreen -->
@@ -185,6 +206,9 @@
     <string name="chef_chat_list_empty">No messages yet</string>
     <string name="chef_chat_list_customer_label">Customer %1$s</string>
 
+    <!-- CustomerChatListScreen -->
+    <string name="customer_chat_list_empty">No chats yet</string>
+
     <!-- ChefDashboardScreen -->
     <string name="chef_dashboard_title">Chef Dashboard</string>
     <string name="chef_dashboard_kitchen_name">Rukhsana\'s Kitchen</string>
@@ -203,6 +227,9 @@
     <string name="chef_dashboard_order_number">Order #%1$s</string>
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
+    <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
+    <string name="chef_dashboard_view_screenshot_button">View payment screenshot</string>
+    <string name="chef_dashboard_screenshot_load_failed">Couldn\'t load screenshot</string>
 
     <!-- MenuManagerScreen -->
     <string name="menu_manager_title">Menu Manager</string>

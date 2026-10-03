@@ -108,4 +108,23 @@ object FirestoreChatRepository {
             null
         }
     }
+
+    fun listenCustomerThreads(customerId: String, onUpdate: (List<ChatThreadUi>) -> Unit): ListenerRegistration? {
+        return try {
+            db.collection("chats")
+                .whereEqualTo("customerId", customerId)
+                .addSnapshotListener { snapshot, _ ->
+                    val threads = snapshot?.documents?.mapNotNull { doc ->
+                        val chefId = doc.getString("chefId") ?: return@mapNotNull null
+                        val chefName = doc.getString("chefName") ?: ""
+                        val lastMessage = doc.getString("lastMessage") ?: ""
+                        val lastMessageAt = doc.getLong("lastMessageAt") ?: 0L
+                        ChatThreadUi(doc.id, customerId, chefId, chefName, lastMessage, lastMessageAt)
+                    }?.sortedByDescending { it.lastMessageAt } ?: emptyList()
+                    onUpdate(threads)
+                }
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

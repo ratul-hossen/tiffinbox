@@ -19,7 +19,8 @@ data class ChefUi(
     val onTime: Double,
     val totalOrders: Int,
     val isVerified: Boolean,
-    val isAvailableToday: Boolean
+    val isAvailableToday: Boolean,
+    val bkashNumber: String = ""
 )
 
 data class MealUi(
@@ -110,7 +111,10 @@ data class ChefOrderUi(
     val itemsSummary: String,
     val totalPrice: Int,
     val status: String,
-    val placedAt: Long
+    val placedAt: Long,
+    val paymentMethod: String = "",
+    val bkashTransactionId: String = "",
+    val bkashScreenshotBase64: String = ""
 )
 
 data class EarningsSummary(

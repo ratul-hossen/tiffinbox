@@ -14,9 +14,11 @@ import androidx.navigation.NavType
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
+import com.ratulhossen.tiffinbox.ui.screens.auth.PhoneVerificationScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatListScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatScreen
+import com.ratulhossen.tiffinbox.ui.screens.chat.CustomerChatListScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.CustomerChatScreen
 import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.checkout.CheckoutScreen
@@ -94,6 +96,27 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onLoginSuccess = { resolvedRole ->
                     val destination = if (resolvedRole == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
                     navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
+                },
+                onNeedsPhoneVerification = { phoneNumber, verifyRole ->
+                    navController.navigate(Routes.phoneVerification(phoneNumber, verifyRole))
+                }
+            )
+        }
+
+        composable(
+            route = Routes.PHONE_VERIFICATION,
+            arguments = listOf(
+                navArgument("phoneNumber") { type = NavType.StringType },
+                navArgument("role") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val phoneNumber = backStackEntry.arguments?.getString("phoneNumber").orEmpty()
+            val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
+            PhoneVerificationScreen(
+                phoneNumber = phoneNumber,
+                onVerified = {
+                    val destination = if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
+                    navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
                 }
             )
         }
@@ -103,6 +126,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) },
                 onMealClick = { mealId -> navController.navigate(Routes.mealDetail(mealId)) },
                 onCartClick = { navController.navigate(Routes.CART) },
+                onChatClick = { navController.navigate(Routes.CUSTOMER_CHAT_LIST) },
                 onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
                 onLogout = {
@@ -192,6 +216,15 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             val chefId = backStackEntry.arguments?.getString("chefId").orEmpty()
             CustomerChatScreen(
                 chefId = chefId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.CUSTOMER_CHAT_LIST) {
+            val customerId = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+            CustomerChatListScreen(
+                customerId = customerId,
+                onThreadClick = { chefId -> navController.navigate(Routes.customerChat(chefId)) },
                 onBack = { navController.popBackStack() }
             )
         }

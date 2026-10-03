@@ -25,7 +25,9 @@ object FirestoreOrderRepository {
         platformFee: Int,
         total: Int,
         deliveryAddress: String,
-        paymentMethod: String
+        paymentMethod: String,
+        bkashTransactionId: String? = null,
+        bkashScreenshotBase64: String? = null
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -48,6 +50,8 @@ object FirestoreOrderRepository {
                 "totalPrice" to total,
                 "deliveryAddress" to deliveryAddress,
                 "paymentMethod" to paymentMethod,
+                "bkashTransactionId" to bkashTransactionId.orEmpty(),
+                "bkashScreenshotBase64" to bkashScreenshotBase64.orEmpty(),
                 "status" to "Placed",
                 "placedAt" to System.currentTimeMillis()
             )
@@ -132,7 +136,10 @@ object FirestoreOrderRepository {
                         itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
                         totalPrice = (doc.getLong("totalPrice") ?: 0L).toInt(),
                         status = doc.getString("status") ?: "Placed",
-                        placedAt = doc.getLong("placedAt") ?: 0L
+                        placedAt = doc.getLong("placedAt") ?: 0L,
+                        paymentMethod = doc.getString("paymentMethod").orEmpty(),
+                        bkashTransactionId = doc.getString("bkashTransactionId").orEmpty(),
+                        bkashScreenshotBase64 = doc.getString("bkashScreenshotBase64").orEmpty()
                     )
                 }
         } catch (e: Exception) {

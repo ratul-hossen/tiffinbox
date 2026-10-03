@@ -81,7 +81,8 @@ object FirestoreCatalogRepository {
             onTime = getDouble("onTime") ?: 0.0,
             totalOrders = (getLong("totalOrders") ?: 0L).toInt(),
             isVerified = getBoolean("isVerified") ?: false,
-            isAvailableToday = getBoolean("isAvailableToday") ?: true
+            isAvailableToday = getBoolean("isAvailableToday") ?: true,
+            bkashNumber = getString("bkashNumber") ?: ""
         )
     }
 

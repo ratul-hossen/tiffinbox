@@ -5,6 +5,7 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val ROLE_SELECT = "role_select"
     const val LOGIN = "login/{role}"
+    const val PHONE_VERIFICATION = "phone_verification/{phoneNumber}/{role}"
     const val MAIN = "main"
     const val CHEF_DASHBOARD = "chef_dashboard"
     const val MENU_MANAGER = "menu_manager"
@@ -14,6 +15,7 @@ object Routes {
     const val ORDER_TRACKING = "order_tracking/{orderId}"
     const val REVIEW = "review/{chefId}"
     const val CUSTOMER_CHAT = "chat/{chefId}"
+    const val CUSTOMER_CHAT_LIST = "customer_chat_list"
     const val CHEF_CHAT_LIST = "chef_chat_list"
     const val CHEF_CHAT = "chef_chat/{customerId}/{chefId}"
     const val SUBSCRIBE = "subscribe/{chefId}"
@@ -22,6 +24,7 @@ object Routes {
     const val CHECKOUT = "checkout"
 
     fun login(role: String) = "login/$role"
+    fun phoneVerification(phoneNumber: String, role: String) = "phone_verification/$phoneNumber/$role"
     fun orderTracking(orderId: String) = "order_tracking/$orderId"
     fun review(chefId: String) = "review/$chefId"
     fun chefDetail(chefId: String) = "chef_detail/$chefId"

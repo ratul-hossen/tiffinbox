@@ -80,6 +80,8 @@ export interface Order {
   totalPrice?: number;
   deliveryAddress?: string;
   paymentMethod?: string;
+  bkashTransactionId?: string;
+  bkashScreenshotBase64?: string;
   status?: OrderStatus | string;
   placedAt?: number; // epoch millis
 }

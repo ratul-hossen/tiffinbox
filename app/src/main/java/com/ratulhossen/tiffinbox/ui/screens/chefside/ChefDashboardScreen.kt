@@ -1,8 +1,13 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,10 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
@@ -44,6 +51,8 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
         FirestoreOrderRepository.updateOrderStatus(orderId, newStatus)
         orders = orders.filterNot { it.id == orderId }
     }
+
+    var viewingScreenshotBase64 by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -179,6 +188,24 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    if (order.bkashTransactionId.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            stringResource(R.string.chef_dashboard_bkash_transaction_label, order.bkashTransactionId),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (order.bkashScreenshotBase64.isNotBlank()) {
+                            TextButton(
+                                onClick = { viewingScreenshotBase64 = order.bkashScreenshotBase64 },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(stringResource(R.string.chef_dashboard_view_screenshot_button), style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { respondToOrder(order.id, "Accepted") }) {
@@ -187,6 +214,34 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
                         OutlinedButton(onClick = { respondToOrder(order.id, "Cancelled") }) {
                             Text(stringResource(R.string.chef_dashboard_reject_button))
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    val screenshotBase64 = viewingScreenshotBase64
+    if (screenshotBase64 != null) {
+        val bitmap = remember(screenshotBase64) {
+            runCatching {
+                val bytes = Base64.decode(screenshotBase64, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+            }.getOrNull()
+        }
+        Dialog(onDismissRequest = { viewingScreenshotBase64 = null }) {
+            Surface(shape = MaterialTheme.shapes.large) {
+                Box(modifier = Modifier.padding(8.dp)) {
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = stringResource(R.string.chef_dashboard_view_screenshot_button),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            stringResource(R.string.chef_dashboard_screenshot_load_failed),
+                            modifier = Modifier.padding(24.dp)
+                        )
                     }
                 }
             }
