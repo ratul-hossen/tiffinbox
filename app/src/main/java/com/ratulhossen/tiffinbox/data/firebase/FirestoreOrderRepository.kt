@@ -1,6 +1,7 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
@@ -16,7 +17,8 @@ import java.util.Locale
  */
 object FirestoreOrderRepository {
 
-    fun placeOrder(
+    /** Returns the new order's id on success, or null if it couldn't be placed. */
+    suspend fun placeOrder(
         items: List<CartItemUi>,
         subtotal: Int,
         deliveryFee: Int,
@@ -24,10 +26,10 @@ object FirestoreOrderRepository {
         total: Int,
         deliveryAddress: String,
         paymentMethod: String
-    ) {
-        try {
-            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return
-            val chefId = items.firstOrNull()?.meal?.chefId ?: return
+    ): String? {
+        return try {
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
+            val chefId = items.firstOrNull()?.meal?.chefId ?: return null
 
             val orderData = hashMapOf(
                 "customerId" to customerId,
@@ -50,9 +52,28 @@ object FirestoreOrderRepository {
                 "placedAt" to System.currentTimeMillis()
             )
 
-            FirebaseFirestore.getInstance().collection("orders").add(orderData)
+            FirebaseFirestore.getInstance().collection("orders").add(orderData).await().id
         } catch (e: Exception) {
-            // Firebase not configured yet, or offline — safe to ignore.
+            null
+        }
+    }
+
+    /**
+     * Live-watches a single order's real status (and chefId, for the
+     * post-delivery review step) so the customer sees exactly what the chef
+     * does on their dashboard — no more a client-only fake progress timer.
+     */
+    fun listenOrder(
+        orderId: String,
+        onUpdate: (status: String?, chefId: String?) -> Unit
+    ): ListenerRegistration? {
+        return try {
+            FirebaseFirestore.getInstance().collection("orders").document(orderId)
+                .addSnapshotListener { snapshot, _ ->
+                    onUpdate(snapshot?.getString("status"), snapshot?.getString("chefId"))
+                }
+        } catch (e: Exception) {
+            null
         }
     }
 

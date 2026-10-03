@@ -19,13 +19,8 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
 import com.ratulhossen.tiffinbox.ui.components.StarRatingInput
 
-// The tracking/review demo flow doesn't carry a real order/chef id yet,
-// so this matches the single chef ("Rukhsana's Kitchen") used throughout
-// the rest of the dummy-data demo.
-private const val DEMO_CHEF_ID = "chef1"
-
 @Composable
-fun ReviewScreen(onSubmitted: () -> Unit) {
+fun ReviewScreen(chefId: String, onSubmitted: () -> Unit) {
     var taste by remember { mutableIntStateOf(0) }
     var hygiene by remember { mutableIntStateOf(0) }
     var packaging by remember { mutableIntStateOf(0) }
@@ -72,7 +67,7 @@ fun ReviewScreen(onSubmitted: () -> Unit) {
         Button(
             onClick = {
                 FirestoreReviewRepository.submitReview(
-                    chefId = DEMO_CHEF_ID,
+                    chefId = chefId,
                     taste = taste,
                     hygiene = hygiene,
                     packaging = packaging,

@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -40,12 +42,14 @@ private fun PaymentMethod.label(): String = when (this) {
 @Composable
 fun CheckoutScreen(
     onBack: () -> Unit,
-    onOrderPlaced: () -> Unit
+    onOrderPlaced: (orderId: String) -> Unit
 ) {
     val defaultAddress = stringResource(R.string.home_location)
     var address by remember { mutableStateOf(defaultAddress) }
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH_ON_DELIVERY) }
+    var placing by remember { mutableStateOf(false) }
     val items = CartStore.items
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -63,19 +67,25 @@ fun CheckoutScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Button(
                         onClick = {
-                            FirestoreOrderRepository.placeOrder(
-                                items = items.toList(),
-                                subtotal = CartStore.subtotal,
-                                deliveryFee = CartStore.DELIVERY_FEE,
-                                platformFee = CartStore.PLATFORM_FEE,
-                                total = CartStore.total,
-                                deliveryAddress = address,
-                                paymentMethod = selectedPayment.name
-                            )
-                            CartStore.clear()
-                            onOrderPlaced()
+                            placing = true
+                            scope.launch {
+                                val orderId = FirestoreOrderRepository.placeOrder(
+                                    items = items.toList(),
+                                    subtotal = CartStore.subtotal,
+                                    deliveryFee = CartStore.DELIVERY_FEE,
+                                    platformFee = CartStore.PLATFORM_FEE,
+                                    total = CartStore.total,
+                                    deliveryAddress = address,
+                                    paymentMethod = selectedPayment.name
+                                )
+                                placing = false
+                                if (orderId != null) {
+                                    CartStore.clear()
+                                    onOrderPlaced(orderId)
+                                }
+                            }
                         },
-                        enabled = address.isNotBlank() && items.isNotEmpty(),
+                        enabled = !placing && address.isNotBlank() && items.isNotEmpty(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)

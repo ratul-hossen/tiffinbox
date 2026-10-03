@@ -133,13 +133,17 @@
 
     <!-- OrderTrackingScreen -->
     <string name="order_tracking_title">অর্ডার ট্র্যাকিং</string>
-    <string name="order_tracking_subtitle">Rukhsana\'s Kitchen থেকে আপনার খাবার আসছে</string>
+    <string name="order_tracking_subtitle">আপনার খাবার আসছে</string>
+    <string name="order_tracking_subtitle_named">%1$s থেকে আপনার খাবার আসছে</string>
+    <string name="order_tracking_loading">অর্ডারের তথ্য লোড হচ্ছে…</string>
     <string name="order_stage_placed">Placed</string>
     <string name="order_stage_accepted">Accepted</string>
     <string name="order_stage_cooking">Cooking</string>
     <string name="order_stage_out_for_delivery">Out for Delivery</string>
     <string name="order_stage_delivered">Delivered</string>
+    <string name="order_stage_cancelled">বাতিল</string>
     <string name="order_tracking_in_progress">চলছে...</string>
+    <string name="order_tracking_cancelled_message">দুঃখিত, এই অর্ডারটি বাতিল করা হয়েছে</string>
     <string name="order_tracking_review_button">রিভিউ দিন</string>
 
     <!-- OrdersScreen -->
