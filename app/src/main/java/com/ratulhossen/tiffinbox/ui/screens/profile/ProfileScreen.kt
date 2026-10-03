@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 
 private data class ProfileMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit = {})
@@ -35,6 +36,10 @@ private data class ProfileMenuItem(val icon: ImageVector, val label: String, val
 @Composable
 fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
     var seedStatus by remember { mutableStateOf<String?>(null) }
+    val fallbackName = stringResource(R.string.profile_demo_user_name)
+    val user = FirebaseAuthRepository.currentUser
+    val displayName = user?.displayName?.takeIf { it.isNotBlank() } ?: fallbackName
+    val subtitle = user?.email ?: stringResource(R.string.profile_demo_phone)
 
     val menuItems = listOf(
         ProfileMenuItem(Icons.Filled.Receipt, stringResource(R.string.profile_menu_my_orders)),
@@ -64,9 +69,9 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(stringResource(R.string.profile_demo_user_name), style = MaterialTheme.typography.titleLarge)
+                Text(displayName, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    stringResource(R.string.profile_demo_phone),
+                    subtitle,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
