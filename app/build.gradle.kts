@@ -1,17 +1,24 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    // No separate org.jetbrains.kotlin.android plugin here: AGP 9.0+ has
+    // built-in Kotlin support and applying both now conflicts
+    // ("Cannot add extension with name 'kotlin'").
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.ratulhossen.tiffinbox"
-    compileSdk = 34
+    // vico:compose 3.x moved to Compose Multiplatform and its resolved
+    // AndroidX Compose transitive deps require compileSdk 37 / AGP 9.1.0+
+    // (see the matching com.android.application version bump in the root
+    // build.gradle.kts) — bumped from 34 to clear AAR metadata check
+    // failures, not a deliberate feature choice.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.ratulhossen.tiffinbox"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
 
@@ -35,9 +42,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    // No separate kotlinOptions { jvmTarget = "17" } block: that was part of
+    // the org.jetbrains.kotlin.android plugin we removed above. AGP 9's
+    // built-in Kotlin support picks up the JVM target from compileOptions
+    // above instead.
 
     buildFeatures {
         compose = true
@@ -55,7 +63,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.1")
 
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    // Bumped from 2024.06.00: vico:compose 3.3.1 resolves Compose runtime to
+    // 1.12.0 (HorizontalPager's old signature is gone there), so compile-time
+    // and runtime Compose versions must match or the app crashes on launch.
+    implementation(platform("androidx.compose:compose-bom:2026.08.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -81,7 +92,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.08.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
