@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TiffinBox</string>
+    <string name="app_name" translatable="false">TiffinBox</string>
 
     <!-- Shared / generic -->
     <string name="content_description_back">Back</string>
