@@ -1,0 +1,91 @@
+import { useMemo, useState } from "react";
+import { useCollection } from "../hooks/useCollection";
+import type { AppUser, Order } from "../types";
+import { formatDate } from "../lib/format";
+import UserDetail from "./UserDetail";
+
+interface Props {
+  search: string;
+}
+
+export default function UsersPage({ search }: Props) {
+  const { data: users, loading, error } = useCollection<AppUser>("users");
+  const { data: orders } = useCollection<Order>("orders");
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        (u.name ?? "").toLowerCase().includes(q) ||
+        (u.email ?? "").toLowerCase().includes(q) ||
+        u.id.toLowerCase().includes(q),
+    );
+  }, [users, search]);
+
+  if (loading) return <p className="text-sm text-apple-secondary">Loading users…</p>;
+  if (error) return <p className="text-sm text-apple-red">Error: {error}</p>;
+
+  const detailUser = users.find((u) => u.id === detailUserId) ?? null;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold text-apple-text tracking-tight">
+        Customers / Users ({filtered.length})
+      </h2>
+
+      <p className="text-xs text-apple-secondary">
+        The <code className="bg-black/5 rounded px-1">users</code> collection only started being
+        populated via the new signup flow, so older accounts may not show up here — that's
+        expected, not a bug.
+      </p>
+
+      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Created</th>
+              <th className="px-4 py-3">UID</th>
+              <th className="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((u) => (
+              <tr key={u.id} className="border-b border-black/5 last:border-0">
+                <td className="px-4 py-3">{u.name ?? "–"}</td>
+                <td className="px-4 py-3 text-apple-secondary">{u.email ?? "–"}</td>
+                <td className="px-4 py-3">
+                  <span className="text-xs bg-black/5 rounded-full px-2 py-0.5">
+                    {u.role ?? "unknown"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-apple-secondary">{formatDate(u.createdAt)}</td>
+                <td className="px-4 py-3 text-apple-secondary/70 text-xs">{u.id.slice(0, 10)}…</td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => setDetailUserId(u.id)}
+                    className="text-xs text-apple-blue hover:text-apple-blue-dark font-medium transition-colors duration-150"
+                  >
+                    View details
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <p className="text-sm text-apple-secondary px-4 py-6">
+            No users found — this may be expected until the new signup flow has run for existing
+            accounts.
+          </p>
+        )}
+      </div>
+
+      <UserDetail user={detailUser} orders={orders} onClose={() => setDetailUserId(null)} />
+    </div>
+  );
+}

@@ -1,0 +1,244 @@
+<resources>
+    <string name="app_name">TiffinBox</string>
+
+    <!-- Shared / generic -->
+    <string name="content_description_back">Back</string>
+    <string name="content_description_cart">Cart</string>
+    <string name="content_description_chat">Chat</string>
+    <string name="content_description_verified">Verified</string>
+    <string name="content_description_favorite">Favorite</string>
+    <string name="content_description_decrease">Decrease</string>
+    <string name="content_description_increase">Increase</string>
+    <string name="action_logout">Logout</string>
+    <string name="messages_label">Messages</string>
+    <string name="price_tag">৳%1$d</string>
+
+    <!-- MainActivity -->
+    <string name="offline_banner">ইন্টারনেট সংযোগ নেই — কিছু তথ্য পুরনো হতে পারে</string>
+
+    <!-- NotificationHelper -->
+    <string name="notification_channel_name">Order Updates</string>
+    <string name="notification_channel_description">অর্ডার placed, accepted, cooking, delivered status আপডেট</string>
+
+    <!-- LoginScreen -->
+    <string name="login_welcome_back">স্বাগতম!</string>
+    <string name="login_create_account_title">নতুন Account তৈরি করুন</string>
+    <string name="login_subtitle">ঘরের রান্না, এক Tap দূরে</string>
+    <string name="login_name_label">নাম</string>
+    <string name="login_email_label">ইমেইল</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_email_password_required">ইমেইল ও পাসওয়ার্ড দিন</string>
+    <string name="login_kitchen_name_label">কিচেনের নাম</string>
+    <string name="login_kitchen_name_required">আপনার কিচেনের একটা নাম দিন</string>
+    <string name="login_button">Login</string>
+    <string name="signup_button">Sign Up</string>
+    <string name="login_continue_with_google_button">Continue with Google</string>
+    <string name="login_google_signin_failed">Google দিয়ে সাইন-ইন করা যায়নি, আবার চেষ্টা করুন</string>
+    <string name="login_google_signin_cancelled">Google সাইন-ইন বাতিল করা হয়েছে</string>
+    <string name="login_toggle_to_signup">নতুন? Sign Up করুন</string>
+    <string name="login_toggle_to_login">আগে থেকে Account আছে? Login করুন</string>
+
+    <!-- OnboardingScreen -->
+    <string name="onboarding_skip_button">Skip</string>
+    <string name="onboarding_page1_title">ঘরের খাবার, এক Tap দূরে</string>
+    <string name="onboarding_page1_desc">আপনার আশেপাশের ভেরিফাইড home chef-দের কাছ থেকে অর্ডার করুন।</string>
+    <string name="onboarding_page2_title">যাচাইকৃত ও বিশ্বস্ত</string>
+    <string name="onboarding_page2_desc">প্রতিটা chef পরিচয় ও hygiene checklist দিয়ে ভেরিফাইড।</string>
+    <string name="onboarding_page3_title">AI আপনার পছন্দ বোঝে</string>
+    <string name="onboarding_page3_desc">বাজেট, ডায়েট আর স্বাদ অনুযায়ী সেরা মিল সাজেশন পান।</string>
+    <string name="onboarding_next_button">Next</string>
+    <string name="onboarding_start_button">শুরু করি</string>
+
+    <!-- RoleSelectionScreen -->
+    <string name="role_select_title">আপনি কে হিসেবে যুক্ত হতে চান?</string>
+    <string name="role_select_subtitle">পরে আপনি এটা পরিবর্তন করতে পারবেন</string>
+    <string name="role_customer_title">আমি একজন Customer</string>
+    <string name="role_customer_desc">কাছাকাছি home chef থেকে খাবার অর্ডার করতে চাই</string>
+    <string name="role_chef_title">আমি একজন Home Chef</string>
+    <string name="role_chef_desc">আমার রান্না বিক্রি করে আয় করতে চাই</string>
+    <string name="role_select_continue_button">Continue</string>
+
+    <!-- SplashScreen -->
+    <string name="splash_tagline">Home-Cooked Food, One Tap Away</string>
+
+    <!-- HomeScreen -->
+    <string name="home_location">Ashulia, Dhaka</string>
+    <string name="home_greeting">আজ কী খেতে ইচ্ছে করছে?</string>
+    <string name="home_profile_content_description">Profile</string>
+    <string name="home_search_content_description">Search</string>
+    <string name="search_placeholder">কম তেলে ১২০ টাকার দুপুরের খাবার...</string>
+    <string name="home_section_recommended">আপনার জন্য Recommended</string>
+    <string name="home_section_nearby">কাছাকাছি Home Chef</string>
+    <string name="home_see_all">সব দেখুন</string>
+
+    <!-- SearchScreen -->
+    <string name="search_veg_only_chip">শুধু Veg</string>
+    <string name="search_empty_state_message">কিছু পাওয়া যায়নি, অন্য কিছু খুঁজে দেখুন</string>
+
+    <!-- ChefListScreen -->
+    <string name="chef_list_title">সব Home Chef</string>
+    <string name="chef_sort_recommended">Recommended</string>
+    <string name="chef_sort_nearby">Nearby</string>
+    <string name="chef_sort_top_rated">Top Rated</string>
+    <string name="chef_list_empty">কোনো Chef পাওয়া যায়নি</string>
+
+    <!-- ChefDetailScreen -->
+    <string name="chef_detail_owner_by">by %1$s</string>
+    <string name="chef_rating_summary">%1$s  (%2$s orders)  •  %3$s km away</string>
+    <string name="chef_detail_view_subscription_button">Weekly / Monthly Subscription দেখুন</string>
+    <string name="chef_detail_rating_breakdown_title">Rating Breakdown</string>
+    <string name="chef_detail_menu_title">Menu</string>
+    <string name="rating_taste_label">🍽️ স্বাদ</string>
+    <string name="rating_hygiene_label">🧼 Hygiene</string>
+    <string name="rating_packaging_label">📦 Packaging</string>
+    <string name="rating_on_time_label">⏱️ On-Time</string>
+
+    <!-- ChefCard -->
+    <string name="chef_card_closed_today">আজ বন্ধ</string>
+    <string name="chef_card_rating_orders">%1$s (%2$s)</string>
+    <string name="chef_card_distance_km">%1$s km</string>
+
+    <!-- MealDetailScreen -->
+    <string name="meal_detail_title">Meal Details</string>
+    <string name="meal_add_to_cart_button">Add to Cart • ৳%1$d</string>
+    <string name="meal_sold_out_today">আজকের জন্য শেষ</string>
+    <string name="meal_price_portion">৳%1$d  •  %2$s</string>
+    <string name="meal_dietary_tags_title">Dietary Tags</string>
+    <string name="meal_allergens_title">Allergens</string>
+    <string name="meal_general_tag">General</string>
+    <string name="meal_plates_left">● %1$d plates left today</string>
+
+    <!-- CartScreen -->
+    <string name="cart_top_bar_title">আপনার Cart</string>
+    <string name="cart_summary_subtotal">Subtotal</string>
+    <string name="cart_summary_delivery_fee">Delivery Fee</string>
+    <string name="cart_summary_platform_fee">Platform Fee</string>
+    <string name="cart_summary_total">Total</string>
+    <string name="cart_checkout_button">Checkout • ৳%1$d</string>
+    <string name="cart_empty_message">আপনার Cart খালি 🍽️</string>
+    <string name="cart_item_price_each">৳%1$d each</string>
+
+    <!-- CheckoutScreen -->
+    <string name="checkout_title">Checkout</string>
+    <string name="checkout_place_order_button">Place Order • ৳%1$d</string>
+    <string name="checkout_delivery_address_title">Delivery Address</string>
+    <string name="checkout_address_placeholder">আপনার ঠিকানা লিখুন</string>
+    <string name="checkout_payment_method_title">Payment Method</string>
+    <string name="payment_method_cod">Cash on Delivery</string>
+    <string name="payment_method_bkash">bKash</string>
+    <string name="payment_method_nagad">Nagad</string>
+    <string name="payment_method_card">Card</string>
+    <string name="checkout_coming_soon_chip">আসছে</string>
+    <string name="checkout_order_summary_title">Order Summary</string>
+
+    <!-- OrderTrackingScreen -->
+    <string name="order_tracking_title">অর্ডার ট্র্যাকিং</string>
+    <string name="order_tracking_subtitle">Rukhsana\'s Kitchen থেকে আপনার খাবার আসছে</string>
+    <string name="order_stage_placed">Placed</string>
+    <string name="order_stage_accepted">Accepted</string>
+    <string name="order_stage_cooking">Cooking</string>
+    <string name="order_stage_out_for_delivery">Out for Delivery</string>
+    <string name="order_stage_delivered">Delivered</string>
+    <string name="order_tracking_in_progress">চলছে...</string>
+    <string name="order_tracking_review_button">রিভিউ দিন</string>
+
+    <!-- OrdersScreen -->
+    <string name="orders_empty_message">এখনো কোনো অর্ডার নেই</string>
+
+    <!-- FavoritesScreen -->
+    <string name="favorites_empty_title">এখনো কোনো Favorite chef যোগ করেননি</string>
+    <string name="favorites_empty_subtitle">chef কার্ডের হার্ট আইকনে ট্যাপ করে যোগ করুন</string>
+
+    <!-- ProfileScreen -->
+    <string name="profile_menu_my_orders">আমার অর্ডার</string>
+    <string name="profile_menu_my_subscriptions">আমার Subscriptions</string>
+    <string name="profile_menu_favorites">Favorites</string>
+    <string name="profile_menu_address_management">ঠিকানা ব্যবস্থাপনা</string>
+    <string name="profile_menu_payment_method">Payment পদ্ধতি</string>
+    <string name="profile_menu_notifications">Notifications</string>
+    <string name="profile_menu_settings">Settings</string>
+    <string name="profile_demo_user_name">Rafi Ahmed</string>
+    <string name="profile_demo_phone">+880 1XXXXXXXXX</string>
+    <string name="profile_seeding_status_sending">পাঠানো হচ্ছে...</string>
+    <string name="profile_seeding_status_success">✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে</string>
+    <string name="profile_seeding_status_failure">❌ %1$s</string>
+    <string name="profile_dev_seed_button">Developer: Sample data Firestore-এ পাঠান</string>
+
+    <!-- ReviewScreen -->
+    <string name="review_title">খাবার কেমন লাগলো?</string>
+    <string name="review_subtitle">Rukhsana\'s Kitchen — ৪টা আলাদা দিক থেকে রেটিং দিন</string>
+    <string name="review_comment_label">মন্তব্য (ঐচ্ছিক)</string>
+    <string name="review_submit_button">রিভিউ Submit করুন</string>
+    <string name="review_skip_button">এখন না, Skip করুন</string>
+
+    <!-- ChatScreen -->
+    <string name="chat_chef_fallback_name">Chef</string>
+    <string name="chat_customer_title">Customer (%1$s)</string>
+    <string name="chat_message_placeholder">মেসেজ লিখুন...</string>
+    <string name="chat_send_content_description">Send</string>
+    <string name="chat_empty_state">কথোপকথন শুরু করুন</string>
+    <string name="chat_admin_label">অ্যাডমিন</string>
+
+    <!-- ChefChatListScreen -->
+    <string name="chef_chat_list_empty">এখনো কোনো মেসেজ আসেনি</string>
+    <string name="chef_chat_list_customer_label">Customer %1$s</string>
+
+    <!-- ChefDashboardScreen -->
+    <string name="chef_dashboard_title">Chef Dashboard</string>
+    <string name="chef_dashboard_kitchen_name">Rukhsana\'s Kitchen</string>
+    <string name="chef_dashboard_available_toggle">আজ Available আছি</string>
+    <string name="chef_dashboard_manage_menu_button">মেনু ম্যানেজ করুন</string>
+    <string name="chef_dashboard_earning_today">আজকের আয়</string>
+    <string name="chef_dashboard_earning_week">৭ দিনে আয়</string>
+    <string name="chef_dashboard_earning_recent_orders">সাম্প্রতিক অর্ডার</string>
+    <string name="chef_dashboard_chart_title">দৈনিক আয় (গত ১৪ দিন)</string>
+    <string name="chef_dashboard_chart_empty">চার্ট দেখানোর জন্য যথেষ্ট অর্ডার ইতিহাস এখনো নেই</string>
+    <string name="chef_dashboard_forecast_title">আগামীকালের চাহিদার পূর্বাভাস</string>
+    <string name="chef_dashboard_forecast_result">~%1$d প্লেট রান্নার প্রস্তুতি নিন</string>
+    <string name="chef_dashboard_forecast_empty">পূর্বাভাসের জন্য এখনো পর্যাপ্ত অর্ডার ইতিহাস নেই</string>
+    <string name="chef_dashboard_new_orders_title">নতুন অর্ডার</string>
+    <string name="chef_dashboard_no_new_orders">এই মুহূর্তে কোনো নতুন অর্ডার নেই।</string>
+    <string name="chef_dashboard_order_number">Order #%1$s</string>
+    <string name="chef_dashboard_accept_button">Accept</string>
+    <string name="chef_dashboard_reject_button">Reject</string>
+
+    <!-- MenuManagerScreen -->
+    <string name="menu_manager_title">Menu Manager</string>
+    <string name="menu_manager_add_meal_content_description">নতুন মিল যোগ করুন</string>
+    <string name="menu_manager_item_price_quantity">৳%1$d  •  %2$d plates</string>
+    <string name="menu_manager_add_meal_name_label">মিলের নাম</string>
+    <string name="menu_manager_add_meal_price_label">দাম (৳)</string>
+    <string name="menu_manager_add_button">যোগ করুন</string>
+    <string name="menu_manager_cancel_button">বাতিল</string>
+
+    <!-- SubscribeScreen -->
+    <string name="subscribe_title">Subscription Plan</string>
+    <string name="subscribe_header">%1$s-এর সাথে নিয়মিত খাবার</string>
+    <string name="subscribe_subtitle">প্রতিবার আলাদা অর্ডার না করে একটা প্ল্যান নিন</string>
+    <string name="subscribe_choose_plan_title">Plan বেছে নিন</string>
+    <string name="subscription_plan_weekly">Weekly</string>
+    <string name="subscription_plan_monthly">Monthly</string>
+    <string name="subscribe_meals_per_week_title">সপ্তাহে কয়টা মিল চান</string>
+    <string name="subscribe_summary_price_per_meal">প্রতি মিল আনুমানিক</string>
+    <string name="subscribe_summary_meals_per_week">সপ্তাহে মিল</string>
+    <string name="subscribe_summary_duration">মেয়াদ</string>
+    <string name="subscribe_summary_duration_value">%1$d সপ্তাহ</string>
+    <string name="subscribe_summary_total">মোট (%1$s)</string>
+    <string name="subscribe_button">Subscribe করুন</string>
+
+    <!-- MySubscriptionsScreen -->
+    <string name="my_subscriptions_title">আমার Subscriptions</string>
+    <string name="my_subscriptions_empty">কোনো সক্রিয় Subscription নেই</string>
+    <string name="my_subscriptions_plan_summary">%1$s • সপ্তাহে %2$d মিল</string>
+    <string name="my_subscriptions_cancel_button">বাতিল করুন</string>
+
+    <!-- MainScreen -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_orders">Orders</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- StarRatingInput -->
+    <string name="star_rating_content_description">%1$d star</string>
+</resources>

@@ -1,0 +1,166 @@
+rules_version = '2';
+
+// Reference ruleset matching the data models in README.md (User, Chef, Meal,
+// Order, Review). This is the ruleset actually published in Firebase
+// Console -> Firestore Database -> Rules for the tiffinbox-2cb8b project
+// (not auto-synced — any further change to this file must be manually
+// re-pasted and re-published there to take effect). Not consumed by the
+// Android build itself; this file is the source of truth to keep in sync
+// with what's deployed.
+//
+// admin-web (see /admin-web) additions: an isAdmin()/isSuperAdmin() helper,
+// an admins/{adminId} collection, a subscriptions/{subscriptionId}
+// collection, and broadened admin read/write on chefs, meals, orders,
+// reviews, users and subscriptions, below.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Admin-web helper: a uid with a document at admins/{uid} is treated as
+    // an admin everywhere below. Added for the admin-web panel
+    // (admin-web/) — see admins/{adminId} match block just below for how
+    // that collection itself is guarded.
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Super-admin: an admin whose own admins/{uid} doc has role ==
+    // "super_admin". Only super admins may add or remove other admins (see
+    // admins/{adminId} below) — this is the "extra power" the project owner
+    // asked for hossen240504@gmail.com specifically.
+    function isSuperAdmin() {
+      return isAdmin() &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "super_admin";
+    }
+
+    // admins/{adminId} — doc id = a Firebase Auth uid; its mere existence
+    // marks that uid as an admin (see isAdmin() above), and its `role` field
+    // ("super_admin" | "admin") marks the extra-power tier (see
+    // isSuperAdmin() above). All admins may read this list (admin-web's
+    // "Admins" page). Only a super admin may create a NEW admin (inviting
+    // someone) or delete one (never themselves). The one narrow exception is
+    // a one-time self-heal: the hardcoded super-admin email may set
+    // role="super_admin" on their OWN existing doc if it doesn't have that
+    // role yet — this is how the original bootstrap-created doc for
+    // hossen240504@gmail.com (created before this role system existed) gets
+    // upgraded, without ever allowing arbitrary signed-in users to grant
+    // themselves admin access the way the old open bootstrap rule did.
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || (
+        isOwner(adminId) &&
+        request.auth.token.email == "hossen240504@gmail.com" &&
+        resource.data.get("role", null) != "super_admin" &&
+        request.resource.data.role == "super_admin"
+      );
+      allow delete: if isSuperAdmin() && adminId != request.auth.uid;
+    }
+
+    // users/{userId} — profile data (name, phone, role, addresses)
+    // Admins (admin-web) can read/write any user doc for moderation.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
+
+    // chefs/{chefId} — public kitchen profiles, only the owning chef can edit.
+    // The signup flow (see FirestoreChefRepository.kt) always creates this
+    // doc at chefs/{uid} using the chef's own Firebase Auth uid as the doc
+    // id, so create is restricted to that exact match — otherwise any
+    // signed-in user could create or overwrite a kitchen profile under an id
+    // they don't own. Admins (admin-web) can also edit/delete any chef
+    // (verify, toggle availability, moderate).
+    match /chefs/{chefId} {
+      allow read: if true;
+      allow create: if isOwner(chefId);
+      allow update, delete: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // meals/{mealId} — public menu items, only the owning chef can edit
+    // Admins (admin-web) can also edit/delete any meal.
+    match /meals/{mealId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() &&
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid);
+    }
+
+    // orders/{orderId} — visible only to the customer who placed it or the
+    // chef who is fulfilling it. Admins (admin-web) can read/update any
+    // order (the main lever is changing `status`).
+    match /orders/{orderId} {
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow read, update: if isAdmin() || (isSignedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid
+      ));
+    }
+
+    // reviews/{reviewId} — public read, only the verified buyer can create.
+    // Admins (admin-web) can delete for moderation (flagging).
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // subscriptions/{subscriptionId} — a customer's recurring meal plan
+    // with a chef (see data/firebase/FirestoreSubscriptionRepository.kt).
+    // Added for the admin-web panel; lets the owning customer and admins
+    // manage it (admins can also force-cancel from admin-web).
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow update, delete: if isAdmin() ||
+        (isSignedIn() && resource.data.customerId == request.auth.uid);
+    }
+
+    // admin_activity_log/{logId} — append-only audit trail written by
+    // admin-web (see admin-web/src/lib/activityLog.ts) every time an admin
+    // toggles/edits/deletes something or changes an order's status. Admins
+    // can read it (to review the log in the "Activity Log" tab) and create
+    // new entries, but nothing may ever be updated or deleted — that's what
+    // makes it a trustworthy audit trail rather than just another mutable
+    // collection.
+    match /admin_activity_log/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // chats/{chatId} — one thread per customer+chef pair, id = "<customerId>_<chefId>".
+    // Chefs now have their own real Firebase Auth uid (chefId == that uid,
+    // see FirestoreChefRepository.kt), so both sides of the conversation —
+    // and admin-web (see admin-web/src/components/ChatsPage.tsx), which can
+    // read and reply to any thread — are checked here. Messages are
+    // restricted to the thread's two participants or an admin (rather than
+    // "any signed-in user", which previously let anyone read any chat by
+    // guessing its id) via a lookup on the parent chat doc.
+    match /chats/{chatId} {
+      allow read, write: if isAdmin() || (isSignedIn() && (
+        resource == null ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.chefId == request.auth.uid
+      ));
+
+      match /messages/{messageId} {
+        allow read, create: if isAdmin() || (isSignedIn() && (
+          get(/databases/$(database)/documents/chats/$(chatId)).data.customerId == request.auth.uid ||
+          get(/databases/$(database)/documents/chats/$(chatId)).data.chefId == request.auth.uid
+        ));
+      }
+    }
+  }
+}

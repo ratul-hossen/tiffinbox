@@ -646,7 +646,7 @@ Home • Chef List • Chef Details • Meal Details • Cart • Checkout • O
 ### Chef Side (6)
 Dashboard • Menu Manager • Order Management • Earnings • Chef Profile • Reviews
 
-> **Total: 27+ screens**
+> **Total: 27+ screens** (target/vision list above). **Actually implemented today (~16):** Splash, Onboarding, Role Selection, Login/Signup, Home, Search, Order History, Favorites, Profile, Chef Details, Meal Details, Cart, Order Tracking, Review, Chef Dashboard, Menu Manager. Not yet built: a separate Chef List screen (Home's horizontal rows stand in for it), Checkout as its own step, Subscription, Settings, Address Manager, Notifications, Help, and on the chef side: Order Management, Earnings (with real charts), Chef Profile, and Reviews as dedicated screens. See the Roadmap below for what's tracked where.
 
 ---
 
@@ -690,10 +690,12 @@ cd tiffinbox
 **2. Set up Firebase**
 
 - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-- Enable **Authentication** (Email/Password, Google)
-- Enable **Cloud Firestore**
+- Add an Android app to it with package name **`com.ratulhossen.tiffinbox`** (must match exactly, or `google-services.json` won't resolve)
+- Enable **Authentication** → Email/Password (Google Sign-In is UI-only for now, not wired yet)
+- Enable **Cloud Firestore** (rules reference: `firestore.rules` at the repo root)
 - Enable **Storage**
-- Download `google-services.json` and place it in the `app/` directory
+- Download `google-services.json` and place it directly in the `app/` directory (next to `app/build.gradle.kts`)
+- Re-sync Gradle — `app/build.gradle.kts` applies the Google Services plugin automatically once that file is present, so nothing else needs to change
 
 **3. Configure API keys**
 
@@ -831,39 +833,41 @@ Honest self-assessment of the biggest risks:
 
 ## 🗺️ Roadmap
 
+> Firebase Auth (email/password) and Firestore are live and wired — see `data/firebase/` and `firestore.rules`. Home/Search/Chef Detail/Menu Manager read from Firestore when it has data, falling back to the bundled `SampleData` (dummy data) otherwise, so the app still runs with zero setup. Google Sign-In is still UI-only. See `app/` for the current runnable Android Studio project.
+
 ### Phase 1 — MVP Foundation
 - [x] Project setup and architecture design
-- [ ] Firebase project setup
-- [ ] Authentication (Email + Google)
-- [ ] Role selection flow
-- [ ] Home screen with chef discovery
-- [ ] Chef & meal detail pages
-- [ ] Cart and order placement
-- [ ] Basic chef dashboard
+- [x] Firebase project setup
+- [x] Authentication (Email) — real Firebase Auth; Google Sign-In button is still UI-only
+- [x] Role selection flow
+- [x] Home screen with chef discovery
+- [x] Chef & meal detail pages
+- [x] Cart and order placement
+- [x] Basic chef dashboard
 
 ### Phase 2 — Core Features
-- [ ] Real-time order tracking
-- [ ] 4-dimension rating & review system
-- [ ] AI recommendation engine (hybrid scoring)
-- [ ] Chef menu manager
-- [ ] Push notifications (FCM)
-- [ ] Chef earnings dashboard
+- [x] Real-time order tracking — simulated auto-progress timeline, not backend-driven
+- [x] 4-dimension rating & review system
+- [x] AI recommendation engine (hybrid scoring) — proximity + rating live; budget/dietary/repeat-order signals default to neutral until real usage history exists
+- [x] Chef menu manager
+- [x] Push notifications (FCM) — client-side only: token registration (saved to users/{uid}.fcmToken) and a notification channel/receiver are wired up, so the app can *receive* a push the moment something sends one. Nothing sends one yet — that needs a backend trigger (e.g. a Cloud Function on order-status changes), which is out of scope until hosting/backend is set up.
+- [ ] Chef earnings dashboard — dashboard screen exists but shows static placeholder numbers only; no charts (Vico isn't wired up) or real aggregation yet
 
 ### Phase 3 — Polish
-- [ ] Dark mode
-- [ ] Animations and micro-interactions
-- [ ] Empty states and shimmer loaders
-- [ ] Complete onboarding flow
+- [x] Dark mode
+- [x] Animations and micro-interactions — fade/slide screen transitions; more granular micro-interactions (press states, shared-element transitions) still pending
+- [x] Empty states and shimmer loaders
+- [x] Complete onboarding flow
 - [ ] Error handling and offline mode
 
 ### Phase 4 — Advanced
-- [ ] Subscription plans (weekly / monthly)
+- [x] Subscription plans (weekly / monthly) — plan + price preview and Firestore-backed sign-up/cancel; no automated recurring billing/delivery yet
 - [ ] LLM-powered natural language search
 - [ ] Google Maps integration
-- [ ] In-app chat between customer and chef
+- [x] In-app chat between customer and chef — live via Firestore; chef side uses a synthetic sender id since there's no separate chef login yet
 - [ ] Payment gateway (bKash, Nagad, Card)
-- [ ] Demand forecasting for chefs
-- [ ] Full Bangla / English localization
+- [x] Demand forecasting for chefs — simple moving-average forecast from real Firestore order history; shows "not enough data yet" instead of a fabricated number until a chef has 3+ days of orders
+- [x] Full Bangla / English localization — all screen-level UI text (181 strings) moved to `res/values/strings.xml` (default, same Bangla/English mix as before) with a full `res/values-en/strings.xml` translation, so the app now responds to the device's language setting. Scope note: a handful of deep repository-layer error messages (Firebase auth/seed failure text in `data/firebase/`) are still hardcoded Bangla, since those objects don't have Android `Context` access to resolve a string resource — a small follow-up if full coverage is ever needed.
 
 ### Phase 5 — Future Vision
 - [ ] iOS version
