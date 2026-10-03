@@ -210,7 +210,6 @@
 
     <!-- CustomerChatListScreen -->
     <string name="customer_chat_list_empty">এখনো কোনো চ্যাট নেই</string>
-    <string name="content_description_chat">চ্যাট</string>
 
     <!-- ChefDashboardScreen -->
     <string name="chef_dashboard_title">Chef Dashboard</string>

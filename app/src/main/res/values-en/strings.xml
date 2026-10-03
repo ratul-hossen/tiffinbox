@@ -208,7 +208,6 @@
 
     <!-- CustomerChatListScreen -->
     <string name="customer_chat_list_empty">No chats yet</string>
-    <string name="content_description_chat">Chat</string>
 
     <!-- ChefDashboardScreen -->
     <string name="chef_dashboard_title">Chef Dashboard</string>
