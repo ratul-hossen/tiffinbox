@@ -232,20 +232,31 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         composable(Routes.CHECKOUT) {
             CheckoutScreen(
                 onBack = { navController.popBackStack() },
-                onOrderPlaced = {
-                    navController.navigate(Routes.ORDER_TRACKING) { popUpTo(Routes.MAIN) }
+                onOrderPlaced = { orderId ->
+                    navController.navigate(Routes.orderTracking(orderId)) { popUpTo(Routes.MAIN) }
                 }
             )
         }
 
-        composable(Routes.ORDER_TRACKING) {
-            OrderTrackingScreen(onDone = {
-                navController.navigate(Routes.REVIEW) { popUpTo(Routes.ORDER_TRACKING) { inclusive = true } }
-            })
+        composable(
+            route = Routes.ORDER_TRACKING,
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId").orEmpty()
+            OrderTrackingScreen(
+                orderId = orderId,
+                onDone = { chefId ->
+                    navController.navigate(Routes.review(chefId)) { popUpTo(Routes.ORDER_TRACKING) { inclusive = true } }
+                }
+            )
         }
 
-        composable(Routes.REVIEW) {
-            ReviewScreen(onSubmitted = {
+        composable(
+            route = Routes.REVIEW,
+            arguments = listOf(navArgument("chefId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chefId = backStackEntry.arguments?.getString("chefId").orEmpty()
+            ReviewScreen(chefId = chefId, onSubmitted = {
                 navController.navigate(Routes.MAIN) { popUpTo(Routes.MAIN) { inclusive = true } }
             })
         }

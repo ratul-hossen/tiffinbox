@@ -47,7 +47,19 @@ enum class OrderStage {
     ACCEPTED,
     COOKING,
     OUT_FOR_DELIVERY,
-    DELIVERED
+    DELIVERED,
+    CANCELLED
+}
+
+/** Maps the plain status string stored on orders/{orderId} to an [OrderStage], or null if unrecognized. */
+fun String.toOrderStage(): OrderStage? = when (this) {
+    "Placed" -> OrderStage.PLACED
+    "Accepted" -> OrderStage.ACCEPTED
+    "Cooking" -> OrderStage.COOKING
+    "OutForDelivery" -> OrderStage.OUT_FOR_DELIVERY
+    "Delivered" -> OrderStage.DELIVERED
+    "Cancelled" -> OrderStage.CANCELLED
+    else -> null
 }
 
 @Composable
@@ -57,6 +69,7 @@ fun OrderStage.label(): String = when (this) {
     OrderStage.COOKING -> stringResource(R.string.order_stage_cooking)
     OrderStage.OUT_FOR_DELIVERY -> stringResource(R.string.order_stage_out_for_delivery)
     OrderStage.DELIVERED -> stringResource(R.string.order_stage_delivered)
+    OrderStage.CANCELLED -> stringResource(R.string.order_stage_cancelled)
 }
 
 data class PastOrderUi(

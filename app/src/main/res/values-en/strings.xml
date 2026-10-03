@@ -131,13 +131,17 @@
 
     <!-- OrderTrackingScreen -->
     <string name="order_tracking_title">Order Tracking</string>
-    <string name="order_tracking_subtitle">Your food is coming from Rukhsana\'s Kitchen</string>
+    <string name="order_tracking_subtitle">Your food is on its way</string>
+    <string name="order_tracking_subtitle_named">Your food is coming from %1$s</string>
+    <string name="order_tracking_loading">Loading order…</string>
     <string name="order_stage_placed">Placed</string>
     <string name="order_stage_accepted">Accepted</string>
     <string name="order_stage_cooking">Cooking</string>
     <string name="order_stage_out_for_delivery">Out for Delivery</string>
     <string name="order_stage_delivered">Delivered</string>
+    <string name="order_stage_cancelled">Cancelled</string>
     <string name="order_tracking_in_progress">In progress...</string>
+    <string name="order_tracking_cancelled_message">Sorry, this order was cancelled</string>
     <string name="order_tracking_review_button">Give a Review</string>
 
     <!-- OrdersScreen -->
