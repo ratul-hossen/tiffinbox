@@ -3,6 +3,7 @@ package com.ratulhossen.tiffinbox.ui.screens.main
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -16,6 +17,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
@@ -33,6 +35,7 @@ fun MainScreen(
     onChefClick: (String) -> Unit,
     onMealClick: (String) -> Unit,
     onCartClick: () -> Unit,
+    onChatClick: () -> Unit,
     onSubscriptionsClick: () -> Unit,
     onSeeAllChefsClick: (String) -> Unit,
     onLogout: () -> Unit
@@ -52,6 +55,13 @@ fun MainScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    IconButton(onClick = onChatClick) {
+                        Icon(
+                            Icons.Filled.Chat,
+                            contentDescription = stringResource(R.string.content_description_chat),
+                            tint = Color(0xFF25D366)
+                        )
+                    }
                     IconButton(onClick = onCartClick) {
                         BadgedBox(
                             badge = {

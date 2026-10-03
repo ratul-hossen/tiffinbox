@@ -15,6 +15,7 @@ object Routes {
     const val ORDER_TRACKING = "order_tracking/{orderId}"
     const val REVIEW = "review/{chefId}"
     const val CUSTOMER_CHAT = "chat/{chefId}"
+    const val CUSTOMER_CHAT_LIST = "customer_chat_list"
     const val CHEF_CHAT_LIST = "chef_chat_list"
     const val CHEF_CHAT = "chef_chat/{customerId}/{chefId}"
     const val SUBSCRIBE = "subscribe/{chefId}"

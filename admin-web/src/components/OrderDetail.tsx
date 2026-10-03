@@ -88,6 +88,25 @@ export default function OrderDetail({ order, chefName, onClose }: Props) {
             <div className="text-xs text-apple-secondary">Payment method</div>
             <div className="font-medium">{order.paymentMethod || "–"}</div>
           </div>
+          {order.bkashTransactionId && (
+            <div className="bg-apple-bg rounded-xl px-3 py-2">
+              <div className="text-xs text-apple-secondary">bKash Transaction ID</div>
+              <div className="font-medium truncate">{order.bkashTransactionId}</div>
+            </div>
+          )}
+          {order.bkashScreenshotUrl && (
+            <div className="bg-apple-bg rounded-xl px-3 py-2">
+              <div className="text-xs text-apple-secondary">bKash screenshot</div>
+              <a
+                href={order.bkashScreenshotUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-apple-blue hover:text-apple-blue-dark transition-colors duration-150"
+              >
+                View screenshot
+              </a>
+            </div>
+          )}
           <div className="bg-apple-bg rounded-xl px-3 py-2 col-span-2">
             <div className="text-xs text-apple-secondary">Placed at</div>
             <div className="font-medium">{formatDateTime(order.placedAt)}</div>

@@ -1,13 +1,19 @@
 package com.ratulhossen.tiffinbox.ui.screens.checkout
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,11 +27,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseStorageRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 
 private enum class PaymentMethod(val available: Boolean) {
     CASH_ON_DELIVERY(available = true),
-    BKASH(available = false),
+    BKASH(available = true),
     NAGAD(available = false),
     CARD(available = false)
 }
@@ -48,8 +57,27 @@ fun CheckoutScreen(
     var address by remember { mutableStateOf(defaultAddress) }
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH_ON_DELIVERY) }
     var placing by remember { mutableStateOf(false) }
+    var bkashTransactionId by remember { mutableStateOf("") }
+    var bkashScreenshotUri by remember { mutableStateOf<Uri?>(null) }
+    var chefBkashNumber by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val items = CartStore.items
     val scope = rememberCoroutineScope()
+
+    val transactionIdRequiredMessage = stringResource(R.string.checkout_bkash_transaction_id_required)
+    val screenshotRequiredMessage = stringResource(R.string.checkout_bkash_screenshot_required)
+    val uploadFailedMessage = stringResource(R.string.checkout_bkash_upload_failed)
+
+    val pickScreenshotLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) bkashScreenshotUri = uri }
+
+    LaunchedEffect(items.firstOrNull()?.meal?.chefId) {
+        val chefId = items.firstOrNull()?.meal?.chefId
+        if (chefId != null) {
+            chefBkashNumber = FirestoreCatalogRepository.getChef(chefId)?.bkashNumber.orEmpty()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -65,10 +93,41 @@ fun CheckoutScreen(
         bottomBar = {
             Surface(shadowElevation = 8.dp) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    if (errorMessage != null) {
+                        Text(
+                            errorMessage.orEmpty(),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                     Button(
                         onClick = {
+                            errorMessage = null
+                            if (selectedPayment == PaymentMethod.BKASH) {
+                                if (bkashTransactionId.isBlank()) {
+                                    errorMessage = transactionIdRequiredMessage
+                                    return@Button
+                                }
+                                if (bkashScreenshotUri == null) {
+                                    errorMessage = screenshotRequiredMessage
+                                    return@Button
+                                }
+                            }
                             placing = true
                             scope.launch {
+                                var screenshotUrl: String? = null
+                                if (selectedPayment == PaymentMethod.BKASH) {
+                                    val customerId = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+                                    screenshotUrl = bkashScreenshotUri?.let {
+                                        FirebaseStorageRepository.uploadBkashScreenshot(customerId, it)
+                                    }
+                                    if (screenshotUrl == null) {
+                                        placing = false
+                                        errorMessage = uploadFailedMessage
+                                        return@launch
+                                    }
+                                }
                                 val orderId = FirestoreOrderRepository.placeOrder(
                                     items = items.toList(),
                                     subtotal = CartStore.subtotal,
@@ -76,7 +135,9 @@ fun CheckoutScreen(
                                     platformFee = CartStore.PLATFORM_FEE,
                                     total = CartStore.total,
                                     deliveryAddress = address,
-                                    paymentMethod = selectedPayment.name
+                                    paymentMethod = selectedPayment.name,
+                                    bkashTransactionId = if (selectedPayment == PaymentMethod.BKASH) bkashTransactionId.trim() else null,
+                                    bkashScreenshotUrl = screenshotUrl
                                 )
                                 placing = false
                                 if (orderId != null) {
@@ -150,6 +211,57 @@ fun CheckoutScreen(
                         )
                         if (!method.available) {
                             AssistChip(onClick = {}, enabled = false, label = { Text(stringResource(R.string.checkout_coming_soon_chip)) })
+                        }
+                    }
+                }
+            }
+
+            if (selectedPayment == PaymentMethod.BKASH) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        if (chefBkashNumber.isNotBlank()) {
+                            Text(
+                                stringResource(R.string.checkout_bkash_number_notice, chefBkashNumber),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                        OutlinedTextField(
+                            value = bkashTransactionId,
+                            onValueChange = { bkashTransactionId = it },
+                            label = { Text(stringResource(R.string.checkout_bkash_transaction_id_label)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                pickScreenshotLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                if (bkashScreenshotUri != null) Icons.Filled.CheckCircle else Icons.Filled.Upload,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (bkashScreenshotUri != null) {
+                                    stringResource(R.string.checkout_bkash_screenshot_selected)
+                                } else {
+                                    stringResource(R.string.checkout_bkash_select_screenshot_button)
+                                }
+                            )
                         }
                     }
                 }

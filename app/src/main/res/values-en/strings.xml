@@ -141,6 +141,13 @@
     <string name="payment_method_nagad">Nagad</string>
     <string name="payment_method_card">Card</string>
     <string name="checkout_coming_soon_chip">Coming soon</string>
+    <string name="checkout_bkash_number_notice">Send Money to this bKash number: %1$s</string>
+    <string name="checkout_bkash_transaction_id_label">Transaction ID</string>
+    <string name="checkout_bkash_transaction_id_required">Transaction ID is required</string>
+    <string name="checkout_bkash_select_screenshot_button">Upload Screenshot</string>
+    <string name="checkout_bkash_screenshot_selected">Screenshot selected ✓</string>
+    <string name="checkout_bkash_screenshot_required">Payment screenshot is required</string>
+    <string name="checkout_bkash_upload_failed">Screenshot upload failed, please try again</string>
     <string name="checkout_order_summary_title">Order Summary</string>
 
     <!-- OrderTrackingScreen -->
@@ -199,6 +206,10 @@
     <string name="chef_chat_list_empty">No messages yet</string>
     <string name="chef_chat_list_customer_label">Customer %1$s</string>
 
+    <!-- CustomerChatListScreen -->
+    <string name="customer_chat_list_empty">No chats yet</string>
+    <string name="content_description_chat">Chat</string>
+
     <!-- ChefDashboardScreen -->
     <string name="chef_dashboard_title">Chef Dashboard</string>
     <string name="chef_dashboard_kitchen_name">Rukhsana\'s Kitchen</string>
@@ -217,6 +228,8 @@
     <string name="chef_dashboard_order_number">Order #%1$s</string>
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
+    <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
+    <string name="chef_dashboard_view_screenshot_button">View payment screenshot</string>
 
     <!-- MenuManagerScreen -->
     <string name="menu_manager_title">Menu Manager</string>

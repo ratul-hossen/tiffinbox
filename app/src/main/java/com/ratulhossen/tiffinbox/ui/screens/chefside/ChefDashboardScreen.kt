@@ -1,8 +1,12 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +49,8 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
         FirestoreOrderRepository.updateOrderStatus(orderId, newStatus)
         orders = orders.filterNot { it.id == orderId }
     }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -179,6 +186,26 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    if (order.bkashTransactionId.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            stringResource(R.string.chef_dashboard_bkash_transaction_label, order.bkashTransactionId),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (order.bkashScreenshotUrl.isNotBlank()) {
+                            TextButton(
+                                onClick = {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(order.bkashScreenshotUrl)))
+                                },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(stringResource(R.string.chef_dashboard_view_screenshot_button), style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { respondToOrder(order.id, "Accepted") }) {
