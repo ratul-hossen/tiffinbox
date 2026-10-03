@@ -114,7 +114,7 @@ data class ChefOrderUi(
     val placedAt: Long,
     val paymentMethod: String = "",
     val bkashTransactionId: String = "",
-    val bkashScreenshotUrl: String = ""
+    val bkashScreenshotBase64: String = ""
 )
 
 data class EarningsSummary(

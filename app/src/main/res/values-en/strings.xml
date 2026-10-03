@@ -230,6 +230,7 @@
     <string name="chef_dashboard_reject_button">Reject</string>
     <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
     <string name="chef_dashboard_view_screenshot_button">View payment screenshot</string>
+    <string name="chef_dashboard_screenshot_load_failed">Couldn\'t load screenshot</string>
 
     <!-- MenuManagerScreen -->
     <string name="menu_manager_title">Menu Manager</string>

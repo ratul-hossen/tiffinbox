@@ -23,14 +23,14 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
-import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
-import com.ratulhossen.tiffinbox.data.firebase.FirebaseStorageRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.util.ImageCompressor
 
 private enum class PaymentMethod(val available: Boolean) {
     CASH_ON_DELIVERY(available = true),
@@ -63,6 +63,7 @@ fun CheckoutScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val items = CartStore.items
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val transactionIdRequiredMessage = stringResource(R.string.checkout_bkash_transaction_id_required)
     val screenshotRequiredMessage = stringResource(R.string.checkout_bkash_screenshot_required)
@@ -116,13 +117,12 @@ fun CheckoutScreen(
                             }
                             placing = true
                             scope.launch {
-                                var screenshotUrl: String? = null
+                                var screenshotBase64: String? = null
                                 if (selectedPayment == PaymentMethod.BKASH) {
-                                    val customerId = FirebaseAuthRepository.currentUser?.uid.orEmpty()
-                                    screenshotUrl = bkashScreenshotUri?.let {
-                                        FirebaseStorageRepository.uploadBkashScreenshot(customerId, it)
+                                    screenshotBase64 = bkashScreenshotUri?.let {
+                                        ImageCompressor.compressToBase64(context, it)
                                     }
-                                    if (screenshotUrl == null) {
+                                    if (screenshotBase64 == null) {
                                         placing = false
                                         errorMessage = uploadFailedMessage
                                         return@launch
@@ -137,7 +137,7 @@ fun CheckoutScreen(
                                     deliveryAddress = address,
                                     paymentMethod = selectedPayment.name,
                                     bkashTransactionId = if (selectedPayment == PaymentMethod.BKASH) bkashTransactionId.trim() else null,
-                                    bkashScreenshotUrl = screenshotUrl
+                                    bkashScreenshotBase64 = screenshotBase64
                                 )
                                 placing = false
                                 if (orderId != null) {
