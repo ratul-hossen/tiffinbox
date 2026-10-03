@@ -16,13 +16,21 @@ object FirestoreChefRepository {
     private val db: FirebaseFirestore
         get() = FirebaseFirestore.getInstance()
 
-    suspend fun createChefProfile(uid: String, kitchenName: String, ownerName: String) {
+    suspend fun createChefProfile(
+        uid: String,
+        kitchenName: String,
+        ownerName: String,
+        whatsappNumber: String = "",
+        bkashNumber: String = ""
+    ) {
         try {
             db.collection("chefs").document(uid).set(
                 hashMapOf(
                     "userId" to uid,
                     "kitchenName" to kitchenName,
                     "ownerName" to ownerName,
+                    "whatsappNumber" to whatsappNumber,
+                    "bkashNumber" to bkashNumber,
                     "emoji" to "🍱",
                     "bio" to "",
                     "specialty" to emptyList<String>(),

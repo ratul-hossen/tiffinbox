@@ -33,6 +33,13 @@ object FirebaseAuthRepository {
                 .build()
             user.updateProfile(profileUpdate).await()
 
+            try {
+                user.sendEmailVerification().await()
+            } catch (e: Exception) {
+                // Non-fatal: the account still exists even if the verification
+                // email couldn't be sent right now (e.g. offline).
+            }
+
             AuthResult.Success(user)
         } catch (e: Exception) {
             AuthResult.Failure(friendlyMessage(e))

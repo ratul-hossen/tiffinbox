@@ -28,12 +28,26 @@
     <string name="login_email_password_required">Enter email and password</string>
     <string name="login_kitchen_name_label">Kitchen name</string>
     <string name="login_kitchen_name_required">Give your kitchen a name</string>
+    <string name="login_whatsapp_number_label">WhatsApp number</string>
+    <string name="login_whatsapp_number_required">Enter your WhatsApp number</string>
+    <string name="login_whatsapp_number_invalid">Enter a valid Bangladeshi number (e.g. 01XXXXXXXXX)</string>
+    <string name="login_bkash_number_label">bKash number</string>
+    <string name="login_bkash_number_required">Enter your bKash number (to receive payments)</string>
     <string name="login_button">Login</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
     <string name="login_google_signin_failed">Google sign-in failed, please try again</string>
     <string name="login_google_signin_cancelled">Google sign-in was cancelled</string>
     <string name="login_toggle_to_signup">New here? Sign Up</string>
+
+    <!-- PhoneVerificationScreen -->
+    <string name="phone_verification_title">Verify your phone number</string>
+    <string name="phone_verification_subtitle">An OTP code was sent to %1$s</string>
+    <string name="phone_verification_code_label">6-digit code</string>
+    <string name="phone_verification_code_required">Enter the full 6-digit code</string>
+    <string name="phone_verification_verify_button">Verify</string>
+    <string name="phone_verification_resend_button">Resend code</string>
+    <string name="phone_verification_send_failed">Couldn\'t send the code, please try again</string>
     <string name="login_toggle_to_login">Already have an Account? Login</string>
 
     <!-- OnboardingScreen -->
