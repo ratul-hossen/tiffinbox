@@ -17,9 +17,17 @@ object FirestoreCatalogRepository {
     private val db: FirebaseFirestore
         get() = FirebaseFirestore.getInstance()
 
+    /**
+     * Only approved (isVerified) chefs are customer-visible - an admin must
+     * explicitly verify a chef (admin-web's Chefs page) before their kitchen
+     * shows up anywhere a customer browses, even though the chef's own
+     * dashboard and profile already exist right after signup.
+     */
     suspend fun getChefs(): List<ChefUi> {
         return try {
-            db.collection("chefs").get().await().documents.mapNotNull { it.toChefUi() }
+            db.collection("chefs").get().await().documents
+                .mapNotNull { it.toChefUi() }
+                .filter { it.isVerified }
         } catch (e: Exception) {
             emptyList()
         }
@@ -82,7 +90,10 @@ object FirestoreCatalogRepository {
             totalOrders = (getLong("totalOrders") ?: 0L).toInt(),
             isVerified = getBoolean("isVerified") ?: false,
             isAvailableToday = getBoolean("isAvailableToday") ?: true,
-            bkashNumber = getString("bkashNumber") ?: ""
+            bkashNumber = getString("bkashNumber") ?: "",
+            latitude = getDouble("latitude") ?: 0.0,
+            longitude = getDouble("longitude") ?: 0.0,
+            deliveryMode = getString("deliveryMode") ?: "self"
         )
     }
 

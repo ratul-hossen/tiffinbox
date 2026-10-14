@@ -18,9 +18,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
+import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
+import com.ratulhossen.tiffinbox.util.withRealDistances
 
 private enum class ChefSort {
     RECOMMENDED,
@@ -43,6 +47,7 @@ fun ChefListScreen(
     onChefClick: (String) -> Unit
 ) {
     var chefs by remember { mutableStateOf(SampleData.chefs) }
+    var hasRealDistances by remember { mutableStateOf(false) }
     var sort by remember {
         mutableStateOf(
             when (initialSort) {
@@ -55,13 +60,24 @@ fun ChefListScreen(
 
     LaunchedEffect(Unit) {
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
-        if (firestoreChefs.isNotEmpty()) chefs = firestoreChefs
+        if (firestoreChefs.isEmpty()) return@LaunchedEffect
+        val uid = FirebaseAuthRepository.currentUser?.uid
+        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        if (myLocation != null) {
+            chefs = firestoreChefs.withRealDistances(myLocation)
+            hasRealDistances = true
+        } else {
+            chefs = firestoreChefs
+        }
     }
 
-    val sortedChefs = remember(chefs, sort) {
+    val sortedChefs = remember(chefs, sort, hasRealDistances) {
         when (sort) {
             ChefSort.RECOMMENDED -> RecommendationEngine.recommend(chefs)
-            ChefSort.NEARBY -> chefs.sortedBy { it.distanceKm }
+            ChefSort.NEARBY -> {
+                val sorted = chefs.sortedBy { it.distanceKm }
+                if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
+            }
             ChefSort.RATING -> chefs.sortedByDescending { it.overallRating }
         }
     }

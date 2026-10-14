@@ -42,7 +42,8 @@ object FirestoreChefRepository {
                     "onTime" to 0.0,
                     "totalOrders" to 0,
                     "isVerified" to false,
-                    "isAvailableToday" to true
+                    "isAvailableToday" to true,
+                    "deliveryMode" to "self"
                 ),
                 SetOptions.merge()
             ).await()
@@ -57,6 +58,30 @@ object FirestoreChefRepository {
             db.collection("chefs").document(uid).get().await().exists()
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /** A verified location is mandatory for every chef (required right after signup). */
+    fun updateLocation(uid: String, latitude: Double, longitude: Double) {
+        try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf("latitude" to latitude, "longitude" to longitude),
+                SetOptions.merge()
+            )
+        } catch (e: Exception) {
+            // Firebase not configured yet, or offline — safe to ignore.
+        }
+    }
+
+    /** mode is "self" (chef delivers their own orders) or "tiffinbox" (TiffinBox's own delivery system). */
+    fun updateDeliveryMode(uid: String, mode: String) {
+        try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf("deliveryMode" to mode),
+                SetOptions.merge()
+            )
+        } catch (e: Exception) {
+            // Firebase not configured yet, or offline — safe to ignore.
         }
     }
 }

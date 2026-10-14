@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { signOut } from "firebase/auth";
 import {
+  Bike,
   ChefHat,
   History,
   LayoutDashboard,
@@ -28,6 +29,7 @@ import SubscriptionsPage from "./components/SubscriptionsPage";
 import ActivityLogPage from "./components/ActivityLogPage";
 import AdminsPage from "./components/AdminsPage";
 import ChatsPage from "./components/ChatsPage";
+import DeliveryPartnersPage from "./components/DeliveryPartnersPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -40,7 +42,8 @@ type Tab =
   | "subscriptions"
   | "activity"
   | "admins"
-  | "chats";
+  | "chats"
+  | "deliveryPartners";
 
 const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -57,6 +60,7 @@ const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: str
   },
   { key: "activity", label: "Activity Log", icon: History, searchPlaceholder: "Search activity…" },
   { key: "chats", label: "Chats", icon: MessageCircle, searchPlaceholder: "Search chats…" },
+  { key: "deliveryPartners", label: "Delivery Partners", icon: Bike },
   { key: "admins", label: "Admins", icon: ShieldCheck },
 ];
 
@@ -155,6 +159,7 @@ export default function App() {
           {tab === "subscriptions" && <SubscriptionsPage search={search} />}
           {tab === "activity" && <ActivityLogPage search={search} />}
           {tab === "chats" && <ChatsPage search={search} />}
+          {tab === "deliveryPartners" && <DeliveryPartnersPage />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
         </main>
       </div>

@@ -6,6 +6,8 @@ object Routes {
     const val ROLE_SELECT = "role_select"
     const val LOGIN = "login/{role}"
     const val PHONE_VERIFICATION = "phone_verification/{phoneNumber}/{role}"
+    const val COMPLETE_GOOGLE_PROFILE = "complete_google_profile/{uid}/{role}"
+    const val LOCATION_SETUP = "location_setup/{uid}/{role}"
     const val MAIN = "main"
     const val CHEF_DASHBOARD = "chef_dashboard"
     const val MENU_MANAGER = "menu_manager"
@@ -25,6 +27,8 @@ object Routes {
 
     fun login(role: String) = "login/$role"
     fun phoneVerification(phoneNumber: String, role: String) = "phone_verification/$phoneNumber/$role"
+    fun completeGoogleProfile(uid: String, role: String) = "complete_google_profile/$uid/$role"
+    fun locationSetup(uid: String, role: String) = "location_setup/$uid/$role"
     fun orderTracking(orderId: String) = "order_tracking/$orderId"
     fun review(chefId: String) = "review/$chefId"
     fun chefDetail(chefId: String) = "chef_detail/$chefId"

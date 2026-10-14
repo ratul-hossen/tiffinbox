@@ -36,6 +36,9 @@
     <string name="login_bkash_number_label">bKash নম্বর</string>
     <string name="login_bkash_number_required">bKash নম্বর দিন (পেমেন্ট গ্রহণের জন্য)</string>
     <string name="login_button">Login</string>
+    <string name="complete_google_profile_title">আর একটু বাকি</string>
+    <string name="complete_google_profile_subtitle">চালিয়ে যাওয়ার আগে এই তথ্যগুলো দিন</string>
+    <string name="complete_google_profile_continue_button">চালিয়ে যান</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
     <string name="login_google_signin_failed">Google দিয়ে সাইন-ইন করা যায়নি, আবার চেষ্টা করুন</string>
@@ -51,6 +54,21 @@
     <string name="phone_verification_resend_button">আবার কোড পাঠান</string>
     <string name="phone_verification_send_failed">কোড পাঠানো যায়নি, আবার চেষ্টা করুন</string>
     <string name="login_toggle_to_login">আগে থেকে Account আছে? Login করুন</string>
+
+    <!-- LocationSetupScreen -->
+    <string name="location_setup_title">আপনার লোকেশন দিন</string>
+    <string name="location_setup_subtitle_customer">আপনার কাছাকাছি chef খুঁজে দেখাতে আমাদের আপনার লোকেশন দরকার</string>
+    <string name="location_setup_subtitle_chef">কাস্টমারদের কাছে সঠিকভাবে দেখানোর জন্য আপনার কিচেনের লোকেশন দেওয়া আবশ্যক</string>
+    <string name="location_setup_use_current_button">বর্তমান লোকেশন ব্যবহার করুন</string>
+    <string name="location_setup_or_divider">অথবা</string>
+    <string name="location_setup_address_label">আপনার ঠিকানা লিখুন</string>
+    <string name="location_setup_address_placeholder">যেমন: মিরপুর ১০, ঢাকা</string>
+    <string name="location_setup_confirm_address_button">এই ঠিকানা ব্যবহার করুন</string>
+    <string name="location_setup_detecting">লোকেশন খুঁজছি…</string>
+    <string name="location_setup_permission_denied">লোকেশন পারমিশন দেওয়া হয়নি — নিচে ম্যানুয়ালি ঠিকানা লিখুন</string>
+    <string name="location_setup_gps_failed">লোকেশন খুঁজে পাওয়া যায়নি, ম্যানুয়ালি ঠিকানা দিন</string>
+    <string name="location_setup_address_not_found">এই ঠিকানাটা খুঁজে পাওয়া যায়নি, আবার চেষ্টা করুন</string>
+    <string name="location_setup_address_required">ঠিকানা লিখুন</string>
 
     <!-- OnboardingScreen -->
     <string name="onboarding_skip_button">Skip</string>
@@ -111,6 +129,7 @@
     <string name="chef_card_closed_today">আজ বন্ধ</string>
     <string name="chef_card_rating_orders">%1$s (%2$s)</string>
     <string name="chef_card_distance_km">%1$s km</string>
+    <string name="chef_card_tiffinbox_delivery_badge">🛵 TiffinBox Delivery</string>
 
     <!-- MealDetailScreen -->
     <string name="meal_detail_title">Meal Details</string>
@@ -232,6 +251,11 @@
     <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
     <string name="chef_dashboard_view_screenshot_button">পেমেন্ট স্ক্রিনশট দেখুন</string>
     <string name="chef_dashboard_screenshot_load_failed">স্ক্রিনশট লোড করা যায়নি</string>
+    <string name="chef_dashboard_delivery_mode_title">ডেলিভারি কে করবে?</string>
+    <string name="chef_dashboard_delivery_mode_self">আমি নিজে ডেলিভারি করব</string>
+    <string name="chef_dashboard_delivery_mode_tiffinbox">TiffinBox-এর ডেলিভারি সার্ভিস ব্যবহার করব</string>
+    <string name="chef_dashboard_pending_title">অ্যাকাউন্ট যাচাইয়ের অপেক্ষায়</string>
+    <string name="chef_dashboard_pending_message">অ্যাডমিন আপনার কিচেন প্রোফাইল যাচাই করার পর আপনি মেনু ম্যানেজ করতে এবং অর্ডার নিতে পারবেন। অনুগ্রহ করে অপেক্ষা করুন।</string>
 
     <!-- MenuManagerScreen -->
     <string name="menu_manager_title">Menu Manager</string>

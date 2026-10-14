@@ -185,7 +185,7 @@ export default function ChefsPage({ search }: Props) {
                     onClick={() => toggleField(chef, "isVerified")}
                     disabled={busyId === chef.id}
                   >
-                    {chef.isVerified ? "Verified" : "Not verified"}
+                    {chef.isVerified ? "Approved" : "Pending approval"}
                   </Badge>
                   <Badge
                     tone={chef.isAvailableToday ? "blue" : "neutral"}
@@ -194,7 +194,15 @@ export default function ChefsPage({ search }: Props) {
                   >
                     {chef.isAvailableToday ? "Available today" : "Unavailable"}
                   </Badge>
+                  {chef.deliveryMode === "tiffinbox" && (
+                    <Badge tone="blue">🛵 TiffinBox Delivery</Badge>
+                  )}
                 </div>
+                {!chef.isVerified && (
+                  <p className="text-[11px] text-apple-secondary mt-1.5">
+                    Hidden from customers and can&apos;t receive orders until approved.
+                  </p>
+                )}
 
                 <div className="flex gap-3 mt-3 pt-3 border-t border-black/5 text-xs">
                   <button
