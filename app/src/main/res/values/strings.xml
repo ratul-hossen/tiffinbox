@@ -36,6 +36,9 @@
     <string name="login_bkash_number_label">bKash নম্বর</string>
     <string name="login_bkash_number_required">bKash নম্বর দিন (পেমেন্ট গ্রহণের জন্য)</string>
     <string name="login_button">Login</string>
+    <string name="complete_google_profile_title">আর একটু বাকি</string>
+    <string name="complete_google_profile_subtitle">চালিয়ে যাওয়ার আগে এই তথ্যগুলো দিন</string>
+    <string name="complete_google_profile_continue_button">চালিয়ে যান</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
     <string name="login_google_signin_failed">Google দিয়ে সাইন-ইন করা যায়নি, আবার চেষ্টা করুন</string>

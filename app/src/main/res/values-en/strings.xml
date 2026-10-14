@@ -34,6 +34,9 @@
     <string name="login_bkash_number_label">bKash number</string>
     <string name="login_bkash_number_required">Enter your bKash number (to receive payments)</string>
     <string name="login_button">Login</string>
+    <string name="complete_google_profile_title">Just a bit more</string>
+    <string name="complete_google_profile_subtitle">A few more details before you continue</string>
+    <string name="complete_google_profile_continue_button">Continue</string>
     <string name="signup_button">Sign Up</string>
     <string name="login_continue_with_google_button">Continue with Google</string>
     <string name="login_google_signin_failed">Google sign-in failed, please try again</string>

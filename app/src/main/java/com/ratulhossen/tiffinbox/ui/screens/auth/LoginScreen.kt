@@ -52,7 +52,8 @@ private fun defaultWebClientIdOrNull(context: android.content.Context): String? 
 fun LoginScreen(
     role: String,
     onLoginSuccess: (resolvedRole: String) -> Unit,
-    onNeedsPhoneVerification: (normalizedPhone: String, role: String) -> Unit
+    onNeedsPhoneVerification: (normalizedPhone: String, role: String) -> Unit,
+    onGoogleNeedsProfile: (uid: String, role: String) -> Unit
 ) {
     var isLoginMode by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
@@ -187,7 +188,7 @@ fun LoginScreen(
                     is AuthResult.Success -> {
                         val uid = authResult.user.uid
                         val existingRole = FirestoreUserRepository.getRole(uid)
-                        val resolvedRole = if (existingRole != null) {
+                        if (existingRole != null) {
                             if (existingRole == UserRole.CHEF.name && !FirestoreChefRepository.chefProfileExists(uid)) {
                                 val displayName = googleIdTokenCredential.displayName
                                     ?: authResult.user.displayName.orEmpty()
@@ -197,28 +198,19 @@ fun LoginScreen(
                                     ownerName = displayName
                                 )
                             }
-                            existingRole
+                            FirestoreUserRepository.registerFcmToken(uid)
+                            isLoading = false
+                            onLoginSuccess(existingRole)
                         } else {
-                            val displayName = googleIdTokenCredential.displayName
-                                ?: authResult.user.displayName.orEmpty()
-                            FirestoreUserRepository.upsertProfile(
-                                uid = uid,
-                                name = displayName,
-                                email = authResult.user.email.orEmpty(),
-                                role = role
-                            )
-                            if (isChefRole) {
-                                FirestoreChefRepository.createChefProfile(
-                                    uid = uid,
-                                    kitchenName = if (displayName.isNotBlank()) "$displayName's Kitchen" else "My Kitchen",
-                                    ownerName = displayName
-                                )
-                            }
-                            role
+                            // Brand-new Google sign-up: still needs the same
+                            // WhatsApp/bKash number, phone verification, and
+                            // location setup an email/password signup goes
+                            // through - CompleteGoogleProfileScreen collects
+                            // the former, then reuses the existing
+                            // phone-verification/location-setup flow.
+                            isLoading = false
+                            onGoogleNeedsProfile(uid, role)
                         }
-                        FirestoreUserRepository.registerFcmToken(uid)
-                        isLoading = false
-                        onLoginSuccess(resolvedRole)
                     }
                     is AuthResult.Failure -> {
                         isLoading = false

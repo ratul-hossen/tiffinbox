@@ -13,6 +13,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.ui.screens.auth.CompleteGoogleProfileScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LocationSetupScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.PhoneVerificationScreen
@@ -100,6 +101,27 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 },
                 onNeedsPhoneVerification = { phoneNumber, verifyRole ->
                     navController.navigate(Routes.phoneVerification(phoneNumber, verifyRole))
+                },
+                onGoogleNeedsProfile = { uid, verifyRole ->
+                    navController.navigate(Routes.completeGoogleProfile(uid, verifyRole))
+                }
+            )
+        }
+
+        composable(
+            route = Routes.COMPLETE_GOOGLE_PROFILE,
+            arguments = listOf(
+                navArgument("uid") { type = NavType.StringType },
+                navArgument("role") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val uid = backStackEntry.arguments?.getString("uid").orEmpty()
+            val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
+            CompleteGoogleProfileScreen(
+                uid = uid,
+                role = role,
+                onCompleted = { normalizedPhone ->
+                    navController.navigate(Routes.phoneVerification(normalizedPhone, role))
                 }
             )
         }
