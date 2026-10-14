@@ -34,6 +34,7 @@ import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
 import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
+import com.ratulhossen.tiffinbox.ui.screens.settings.SettingsScreen
 import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
 import com.ratulhossen.tiffinbox.ui.screens.subscription.MySubscriptionsScreen
 import com.ratulhossen.tiffinbox.ui.screens.subscription.SubscribeScreen
@@ -174,6 +175,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onCartClick = { navController.navigate(Routes.CART) },
                 onChatClick = { navController.navigate(Routes.CUSTOMER_CHAT_LIST) },
                 onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
@@ -196,6 +198,10 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.MY_SUBSCRIPTIONS) {
             MySubscriptionsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(

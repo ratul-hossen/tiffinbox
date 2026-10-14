@@ -37,6 +37,7 @@ fun MainScreen(
     onCartClick: () -> Unit,
     onChatClick: () -> Unit,
     onSubscriptionsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onSeeAllChefsClick: (String) -> Unit,
     onLogout: () -> Unit
 ) {
@@ -104,7 +105,7 @@ fun MainScreen(
                 1 -> SearchScreen(onMealClick = onMealClick)
                 2 -> OrdersScreen()
                 3 -> FavoritesScreen(onChefClick = onChefClick)
-                4 -> ProfileScreen(onLogout = onLogout, onSubscriptionsClick = onSubscriptionsClick)
+                4 -> ProfileScreen(onLogout = onLogout, onSubscriptionsClick = onSubscriptionsClick, onSettingsClick = onSettingsClick)
             }
         }
     }

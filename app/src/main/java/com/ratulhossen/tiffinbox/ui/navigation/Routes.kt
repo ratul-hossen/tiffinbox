@@ -24,6 +24,7 @@ object Routes {
     const val MY_SUBSCRIPTIONS = "my_subscriptions"
     const val CHEF_LIST = "chef_list/{sort}"
     const val CHECKOUT = "checkout"
+    const val SETTINGS = "settings"
 
     fun login(role: String) = "login/$role"
     fun phoneVerification(phoneNumber: String, role: String) = "phone_verification/$phoneNumber/$role"

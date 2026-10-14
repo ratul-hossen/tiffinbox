@@ -34,7 +34,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 private data class ProfileMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit = {})
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
+fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit, onSettingsClick: () -> Unit) {
     var seedStatus by remember { mutableStateOf<String?>(null) }
     val fallbackName = stringResource(R.string.profile_demo_user_name)
     val user = FirebaseAuthRepository.currentUser
@@ -48,7 +48,7 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
         ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management)),
         ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method)),
         ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications)),
-        ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings))
+        ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings), onSettingsClick)
     )
     val seedingSendingMessage = stringResource(R.string.profile_seeding_status_sending)
     val seedingSuccessMessage = stringResource(R.string.profile_seeding_status_success)
