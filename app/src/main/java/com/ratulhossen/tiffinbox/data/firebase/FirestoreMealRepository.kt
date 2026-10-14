@@ -23,6 +23,7 @@ object FirestoreMealRepository {
                 "dietaryTags" to meal.dietaryTags,
                 "availableQuantity" to meal.availableQuantity,
                 "portionSize" to meal.portionSize,
+                "photoBase64" to meal.photoBase64,
                 "isAvailable" to true
             )
             FirebaseFirestore.getInstance().collection("meals").add(data)

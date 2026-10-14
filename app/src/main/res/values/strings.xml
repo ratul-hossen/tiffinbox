@@ -119,6 +119,7 @@
     <string name="chef_rating_summary">%1$s  (%2$s orders)  •  %3$s km away</string>
     <string name="chef_detail_view_subscription_button">Weekly / Monthly Subscription দেখুন</string>
     <string name="chef_detail_rating_breakdown_title">Rating Breakdown</string>
+    <string name="chef_detail_videos_title">ভিডিও</string>
     <string name="chef_detail_menu_title">Menu</string>
     <string name="rating_taste_label">🍽️ স্বাদ</string>
     <string name="rating_hygiene_label">🧼 Hygiene</string>
@@ -261,6 +262,13 @@
     <string name="chef_dashboard_delivery_mode_title">ডেলিভারি কে করবে?</string>
     <string name="chef_dashboard_delivery_mode_self">আমি নিজে ডেলিভারি করব</string>
     <string name="chef_dashboard_delivery_mode_tiffinbox">TiffinBox-এর ডেলিভারি সার্ভিস ব্যবহার করব</string>
+    <string name="chef_dashboard_kitchen_photo_title">কিচেনের ছবি</string>
+    <string name="chef_dashboard_kitchen_photo_button">ছবি আপলোড করুন</string>
+    <string name="chef_dashboard_videos_title">ভিডিও পোস্ট করুন</string>
+    <string name="chef_dashboard_video_url_label">ভিডিও লিংক (YouTube/Facebook/Drive)</string>
+    <string name="chef_dashboard_video_caption_label">ক্যাপশন</string>
+    <string name="chef_dashboard_post_video_button">পোস্ট করুন</string>
+    <string name="chef_dashboard_video_untitled">ভিডিও</string>
     <string name="chef_dashboard_pending_title">অ্যাকাউন্ট যাচাইয়ের অপেক্ষায়</string>
     <string name="chef_dashboard_pending_message">অ্যাডমিন আপনার কিচেন প্রোফাইল যাচাই করার পর আপনি মেনু ম্যানেজ করতে এবং অর্ডার নিতে পারবেন। অনুগ্রহ করে অপেক্ষা করুন।</string>
 
@@ -270,6 +278,8 @@
     <string name="menu_manager_item_price_quantity">৳%1$d  •  %2$d plates</string>
     <string name="menu_manager_add_meal_name_label">মিলের নাম</string>
     <string name="menu_manager_add_meal_price_label">দাম (৳)</string>
+    <string name="menu_manager_select_photo_button">ছবি যোগ করুন</string>
+    <string name="menu_manager_photo_selected">ছবি নির্বাচিত হয়েছে ✓</string>
     <string name="menu_manager_add_button">যোগ করুন</string>
     <string name="menu_manager_cancel_button">বাতিল</string>
 

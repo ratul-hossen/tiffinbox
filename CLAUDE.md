@@ -199,21 +199,28 @@ literally.
    screen already reads `MaterialTheme.colorScheme.*` rather than hardcoded
    colors, so they automatically follow whichever palette is selected —
    no per-screen changes were needed for this step.
-2. **[ ] Kitchen/food photo uploads** — add an optional `kitchenPhotoBase64`
-   field on `chefs/{uid}` and `photoBase64` on `meals/{mealId}`, a photo
-   picker (reuse the `ActivityResultContracts.PickVisualMedia` +
-   `ImageCompressor` pattern already used for bKash screenshots) in the
-   chef signup flow / kitchen info step and in `MenuManagerScreen`'s
-   add/edit food form. Render these instead of the emoji wherever a chef
-   card/detail/meal card currently shows `chef.emoji`/`meal.emoji`, with
-   the emoji as a graceful fallback when no photo is set (don't break
-   existing data).
-3. **[ ] Chef video posts** — a `videos` sub-collection or array field on
-   the chef doc, each entry `{url, caption, postedAt}`; a simple "Add
-   Video" form (paste a link + caption) in the chef dashboard/profile, and
-   a video list/grid on the public chef detail screen that opens the link
-   externally (`Intent.ACTION_VIEW`) or embeds a basic WebView — whichever
-   is simpler to get right; don't over-build a custom video player.
+2. **[x] Kitchen/food photo uploads — DONE.** `ChefUi.photoBase64` and
+   `MealUi.photoBase64` (`data/model/UiModels.kt`), read/written via
+   `FirestoreCatalogRepository`/`FirestoreChefRepository.updatePhoto()`/
+   `FirestoreMealRepository.addMeal()`. A reusable `Base64Thumbnail`
+   composable (`ui/components/Base64Thumbnail.kt`) decodes the base64 and
+   falls back to the emoji when blank — used in `ChefCard`,
+   `ChefDetailScreen`, `MealCard`, and the `MenuManagerScreen` meal list.
+   Photo pickers (`ActivityResultContracts.PickVisualMedia` +
+   `ImageCompressor.compressToBase64`) are wired into
+   `MenuManagerScreen`'s add-meal dialog (food photo) and
+   `ChefDashboardScreen` (kitchen photo, its own Card above the
+   availability toggle). Not yet done: a kitchen-photo step inside the
+   chef *signup* flow itself — that's folded into step 4
+   (onboarding restructuring) below, not a gap in this step.
+3. **[x] Chef video posts — DONE.** `ChefUi.videos: List<ChefVideoUi>`
+   (`{url, caption, postedAt}`), appended via
+   `FirestoreChefRepository.addVideo()` (`FieldValue.arrayUnion`, no
+   sub-collection needed). `ChefDashboardScreen` has a "Post a video" card
+   (URL + caption fields, Post button, list of the chef's own posted
+   videos). `ChefDetailScreen` shows a public "Videos" section — tapping
+   an entry opens the link externally via `Intent.ACTION_VIEW` (no
+   embedded WebView; simplest option, per the plan).
 4. **[ ] Onboarding/signup visual restructuring** — convert the existing
    single-screen chef signup form (`LoginScreen.kt` signup mode) into a
    multi-step stepper (Personal Info → Kitchen Info incl. type/experience/

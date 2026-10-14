@@ -24,7 +24,17 @@ data class ChefUi(
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     /** "self" = the chef delivers their own orders; "tiffinbox" = TiffinBox's own delivery system handles it. */
-    val deliveryMode: String = "self"
+    val deliveryMode: String = "self",
+    /** Compressed kitchen photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
+    val photoBase64: String = "",
+    /** Each entry: {url, caption, postedAt} - an external link (YouTube/Facebook/Drive), not an uploaded file. */
+    val videos: List<ChefVideoUi> = emptyList()
+)
+
+data class ChefVideoUi(
+    val url: String,
+    val caption: String,
+    val postedAt: Long
 )
 
 data class MealUi(
@@ -39,7 +49,9 @@ data class MealUi(
     val allergens: List<String>,
     val dietaryTags: List<String>,
     val availableQuantity: Int,
-    val portionSize: String
+    val portionSize: String,
+    /** Compressed food photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
+    val photoBase64: String = ""
 )
 
 data class CartItemUi(
