@@ -13,6 +13,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.ui.screens.auth.LocationSetupScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.PhoneVerificationScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
@@ -115,8 +116,31 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             PhoneVerificationScreen(
                 phoneNumber = phoneNumber,
                 onVerified = {
+                    val uid = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+                    navController.navigate(Routes.locationSetup(uid, role)) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.LOCATION_SETUP,
+            arguments = listOf(
+                navArgument("uid") { type = NavType.StringType },
+                navArgument("role") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val uid = backStackEntry.arguments?.getString("uid").orEmpty()
+            val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
+            LocationSetupScreen(
+                uid = uid,
+                role = role,
+                onLocationSaved = {
                     val destination = if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
-                    navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
+                    navController.navigate(destination) {
+                        popUpTo(Routes.LOCATION_SETUP) { inclusive = true }
+                    }
                 }
             )
         }

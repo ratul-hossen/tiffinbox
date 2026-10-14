@@ -83,6 +83,12 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
+    // Plain Play Services location (FusedLocationProviderClient) + Android's
+    // own on-device Geocoder for the free, no-map "nearby chefs" feature -
+    // distinct from Google Maps Platform, so it needs no Google Cloud
+    // billing account.
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     // Real "Continue with Google" sign-in (Credential Manager is the
     // Google-recommended replacement for the older GoogleSignInClient API).
     implementation("androidx.credentials:credentials:1.3.0")

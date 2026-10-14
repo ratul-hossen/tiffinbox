@@ -19,6 +19,9 @@ export interface Chef {
   totalOrders?: number;
   isVerified?: boolean;
   isAvailableToday?: boolean;
+  latitude?: number;
+  longitude?: number;
+  deliveryMode?: "self" | "tiffinbox" | string;
 }
 
 export interface Meal {
@@ -82,6 +85,8 @@ export interface Order {
   paymentMethod?: string;
   bkashTransactionId?: string;
   bkashScreenshotBase64?: string;
+  deliveryHandledBy?: "self" | "tiffinbox" | string;
+  deliveryPartnerId?: string;
   status?: OrderStatus | string;
   placedAt?: number; // epoch millis
 }
@@ -146,6 +151,19 @@ export interface ChatMessage {
   sentAt?: number;
   isAdmin?: boolean;
   adminEmail?: string | null;
+}
+
+// delivery_partners/{uid} - the uid belongs to a Firebase Auth account
+// created ONLY by an admin (DeliveryPartnersPage), via a secondary app
+// instance (see firebase.ts) - there is no self-signup for delivery
+// partners, by design.
+export interface DeliveryPartner {
+  id: string; // Firebase Auth uid
+  name?: string;
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+  createdAt?: number | FirestoreTimestampLike | null;
 }
 
 export interface Subscription {

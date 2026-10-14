@@ -32,6 +32,7 @@ object FirestoreOrderRepository {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
             val chefId = items.firstOrNull()?.meal?.chefId ?: return null
+            val deliveryHandledBy = FirestoreCatalogRepository.getChef(chefId)?.deliveryMode ?: "self"
 
             val orderData = hashMapOf(
                 "customerId" to customerId,
@@ -52,6 +53,11 @@ object FirestoreOrderRepository {
                 "paymentMethod" to paymentMethod,
                 "bkashTransactionId" to bkashTransactionId.orEmpty(),
                 "bkashScreenshotBase64" to bkashScreenshotBase64.orEmpty(),
+                // "self" = the chef delivers it; "tiffinbox" = needs a delivery
+                // partner assigned (deliveryPartnerId is set later, once the
+                // separate delivery-partner app exists to do that assignment).
+                "deliveryHandledBy" to deliveryHandledBy,
+                "deliveryPartnerId" to "",
                 "status" to "Placed",
                 "placedAt" to System.currentTimeMillis()
             )

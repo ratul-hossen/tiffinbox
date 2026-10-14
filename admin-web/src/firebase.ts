@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -17,3 +17,15 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// A second, independent Firebase App instance used ONLY to create
+// delivery-partner Auth accounts from the admin panel. Firebase's client SDK
+// signs the calling app instance in as whatever user createUserWithEmailAndPassword
+// just created, which would otherwise kick the admin out of their own
+// session - running that one call against this separate instance avoids
+// that entirely, with no backend/Cloud Functions (and so no Blaze plan)
+// required.
+const secondaryApp = getApps().some((a) => a.name === "DeliveryPartnerCreation")
+  ? getApp("DeliveryPartnerCreation")
+  : initializeApp(firebaseConfig, "DeliveryPartnerCreation");
+export const secondaryAuth = getAuth(secondaryApp);

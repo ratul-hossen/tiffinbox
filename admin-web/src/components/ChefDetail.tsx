@@ -35,7 +35,7 @@ export default function ChefDetail({ chef, meals, orders, reviews, onClose }: Pr
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Badge tone={chef.isVerified ? "green" : "neutral"}>
-              {chef.isVerified ? "Verified" : "Not verified"}
+              {chef.isVerified ? "Approved" : "Pending approval"}
             </Badge>
             <Badge tone={chef.isAvailableToday ? "blue" : "neutral"}>
               {chef.isAvailableToday ? "Available today" : "Unavailable"}

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
@@ -38,13 +39,20 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
     var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
     var kitchenName by remember { mutableStateOf<String?>(null) }
+    var isApproved by remember { mutableStateOf<Boolean?>(null) }
+    var deliveryMode by remember { mutableStateOf("self") }
 
     LaunchedEffect(chefId) {
-        val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
-        forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
-        orders = FirestoreOrderRepository.getIncomingOrders(chefId)
-        earnings = FirestoreOrderRepository.getEarningsSummary(chefId)
-        kitchenName = FirestoreCatalogRepository.getChef(chefId)?.kitchenName
+        val chef = FirestoreCatalogRepository.getChef(chefId)
+        kitchenName = chef?.kitchenName
+        deliveryMode = chef?.deliveryMode ?: "self"
+        isApproved = chef?.isVerified ?: false
+        if (isApproved == true) {
+            val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
+            forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
+            orders = FirestoreOrderRepository.getIncomingOrders(chefId)
+            earnings = FirestoreOrderRepository.getEarningsSummary(chefId)
+        }
     }
 
     fun respondToOrder(orderId: String, newStatus: String) {
@@ -53,6 +61,38 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
     }
 
     var viewingScreenshotBase64 by remember { mutableStateOf<String?>(null) }
+
+    if (isApproved == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (isApproved == false) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                stringResource(R.string.chef_dashboard_pending_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.chef_dashboard_pending_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            TextButton(onClick = onLogout) { Text(stringResource(R.string.action_logout)) }
+        }
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -90,6 +130,43 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
             ) {
                 Text(stringResource(R.string.chef_dashboard_available_toggle), style = MaterialTheme.typography.titleMedium)
                 Switch(checked = available, onCheckedChange = { available = it })
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(stringResource(R.string.chef_dashboard_delivery_mode_title), style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = deliveryMode == "self",
+                        onClick = {
+                            deliveryMode = "self"
+                            FirestoreChefRepository.updateDeliveryMode(chefId, "self")
+                        }
+                    )
+                    Text(
+                        stringResource(R.string.chef_dashboard_delivery_mode_self),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = deliveryMode == "tiffinbox",
+                        onClick = {
+                            deliveryMode = "tiffinbox"
+                            FirestoreChefRepository.updateDeliveryMode(chefId, "tiffinbox")
+                        }
+                    )
+                    Text(
+                        stringResource(R.string.chef_dashboard_delivery_mode_tiffinbox),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
 

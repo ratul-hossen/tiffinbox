@@ -28,9 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
+import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
+import com.ratulhossen.tiffinbox.util.withRealDistances
 
 @Composable
 fun HomeScreen(
@@ -41,14 +45,29 @@ fun HomeScreen(
 ) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf(SampleData.chefs) }
+    // Only true once we've replaced the static/demo distanceKm with a real
+    // haversine distance from the customer's own saved location - until
+    // then the 2-3km "nearby" radius filter below would be meaningless.
+    var hasRealDistances by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
-        if (firestoreChefs.isNotEmpty()) chefs = firestoreChefs
+        if (firestoreChefs.isEmpty()) return@LaunchedEffect
+        val uid = FirebaseAuthRepository.currentUser?.uid
+        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        if (myLocation != null) {
+            chefs = firestoreChefs.withRealDistances(myLocation)
+            hasRealDistances = true
+        } else {
+            chefs = firestoreChefs
+        }
     }
 
     val recommendedChefs = remember(chefs) { RecommendationEngine.recommend(chefs) }
-    val nearbyChefs = remember(chefs) { chefs.sortedBy { it.distanceKm } }
+    val nearbyChefs = remember(chefs, hasRealDistances) {
+        val sorted = chefs.sortedBy { it.distanceKm }
+        if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
+    }
 
     Column(
         modifier = Modifier

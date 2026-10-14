@@ -20,7 +20,11 @@ data class ChefUi(
     val totalOrders: Int,
     val isVerified: Boolean,
     val isAvailableToday: Boolean,
-    val bkashNumber: String = ""
+    val bkashNumber: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    /** "self" = the chef delivers their own orders; "tiffinbox" = TiffinBox's own delivery system handles it. */
+    val deliveryMode: String = "self"
 )
 
 data class MealUi(

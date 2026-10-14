@@ -12,6 +12,11 @@ rules_version = '2';
 // an admins/{adminId} collection, a subscriptions/{subscriptionId}
 // collection, and broadened admin read/write on chefs, meals, orders,
 // reviews, users and subscriptions, below.
+//
+// Delivery-system groundwork: a delivery_partners/{partnerId} collection
+// (admin-provisioned accounts only, no self-signup), and orders/{orderId}
+// read/update access for the delivery partner assigned to that order
+// (deliveryPartnerId) — for the separate delivery-partner app, not yet built.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -96,15 +101,29 @@ service cloud.firestore {
         get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid);
     }
 
-    // orders/{orderId} — visible only to the customer who placed it or the
-    // chef who is fulfilling it. Admins (admin-web) can read/update any
-    // order (the main lever is changing `status`).
+    // orders/{orderId} — visible only to the customer who placed it, the
+    // chef who is fulfilling it, or (once deliveryPartnerId is set on it)
+    // the delivery partner assigned to it. Admins (admin-web) can
+    // read/update any order (the main lever is changing `status`).
     match /orders/{orderId} {
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
       allow read, update: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
-        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid ||
+        resource.data.get("deliveryPartnerId", "") == request.auth.uid
       ));
+    }
+
+    // delivery_partners/{partnerId} — doc id = a Firebase Auth uid created
+    // ONLY by an admin (admin-web's Delivery Partners page) — there is no
+    // self-signup path for this collection, unlike chefs/users. A partner
+    // may read (and will, once the delivery-partner app exists, update) only
+    // their own doc; only admins can create/delete entries or edit anyone
+    // else's.
+    match /delivery_partners/{partnerId} {
+      allow read: if isAdmin() || isOwner(partnerId);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || isOwner(partnerId);
     }
 
     // reviews/{reviewId} — public read, only the verified buyer can create.

@@ -156,6 +156,20 @@ fun ChefCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (chef.deliveryMode == "tiffinbox") {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.tertiaryContainer
+                    ) {
+                        Text(
+                            stringResource(R.string.chef_card_tiffinbox_delivery_badge),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
         }
     }
