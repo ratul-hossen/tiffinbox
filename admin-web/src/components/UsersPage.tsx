@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { useCollection } from "../hooks/useCollection";
 import type { AppUser, Order } from "../types";
 import { formatDate } from "../lib/format";
+import { logActivity } from "../lib/activityLog";
+import { softDelete } from "../lib/recycleBin";
 import UserDetail from "./UserDetail";
 
 interface Props {
@@ -12,6 +15,22 @@ export default function UsersPage({ search }: Props) {
   const { data: users, loading, error } = useCollection<AppUser>("users");
   const { data: orders } = useCollection<Order>("orders");
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function handleRemove(user: AppUser) {
+    if (
+      !confirm(`Remove ${user.name ?? user.email ?? user.id}? It'll move to the Recycle Bin, not disappear forever.`)
+    ) {
+      return;
+    }
+    setBusyId(user.id);
+    try {
+      await softDelete("users", user.id, user, user.name ?? user.email ?? user.id);
+      await logActivity("Removed user (moved to recycle bin)", "users", user.id, { email: user.email ?? null });
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -64,12 +83,21 @@ export default function UsersPage({ search }: Props) {
                 <td className="px-4 py-3 text-apple-secondary">{formatDate(u.createdAt)}</td>
                 <td className="px-4 py-3 text-apple-secondary/70 text-xs">{u.id.slice(0, 10)}…</td>
                 <td className="px-4 py-3">
-                  <button
-                    onClick={() => setDetailUserId(u.id)}
-                    className="text-xs text-apple-blue hover:text-apple-blue-dark font-medium transition-colors duration-150"
-                  >
-                    View details
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setDetailUserId(u.id)}
+                      className="text-xs text-apple-blue hover:text-apple-blue-dark font-medium transition-colors duration-150"
+                    >
+                      View details
+                    </button>
+                    <button
+                      onClick={() => handleRemove(u)}
+                      disabled={busyId === u.id}
+                      className="inline-flex items-center gap-1 text-apple-red hover:underline disabled:opacity-50 text-xs font-medium"
+                    >
+                      <Trash2 size={13} /> Remove
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -19,11 +19,13 @@ rules_version = '2';
 // (deliveryPartnerId) — for the separate delivery-partner app, not yet built.
 //
 // Recycle Bin: an admin-only recycle_bin/{entryId} collection (see below)
-// that every admin-web "Delete" button now writes a snapshot to before the
-// real delete, so deletions are restorable. chefs/{chefId} and
-// reviews/{reviewId} `create` now also accept isAdmin() (in addition to
-// their normal owner check) so the Recycle Bin can restore those doc types
-// back to their original id on behalf of someone else.
+// that every admin-web "Delete" button (and "Cancel" on an order) now
+// writes a snapshot to before the real delete, so deletions are restorable.
+// chefs/{chefId}, reviews/{reviewId} and orders/{orderId} `create` now also
+// accept isAdmin() (in addition to their normal owner check) so the Recycle
+// Bin can restore those doc types back to their original id on behalf of
+// someone else. users/{userId} already accepted isAdmin() on create, so no
+// change was needed there for user removal to be restorable too.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -115,8 +117,12 @@ service cloud.firestore {
     // chef who is fulfilling it, or (once deliveryPartnerId is set on it)
     // the delivery partner assigned to it. Admins (admin-web) can
     // read/update any order (the main lever is changing `status`).
+    // isAdmin() is also allowed on create so the Recycle Bin can restore a
+    // cancelled-then-removed order back to its original id (admin-web now
+    // moves a cancelled order to the Recycle Bin instead of just flipping
+    // its status - see OrdersPage.tsx's changeStatus()).
     match /orders/{orderId} {
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow create: if (isSignedIn() && request.resource.data.customerId == request.auth.uid) || isAdmin();
       allow read, update: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
         get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid ||

@@ -18,6 +18,8 @@ const COLLECTION_LABEL: Record<string, string> = {
   reviews: "Review",
   delivery_partners: "Delivery Partner",
   admins: "Admin",
+  users: "User",
+  orders: "Order (Cancelled)",
 };
 
 export default function RecycleBinPage({ search, isSuperAdmin }: Props) {

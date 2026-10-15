@@ -505,6 +505,26 @@ light mood rakho").
   commit — real Firestore reads still require real admin sign-in, which
   this sandbox doesn't have credentials for).
 
+## Build fix: KitchenTypeDropdown.kt `ExposedDropdownMenu` unresolved (2026-10)
+
+Owner hit a local Android Studio build failure: `:app:compileDebugKotlin`
+failed with `Unresolved reference 'ExposedDropdownMenu'` in
+`ui/components/KitchenTypeDropdown.kt`, plus cascading "errors" reported
+in a couple of unrelated files (`HireDeliveryManScreen.kt`,
+`StaticInfoScreen.kt`) that don't actually reference
+`ExposedDropdownMenu` at all — those were downstream noise from the one
+real failure, not separate bugs; they should clear once the one below is
+fixed.
+
+Root cause: this project's `compose-bom` (`2026.08.00`,
+`app/build.gradle.kts`) pulls in a Material3 version where the
+`ExposedDropdownMenuBoxScope.ExposedDropdownMenu` composable has been
+removed/deprecated in favor of using the plain `DropdownMenu` composable
+together with the new `Modifier.exposedDropdownSize()` (which replicates
+the old anchor-width-matching behavior). Fixed by swapping the import and
+the composable call in `KitchenTypeDropdown.kt` - the dropdown's actual
+behavior (anchor-width menu, same options) is unchanged.
+
 ## admin-web Recycle Bin (soft delete, 2026-10)
 
 Owner's ask: a Recycle Bin section in admin-web — deleting something
@@ -547,11 +567,27 @@ either restores it or permanently deletes it.
   live rules). **The owner must re-paste the full `firestore.rules`
   content into Firebase Console → Firestore Database → Rules → Publish
   again for Restore to work live** — this file is never auto-synced.
-- **Scope note**: `orders` and `subscriptions` pages don't have a delete
-  button at all today (orders/subscriptions are only ever status-changed,
-  never deleted), so there was nothing to convert there. `users` has no
-  delete button either. If a delete is ever added to those later, route
-  it through `softDelete()` the same way for consistency.
+- **Follow-up (owner): "Jakono user k remova kore dwa, jakono order
+  cancel kore dwa eigula rakho"** — extended coverage to the two cases
+  called out explicitly by name:
+  - **`UsersPage.tsx`** now has a "Remove" button (there wasn't one
+    before) that soft-deletes a user the same way as every other page.
+  - **`OrdersPage.tsx`**'s status dropdown: picking **Cancelled**
+    specifically now soft-deletes the order (snapshot to `recycle_bin`,
+    then remove from `orders`) instead of just updating its `status`
+    field in place — a cancelled order disappears from the active Orders
+    list and shows up in the Recycle Bin, restorable like anything else.
+    Every other status change is still a plain `updateDoc` (only
+    Cancelled is treated as a removal).
+  - `firestore.rules`: `orders/{orderId}` `create` now also accepts
+    `isAdmin()` (same reasoning as chefs/reviews above — restoring is a
+    fresh `create` under the admin's own uid, not the original
+    customer's). `users/{userId}` already allowed `isAdmin()` on create,
+    so no rule change was needed for user-restore.
+  - `subscriptions` still has no delete/cancel-to-bin action — the owner
+    didn't ask for that one and admin-web's Subscriptions page has no
+    delete button to begin with. Route it through `softDelete()` the
+    same way if that's ever added.
 
 ## File map for things mentioned above
 

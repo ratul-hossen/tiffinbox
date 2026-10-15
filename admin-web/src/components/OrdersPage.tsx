@@ -6,6 +6,7 @@ import { useCollection } from "../hooks/useCollection";
 import type { Chef, Order } from "../types";
 import { ORDER_STATUSES } from "../types";
 import { logActivity } from "../lib/activityLog";
+import { softDelete } from "../lib/recycleBin";
 import { formatCurrency, formatDateTime } from "../lib/format";
 import { STATUS_BADGE_TONE } from "../lib/orderStatus";
 import Badge from "./ui/Badge";
@@ -66,11 +67,20 @@ export default function OrdersPage({ search }: Props) {
     [filtered],
   );
 
-  async function changeStatus(orderId: string, status: string) {
-    setBusyId(orderId);
+  // Cancelling an order moves it to the Recycle Bin (same as every other
+  // "remove" action in admin-web) rather than just flipping its status -
+  // it disappears from this list immediately, and can be restored or
+  // permanently deleted from the Recycle Bin page later.
+  async function changeStatus(order: Order, status: string) {
+    setBusyId(order.id);
     try {
-      await updateDoc(doc(db, "orders", orderId), { status });
-      await logActivity("Changed order status", "orders", orderId, { status });
+      if (status === "Cancelled") {
+        await softDelete("orders", order.id, { ...order, status }, `Order ${order.id.slice(0, 8)}…`);
+        await logActivity("Cancelled order (moved to recycle bin)", "orders", order.id);
+      } else {
+        await updateDoc(doc(db, "orders", order.id), { status });
+        await logActivity("Changed order status", "orders", order.id, { status });
+      }
     } finally {
       setBusyId(null);
     }
@@ -166,7 +176,7 @@ export default function OrdersPage({ search }: Props) {
                   <select
                     value={order.status ?? "Placed"}
                     disabled={busyId === order.id}
-                    onChange={(e) => changeStatus(order.id, e.target.value)}
+                    onChange={(e) => changeStatus(order, e.target.value)}
                     className="text-xs border border-apple-border2 rounded-lg px-2 py-1 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   >
                     {ORDER_STATUSES.map((s) => (
