@@ -31,20 +31,18 @@ export default function UsersPage({ search }: Props) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-apple-text tracking-tight">
-        Customers / Users ({filtered.length})
-      </h2>
+      <p className="text-sm text-apple-secondary">{filtered.length} users</p>
 
       <p className="text-xs text-apple-secondary">
-        The <code className="bg-black/5 rounded px-1">users</code> collection only started being
+        The <code className="bg-apple-hover rounded px-1">users</code> collection only started being
         populated via the new signup flow, so older accounts may not show up here — that's
         expected, not a bug.
       </p>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+            <tr className="text-left text-xs text-apple-secondary border-b border-apple-border">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Role</th>
@@ -55,11 +53,11 @@ export default function UsersPage({ search }: Props) {
           </thead>
           <tbody>
             {filtered.map((u) => (
-              <tr key={u.id} className="border-b border-black/5 last:border-0">
+              <tr key={u.id} className="border-b border-apple-border last:border-0">
                 <td className="px-4 py-3">{u.name ?? "–"}</td>
                 <td className="px-4 py-3 text-apple-secondary">{u.email ?? "–"}</td>
                 <td className="px-4 py-3">
-                  <span className="text-xs bg-black/5 rounded-full px-2 py-0.5">
+                  <span className="text-xs bg-apple-hover rounded-full px-2 py-0.5">
                     {u.role ?? "unknown"}
                   </span>
                 </td>

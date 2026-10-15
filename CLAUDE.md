@@ -452,6 +452,59 @@ admin panel a one-click way to wipe all of it later.
   `ChefDetailScreen.kt`, so real customers are never misled into thinking
   a demo chef is a real one.
 
+## admin-web redesign: dark/light "portfolio admin" theme (2026-10)
+
+Owner's ask: restyle the whole admin-web panel to match the Apple-style
+theme on their own portfolio site (`ratul.world/admin`, screenshots shared
+in chat — dark-by-default, grouped sidebar, big page-title headers, stat
+tiles with no icons), make it "user friendly" and fully manageable, and
+keep both a dark and a light mode (explicit follow-up: "Dark mood and
+light mood rakho").
+
+- **Theming mechanism** — `admin-web/src/index.css` defines every
+  `apple-*` color as a CSS variable under `:root` (dark, the default) and
+  `:root[data-theme="light"]` (the original light palette, preserved
+  byte-for-byte so nothing regressed for anyone who prefers it).
+  `tailwind.config.js` maps `apple.bg`/`apple.surface`/`apple.text`/
+  `apple.secondary`/`apple.blue`/`apple.green`/`apple.amber`/`apple.red`
+  through Tailwind's `rgb(var(--x) / <alpha-value>)` pattern (so
+  `bg-apple-blue/10`-style opacity modifiers keep working), plus flat
+  (non-alpha-modifiable) tokens `apple-border`/`apple-border2`/
+  `apple-hover`/`apple-hover2`/`apple-subtle`/`apple-surface2` that
+  replace every hardcoded `border-black/5`, `bg-black/10`, `bg-white/70`,
+  etc. that used to only make sense in light mode. **No component branches
+  on theme** — they just use the same token class names in both modes.
+  `admin-web/src/hooks/useTheme.ts` toggles `data-theme` on `<html>` and
+  persists the choice to `localStorage` (`tiffinbox-admin-theme`); the
+  toggle (sun/moon icon) lives in the sidebar header, next to "TiffinBox /
+  Admin panel".
+- **Sidebar/shell** (`admin-web/src/App.tsx`) — rebuilt to match the
+  portfolio's grouped nav: small uppercase section labels (Overview /
+  Catalog / Operations / People / System) above clusters of nav items,
+  active item gets a blue pill highlight, bottom-of-sidebar status pill
+  ("Writes go live instantly" — this admin's equivalent of the
+  portfolio's "Saves go live instantly", since writes here also go
+  straight to Firestore with no publish step), a "View repo ↗" link (the
+  real GitHub repo — there's no public "site" to link to for an admin
+  panel of a mobile app, so this is the honest equivalent), then
+  email + Sign out. The page title moved from a slim sticky top bar into
+  a large bold `<h1>` + description line at the top of `<main>` itself
+  (matching the portfolio's prominent page-intro block); the Dashboard
+  tab specifically shows a personalized "Hello, {name}." greeting instead
+  of a plain "Dashboard" title. Each page's own now-redundant "X (count)"
+  `<h2>` was downgraded to a small `{count} items` caption under the
+  shared title, so there's no duplicate heading.
+- **`StatCard.tsx`** — simplified to label/huge-number/caption with no
+  icon, matching the portfolio's stat-tile style exactly.
+- **No Firestore/`firestore.rules` changes needed** — this was a pure
+  CSS/presentation change; no new fields, collections, or write paths
+  were introduced (the `isDemo` field from the prior session's demo-chef
+  work was already covered by the existing `chefs`/`meals` rules).
+- Verified visually with Playwright screenshots (dark + light, several
+  pages) against a temporarily-mocked `useAdminAuth` (reverted before
+  commit — real Firestore reads still require real admin sign-in, which
+  this sandbox doesn't have credentials for).
+
 ## File map for things mentioned above
 
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/theme/Color.kt`,

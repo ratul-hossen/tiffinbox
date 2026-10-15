@@ -82,7 +82,7 @@ export default function AdminsPage({ isSuperAdmin }: Props) {
   return (
     <div className="space-y-6">
       {isSuperAdmin && (
-        <div className="bg-apple-surface rounded-2xl shadow-card border border-black/5 p-5">
+        <div className="bg-apple-surface rounded-2xl shadow-card border border-apple-border p-5">
           <h2 className="text-sm font-semibold text-apple-text mb-3 flex items-center gap-2">
             <UserPlus size={16} /> Add an admin
           </h2>
@@ -93,7 +93,7 @@ export default function AdminsPage({ isSuperAdmin }: Props) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="person@example.com"
-              className="flex-1 rounded-xl border border-black/10 px-3.5 py-2.5 text-sm text-apple-text placeholder:text-apple-secondary/70 focus:outline-none focus:ring-2 focus:ring-apple-blue/40"
+              className="flex-1 rounded-xl border border-apple-border2 bg-apple-surface2 px-3.5 py-2.5 text-sm text-apple-text placeholder:text-apple-secondary/70 focus:outline-none focus:ring-2 focus:ring-apple-blue/40"
             />
             <button
               type="submit"
@@ -114,9 +114,9 @@ export default function AdminsPage({ isSuperAdmin }: Props) {
         </div>
       )}
 
-      <div className="bg-apple-surface rounded-2xl shadow-card border border-black/5 overflow-hidden">
+      <div className="bg-apple-surface rounded-2xl shadow-card border border-apple-border overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-black/[0.02] text-apple-secondary text-xs uppercase tracking-wide">
+          <thead className="bg-apple-subtle text-apple-secondary text-xs uppercase tracking-wide">
             <tr>
               <th className="text-left px-5 py-3 font-medium">Email</th>
               <th className="text-left px-5 py-3 font-medium">Role</th>
@@ -124,7 +124,7 @@ export default function AdminsPage({ isSuperAdmin }: Props) {
               {isSuperAdmin && <th className="text-right px-5 py-3 font-medium">Actions</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/5">
+          <tbody className="divide-y divide-apple-border">
             {admins.map((admin) => {
               const isSuper = admin.role === "super_admin";
               return (
@@ -137,7 +137,7 @@ export default function AdminsPage({ isSuperAdmin }: Props) {
                       className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
                         isSuper
                           ? "bg-apple-amber/15 text-apple-amber"
-                          : "bg-black/5 text-apple-secondary"
+                          : "bg-apple-hover text-apple-secondary"
                       }`}
                     >
                       {isSuper ? <ShieldCheck size={13} /> : <Shield size={13} />}

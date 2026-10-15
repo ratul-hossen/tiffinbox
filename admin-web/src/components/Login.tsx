@@ -59,7 +59,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-apple-bg px-4">
-      <div className="w-full max-w-sm bg-apple-surface rounded-2xl shadow-card border border-black/5 p-8">
+      <div className="w-full max-w-sm bg-apple-surface rounded-2xl shadow-card border border-apple-border p-8">
         <div className="mb-6 text-center">
           <div className="text-3xl mb-2">🍱</div>
           <h1 className="text-xl font-bold text-apple-text tracking-tight">TiffinBox Admin</h1>
@@ -70,16 +70,16 @@ export default function Login() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={googleSubmitting}
-          className="w-full flex items-center justify-center gap-2 bg-white hover:bg-black/[0.02] disabled:opacity-60 border border-black/10 text-apple-text rounded-xl py-2.5 text-sm font-medium transition-colors duration-150 shadow-card"
+          className="w-full flex items-center justify-center gap-2 bg-white hover:bg-apple-subtle disabled:opacity-60 border border-apple-border2 text-apple-text rounded-xl py-2.5 text-sm font-medium transition-colors duration-150 shadow-card"
         >
           <GoogleLogo />
           {googleSubmitting ? "Signing in…" : "Sign in with Google"}
         </button>
 
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-black/10" />
+          <div className="flex-1 h-px bg-apple-hover2" />
           <span className="text-xs text-apple-secondary">or</span>
-          <div className="flex-1 h-px bg-black/10" />
+          <div className="flex-1 h-px bg-apple-hover2" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,7 +90,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50 focus:border-apple-blue transition-all duration-150"
+              className="w-full rounded-xl border border-apple-border2 bg-apple-surface2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50 focus:border-apple-blue transition-all duration-150"
               placeholder="you@example.com"
             />
           </div>
@@ -101,7 +101,7 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50 focus:border-apple-blue transition-all duration-150"
+              className="w-full rounded-xl border border-apple-border2 bg-apple-surface2 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50 focus:border-apple-blue transition-all duration-150"
               placeholder="••••••••"
             />
           </div>

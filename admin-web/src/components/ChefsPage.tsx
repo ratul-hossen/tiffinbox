@@ -240,7 +240,7 @@ export default function ChefsPage({ search }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-apple-text tracking-tight">Chefs ({filtered.length})</h2>
+        <p className="text-sm text-apple-secondary">{filtered.length} chefs</p>
         <div className="flex items-center gap-2">
           <button
             onClick={seedDemoChefs}
@@ -259,32 +259,32 @@ export default function ChefsPage({ search }: Props) {
         </div>
       </div>
       {demoMessage && (
-        <p className="text-xs text-apple-secondary bg-black/[0.03] rounded-xl px-3 py-2">{demoMessage}</p>
+        <p className="text-xs text-apple-secondary bg-apple-subtle rounded-xl px-3 py-2">{demoMessage}</p>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((chef) => (
           <div
             key={chef.id}
-            className="bg-apple-surface rounded-2xl border border-black/5 p-5 shadow-card hover:shadow-card-hover transition-shadow duration-200"
+            className="bg-apple-surface rounded-2xl border border-apple-border p-5 shadow-card hover:shadow-card-hover transition-shadow duration-200"
           >
             {editingId === chef.id ? (
               <div className="space-y-2">
                 <input
-                  className="w-full text-sm border border-black/10 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+                  className="w-full text-sm border border-apple-border2 bg-apple-surface2 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   value={draft.kitchenName}
                   onChange={(e) => setDraft({ ...draft, kitchenName: e.target.value })}
                   placeholder="Kitchen name"
                 />
                 <textarea
-                  className="w-full text-sm border border-black/10 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+                  className="w-full text-sm border border-apple-border2 bg-apple-surface2 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   value={draft.bio}
                   onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
                   placeholder="Bio"
                   rows={2}
                 />
                 <input
-                  className="w-full text-sm border border-black/10 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+                  className="w-full text-sm border border-apple-border2 bg-apple-surface2 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   value={draft.specialty}
                   onChange={(e) => setDraft({ ...draft, specialty: e.target.value })}
                   placeholder="Specialty (comma separated)"
@@ -299,7 +299,7 @@ export default function ChefsPage({ search }: Props) {
                   </button>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="text-xs bg-black/5 hover:bg-black/10 rounded-lg px-3 py-1.5 transition-colors duration-150"
+                    className="text-xs bg-apple-hover hover:bg-apple-hover2 rounded-lg px-3 py-1.5 transition-colors duration-150"
                   >
                     Cancel
                   </button>
@@ -368,7 +368,7 @@ export default function ChefsPage({ search }: Props) {
                   </p>
                 )}
 
-                <div className="flex gap-3 mt-3 pt-3 border-t border-black/5 text-xs">
+                <div className="flex gap-3 mt-3 pt-3 border-t border-apple-border text-xs">
                   <button
                     onClick={() => setDetailChefId(chef.id)}
                     className="text-apple-blue hover:text-apple-blue-dark font-medium transition-colors duration-150"

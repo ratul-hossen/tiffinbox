@@ -127,9 +127,17 @@ already there waiting.
 - All writes go straight to Firestore from the browser via the client SDK;
   there is no admin backend/API.
 - Do not commit `.env.local` — it's gitignored.
-- Visual design follows an "Apple-premium" system: Inter (Google Fonts) as
-  the primary typeface, and a set of design tokens (`apple-bg`,
-  `apple-surface`, `apple-text`, `apple-secondary`, `apple-blue`,
-  `apple-green`, `apple-amber`, `apple-red`) defined once in
-  `tailwind.config.js` rather than hardcoded hex values scattered through
-  components. Icons are from `lucide-react`.
+- Visual design follows an "Apple-premium" system modeled on the project
+  owner's own portfolio admin: a grouped sidebar (Overview/Catalog/
+  Operations/People/System), a big page-title + description header, and a
+  set of design tokens (`apple-bg`, `apple-surface`, `apple-surface2`,
+  `apple-text`, `apple-secondary`, `apple-blue`, `apple-green`,
+  `apple-amber`, `apple-red`, plus the flat `apple-border`/`apple-hover`/
+  `apple-subtle` fill tokens) defined once in `tailwind.config.js` rather
+  than hardcoded hex values scattered through components. Every token is a
+  CSS variable (`src/index.css`) that flips between a **dark** palette
+  (the default) and a **light** one depending on `data-theme` on
+  `<html>`, toggled from the sidebar (sun/moon icon) and persisted via
+  `src/hooks/useTheme.ts` (`localStorage`, key
+  `tiffinbox-admin-theme`) — components never branch on theme themselves,
+  they just use the token classes. Icons are from `lucide-react`.

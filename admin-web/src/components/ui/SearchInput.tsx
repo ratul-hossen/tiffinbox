@@ -19,7 +19,7 @@ export default function SearchInput({ value, onChange, placeholder }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Search…"}
-        className="w-full rounded-xl border border-black/5 bg-black/[0.03] pl-9 pr-3 py-2 text-sm text-apple-text placeholder:text-apple-secondary focus:outline-none focus:ring-2 focus:ring-apple-blue/50 focus:bg-white focus:border-apple-blue/30 transition-all duration-150"
+        className="w-full rounded-xl border border-apple-border bg-apple-subtle pl-9 pr-3 py-2 text-sm text-apple-text placeholder:text-apple-secondary focus:outline-none focus:ring-2 focus:ring-apple-blue/50 focus:bg-apple-surface focus:border-apple-blue/30 transition-all duration-150"
       />
     </div>
   );

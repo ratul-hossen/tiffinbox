@@ -2,15 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design tokens, as RGB channel triples (so Tailwind's `rgb(var(--x) /
+ * <alpha-value>)` pattern can still apply opacity modifiers like
+ * `bg-apple-blue/10`). Dark is the default — matches the "ratul.world"
+ * portfolio admin this panel's redesign is modeled on — and `[data-theme="light"]`
+ * on <html> (set by the sidebar's theme toggle, persisted in localStorage
+ * via useTheme.ts) switches to the original light palette.
+ */
+:root {
+  --apple-bg: 0 0 0;
+  --apple-surface: 17 17 19;
+  --apple-surface2: 28 28 30;
+  --apple-text: 255 255 255;
+  --apple-secondary: 142 142 147;
+  --apple-blue: 10 132 255;
+  --apple-blue-dark: 64 156 255;
+  --apple-green: 48 209 88;
+  --apple-amber: 255 159 10;
+  --apple-red: 255 69 58;
+
+  --apple-border: rgba(255, 255, 255, 0.08);
+  --apple-border2: rgba(255, 255, 255, 0.14);
+  --apple-hover: rgba(255, 255, 255, 0.05);
+  --apple-hover2: rgba(255, 255, 255, 0.09);
+  --apple-subtle: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="light"] {
+  --apple-bg: 245 245 247;
+  --apple-surface: 255 255 255;
+  --apple-surface2: 242 242 247;
+  --apple-text: 29 29 31;
+  --apple-secondary: 110 110 115;
+  --apple-blue: 0 113 227;
+  --apple-blue-dark: 0 88 176;
+  --apple-green: 52 199 89;
+  --apple-amber: 255 149 0;
+  --apple-red: 255 59 48;
+
+  --apple-border: rgba(0, 0, 0, 0.06);
+  --apple-border2: rgba(0, 0, 0, 0.1);
+  --apple-hover: rgba(0, 0, 0, 0.04);
+  --apple-hover2: rgba(0, 0, 0, 0.08);
+  --apple-subtle: rgba(0, 0, 0, 0.03);
+}
+
 html, body, #root {
   height: 100%;
 }
 
 body {
-  background-color: #f5f5f7;
-  color: #1d1d1f;
+  background-color: rgb(var(--apple-bg));
+  color: rgb(var(--apple-text));
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
 /* Tighter tracking on headings for the Apple-premium look. */
@@ -47,7 +94,7 @@ h1, h2, h3, h4 {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--apple-hover2);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-track {

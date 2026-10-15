@@ -98,14 +98,14 @@ export default function OrdersPage({ search }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-apple-text tracking-tight">
-          Orders ({filtered.length}) · {formatCurrency(totalRevenue)}
-        </h2>
+        <p className="text-sm text-apple-secondary">
+          {filtered.length} orders · {formatCurrency(totalRevenue)}
+        </p>
         <div className="flex gap-2 items-center">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-sm border border-black/10 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+            className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
           >
             <option value="all">All statuses</option>
             {ORDER_STATUSES.map((s) => (
@@ -117,7 +117,7 @@ export default function OrdersPage({ search }: Props) {
           <select
             value={chefFilter}
             onChange={(e) => setChefFilter(e.target.value)}
-            className="text-sm border border-black/10 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+            className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
           >
             <option value="all">All chefs</option>
             {chefs.map((c) => (
@@ -135,10 +135,10 @@ export default function OrdersPage({ search }: Props) {
         </div>
       </div>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+            <tr className="text-left text-xs text-apple-secondary border-b border-apple-border">
               <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Chef</th>
               <th className="px-4 py-3">Items</th>
@@ -150,7 +150,7 @@ export default function OrdersPage({ search }: Props) {
           </thead>
           <tbody>
             {filtered.map((order) => (
-              <tr key={order.id} className="border-b border-black/5 last:border-0 align-top">
+              <tr key={order.id} className="border-b border-apple-border last:border-0 align-top">
                 <td className="px-4 py-3 text-xs text-apple-secondary/70">{order.id.slice(0, 8)}…</td>
                 <td className="px-4 py-3 text-apple-secondary">{chefName(order.chefId)}</td>
                 <td className="px-4 py-3 text-apple-secondary">
@@ -167,7 +167,7 @@ export default function OrdersPage({ search }: Props) {
                     value={order.status ?? "Placed"}
                     disabled={busyId === order.id}
                     onChange={(e) => changeStatus(order.id, e.target.value)}
-                    className="text-xs border border-black/10 rounded-lg px-2 py-1 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+                    className="text-xs border border-apple-border2 rounded-lg px-2 py-1 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
                   >
                     {ORDER_STATUSES.map((s) => (
                       <option key={s} value={s}>
