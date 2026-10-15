@@ -22,7 +22,10 @@ object FirestoreChefRepository {
         kitchenName: String,
         ownerName: String,
         whatsappNumber: String = "",
-        bkashNumber: String = ""
+        bkashNumber: String = "",
+        nagadNumber: String = "",
+        kitchenType: String = "",
+        yearsOfExperience: Int = 0
     ) {
         try {
             db.collection("chefs").document(uid).set(
@@ -32,6 +35,9 @@ object FirestoreChefRepository {
                     "ownerName" to ownerName,
                     "whatsappNumber" to whatsappNumber,
                     "bkashNumber" to bkashNumber,
+                    "nagadNumber" to nagadNumber,
+                    "kitchenType" to kitchenType,
+                    "yearsOfExperience" to yearsOfExperience,
                     "emoji" to "🍱",
                     "bio" to "",
                     "specialty" to emptyList<String>(),

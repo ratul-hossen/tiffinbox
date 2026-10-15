@@ -21,6 +21,7 @@ data class ChefUi(
     val isVerified: Boolean,
     val isAvailableToday: Boolean,
     val bkashNumber: String = "",
+    val nagadNumber: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     /** "self" = the chef delivers their own orders; "tiffinbox" = TiffinBox's own delivery system handles it. */
@@ -28,7 +29,10 @@ data class ChefUi(
     /** Compressed kitchen photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
     val photoBase64: String = "",
     /** Each entry: {url, caption, postedAt} - an external link (YouTube/Facebook/Drive), not an uploaded file. */
-    val videos: List<ChefVideoUi> = emptyList()
+    val videos: List<ChefVideoUi> = emptyList(),
+    /** e.g. "Home Kitchen" / "Cloud Kitchen" / "Restaurant"; blank for chefs who signed up before this field existed. */
+    val kitchenType: String = "",
+    val yearsOfExperience: Int = 0
 )
 
 data class ChefVideoUi(
@@ -129,8 +133,9 @@ data class ChefOrderUi(
     val status: String,
     val placedAt: Long,
     val paymentMethod: String = "",
-    val bkashTransactionId: String = "",
-    val bkashScreenshotBase64: String = ""
+    /** A manual mobile-banking proof (bKash or Nagad - same free-tier pattern for both). */
+    val paymentTransactionId: String = "",
+    val paymentScreenshotBase64: String = ""
 )
 
 data class EarningsSummary(

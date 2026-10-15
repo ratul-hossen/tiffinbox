@@ -163,7 +163,7 @@
     <string name="payment_method_nagad">Nagad</string>
     <string name="payment_method_card">Card</string>
     <string name="checkout_coming_soon_chip">আসছে</string>
-    <string name="checkout_bkash_number_notice">bKash নাম্বারে Send Money করুন: %1$s</string>
+    <string name="checkout_mobile_banking_number_notice">%1$s নাম্বারে Send Money করুন: %2$s</string>
     <string name="checkout_bkash_transaction_id_label">Transaction ID</string>
     <string name="checkout_bkash_transaction_id_required">Transaction ID আবশ্যক</string>
     <string name="checkout_bkash_select_screenshot_button">স্ক্রিনশট আপলোড করুন</string>
@@ -256,7 +256,7 @@
     <string name="chef_dashboard_order_number">Order #%1$s</string>
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
-    <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
+    <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
     <string name="chef_dashboard_view_screenshot_button">পেমেন্ট স্ক্রিনশট দেখুন</string>
     <string name="chef_dashboard_screenshot_load_failed">স্ক্রিনশট লোড করা যায়নি</string>
     <string name="chef_dashboard_delivery_mode_title">ডেলিভারি কে করবে?</string>

@@ -83,8 +83,9 @@ export interface Order {
   totalPrice?: number;
   deliveryAddress?: string;
   paymentMethod?: string;
-  bkashTransactionId?: string;
-  bkashScreenshotBase64?: string;
+  // Manual mobile-banking proof (bKash or Nagad - same field for both; which one is in paymentMethod).
+  paymentTransactionId?: string;
+  paymentScreenshotBase64?: string;
   deliveryHandledBy?: "self" | "tiffinbox" | string;
   deliveryPartnerId?: string;
   status?: OrderStatus | string;

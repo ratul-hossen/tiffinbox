@@ -35,9 +35,14 @@ import com.ratulhossen.tiffinbox.util.ImageCompressor
 private enum class PaymentMethod(val available: Boolean) {
     CASH_ON_DELIVERY(available = true),
     BKASH(available = true),
-    NAGAD(available = false),
+    // Same free manual-proof pattern as bKash - no payment gateway needed.
+    NAGAD(available = true),
+    // Real card processing needs a paid merchant gateway (SSLCommerz/Stripe/etc.) - out of scope for the free tier.
     CARD(available = false)
 }
+
+private val PaymentMethod.isMobileBanking: Boolean
+    get() = this == PaymentMethod.BKASH || this == PaymentMethod.NAGAD
 
 @Composable
 private fun PaymentMethod.label(): String = when (this) {
@@ -57,9 +62,10 @@ fun CheckoutScreen(
     var address by remember { mutableStateOf(defaultAddress) }
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH_ON_DELIVERY) }
     var placing by remember { mutableStateOf(false) }
-    var bkashTransactionId by remember { mutableStateOf("") }
-    var bkashScreenshotUri by remember { mutableStateOf<Uri?>(null) }
+    var transactionId by remember { mutableStateOf("") }
+    var paymentScreenshotUri by remember { mutableStateOf<Uri?>(null) }
     var chefBkashNumber by remember { mutableStateOf("") }
+    var chefNagadNumber by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val items = CartStore.items
     val scope = rememberCoroutineScope()
@@ -71,12 +77,14 @@ fun CheckoutScreen(
 
     val pickScreenshotLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
-    ) { uri -> if (uri != null) bkashScreenshotUri = uri }
+    ) { uri -> if (uri != null) paymentScreenshotUri = uri }
 
     LaunchedEffect(items.firstOrNull()?.meal?.chefId) {
         val chefId = items.firstOrNull()?.meal?.chefId
         if (chefId != null) {
-            chefBkashNumber = FirestoreCatalogRepository.getChef(chefId)?.bkashNumber.orEmpty()
+            val chef = FirestoreCatalogRepository.getChef(chefId)
+            chefBkashNumber = chef?.bkashNumber.orEmpty()
+            chefNagadNumber = chef?.nagadNumber.orEmpty()
         }
     }
 
@@ -105,12 +113,12 @@ fun CheckoutScreen(
                     Button(
                         onClick = {
                             errorMessage = null
-                            if (selectedPayment == PaymentMethod.BKASH) {
-                                if (bkashTransactionId.isBlank()) {
+                            if (selectedPayment.isMobileBanking) {
+                                if (transactionId.isBlank()) {
                                     errorMessage = transactionIdRequiredMessage
                                     return@Button
                                 }
-                                if (bkashScreenshotUri == null) {
+                                if (paymentScreenshotUri == null) {
                                     errorMessage = screenshotRequiredMessage
                                     return@Button
                                 }
@@ -118,8 +126,8 @@ fun CheckoutScreen(
                             placing = true
                             scope.launch {
                                 var screenshotBase64: String? = null
-                                if (selectedPayment == PaymentMethod.BKASH) {
-                                    screenshotBase64 = bkashScreenshotUri?.let {
+                                if (selectedPayment.isMobileBanking) {
+                                    screenshotBase64 = paymentScreenshotUri?.let {
                                         ImageCompressor.compressToBase64(context, it)
                                     }
                                     if (screenshotBase64 == null) {
@@ -136,8 +144,8 @@ fun CheckoutScreen(
                                     total = CartStore.total,
                                     deliveryAddress = address,
                                     paymentMethod = selectedPayment.name,
-                                    bkashTransactionId = if (selectedPayment == PaymentMethod.BKASH) bkashTransactionId.trim() else null,
-                                    bkashScreenshotBase64 = screenshotBase64
+                                    paymentTransactionId = if (selectedPayment.isMobileBanking) transactionId.trim() else null,
+                                    paymentScreenshotBase64 = screenshotBase64
                                 )
                                 placing = false
                                 if (orderId != null) {
@@ -216,7 +224,7 @@ fun CheckoutScreen(
                 }
             }
 
-            if (selectedPayment == PaymentMethod.BKASH) {
+            if (selectedPayment.isMobileBanking) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     shape = MaterialTheme.shapes.medium,
@@ -224,17 +232,18 @@ fun CheckoutScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        if (chefBkashNumber.isNotBlank()) {
+                        val mobileBankingNumber = if (selectedPayment == PaymentMethod.BKASH) chefBkashNumber else chefNagadNumber
+                        if (mobileBankingNumber.isNotBlank()) {
                             Text(
-                                stringResource(R.string.checkout_bkash_number_notice, chefBkashNumber),
+                                stringResource(R.string.checkout_mobile_banking_number_notice, selectedPayment.label(), mobileBankingNumber),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                         OutlinedTextField(
-                            value = bkashTransactionId,
-                            onValueChange = { bkashTransactionId = it },
+                            value = transactionId,
+                            onValueChange = { transactionId = it },
                             label = { Text(stringResource(R.string.checkout_bkash_transaction_id_label)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
@@ -251,12 +260,12 @@ fun CheckoutScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
-                                if (bkashScreenshotUri != null) Icons.Filled.CheckCircle else Icons.Filled.Upload,
+                                if (paymentScreenshotUri != null) Icons.Filled.CheckCircle else Icons.Filled.Upload,
                                 contentDescription = null
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                if (bkashScreenshotUri != null) {
+                                if (paymentScreenshotUri != null) {
                                     stringResource(R.string.checkout_bkash_screenshot_selected)
                                 } else {
                                     stringResource(R.string.checkout_bkash_select_screenshot_button)

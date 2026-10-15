@@ -221,28 +221,96 @@ literally.
    videos). `ChefDetailScreen` shows a public "Videos" section — tapping
    an entry opens the link externally via `Intent.ACTION_VIEW` (no
    embedded WebView; simplest option, per the plan).
-4. **[ ] Onboarding/signup visual restructuring** — convert the existing
-   single-screen chef signup form (`LoginScreen.kt` signup mode) into a
-   multi-step stepper (Personal Info → Kitchen Info incl. type/experience/
-   photo → Location/delivery-radius with the radius slider), reusing
-   `LocationSetupScreen` for the final step rather than duplicating it.
-   Customer signup can likely stay closer to its current single-screen
-   form (less reference emphasis on multi-step for Buyer in the
-   screenshots) unless the owner asks otherwise.
-5. **[ ] Package system enhancement** — extend
-   `FirestoreSubscriptionRepository`/subscription UI from
-   weekly/monthly to configurable day-counts (7/10/15/30) with a daily
-   capacity field, matching the reference's "Create Package" screen,
-   without breaking existing weekly/monthly subscribers' data.
-6. **[ ] General visual polish pass** — stat-tile dashboards, order
-   status vertical timeline (OrderTrackingScreen/order-detail cards
-   already have most of the data wired — this is a presentation-layer
-   pass, not new data plumbing), once the theme system (step 1) exists to
-   build against.
+4. **[ ] Onboarding/signup visual restructuring (task #64)** — restructure
+   the existing single-screen chef signup form (`LoginScreen.kt` signup
+   mode) into a 3-step stepper: **Step 1 Personal Info** (name, email,
+   password) → **Step 2 Kitchen Info** (kitchen name, new `kitchenType`
+   dropdown e.g. Home Kitchen/Cloud Kitchen/Restaurant, new
+   `yearsOfExperience`, WhatsApp number) → **Step 3 Confirm** (bKash
+   number required, Nagad number optional) → submit goes through the
+   existing phone-verification → location-setup chain unchanged (not
+   duplicating `LocationSetupScreen`; the reference's in-stepper map step
+   is *this app's* separate mandatory LocationSetupScreen right after, not
+   a 4th stepper step — same outcome, reuses existing code). New fields
+   (`kitchenType`, `yearsOfExperience`) added to `ChefUi` +
+   `FirestoreChefRepository.createChefProfile` + mirrored into
+   `CompleteGoogleProfileScreen` (Google sign-up path) for parity, per the
+   fix already applied for WhatsApp/bKash/location in that path. Customer
+   signup stays single-screen (reference emphasizes multi-step for Seller
+   only).
+5. **[ ] Package system enhancement (task #63)** — `SubscriptionPlan`
+   gets day-count-based entries (`DAYS_7`, `DAYS_10`, `DAYS_15`,
+   `DAYS_30`) alongside the legacy `WEEKLY`/`MONTHLY` (kept, never
+   removed — existing subscribers' stored plan name must keep resolving).
+   `SubscribeScreen` adds a Lunch/Dinner/Both meal-type chip row next to
+   the existing meals-per-week stepper, matching the reference's "Package
+   Details" screen (Package Type day-count, Meal Type). The reference's
+   separate "Daily Capacity" field is **not** duplicated as new state —
+   `MealUi.availableQuantity` (already built) already is each meal's daily
+   capacity; re-use it rather than adding a second, parallel capacity
+   number that could drift out of sync.
+6. **[ ] General visual polish pass** — stat-tile dashboards (chef
+   dashboard already has `EarningStat` tiles), order status vertical
+   timeline (`OrderTrackingScreen` already has one, built earlier this
+   project — nothing to add there). Remaining: apply the same
+   stat-tile/timeline visual language to the customer Orders/history list
+   if time allows once tasks #62–67 land; not a blocking gap, just
+   unfinished polish.
 7. **[ ] (Much larger, separate effort, not in this redesign pass) The
    actual delivery-partner Android app** — tracked here only as a
    pointer, see "Delivery system groundwork" above. Do not start this
    inside the same pass as the visual redesign; it's a distinct project.
+
+### New items added after owner reviewed the reference screenshots a second time (2026-10-15)
+
+Owner asked for a single reconciled plan covering done work + phases
+4–6 + these additional screens spotted in the reference images that
+weren't in the original phase list. Tracked as tasks #62–67 (see task
+list), all free-tier:
+
+- **[ ] Nagad payment (task #62)** — `CheckoutScreen`'s `PaymentMethod`
+  enum already has `NAGAD` defined (`available = false`); flip it to
+  `true` and reuse the exact same manual-proof pattern already built for
+  bKash (transaction ID + screenshot, same Firestore fields
+  `bkashTransactionId`/`bkashScreenshotBase64` reused as a generic
+  "mobile banking proof" regardless of method, to avoid an admin-web
+  schema change for what is a UI-only distinction). Add an optional
+  `nagadNumber` on the chef doc alongside `bkashNumber`. **Card stays
+  "coming soon"** — real card processing needs a paid merchant gateway
+  (SSLCommerz/Stripe/etc.), which is out of scope for the free-tier
+  constraint; this is an honest limitation, not an oversight.
+- **[ ] Settings sub-pages (task #65)** — Change Password (functional,
+  `FirebaseAuth` reauthenticate + `updatePassword`), Payment Methods
+  (static — lists bKash/Nagad/COD as active, Card as coming soon), Help
+  & Support (static FAQ + contact), Terms & Conditions, Privacy Policy
+  (static placeholder legal text, clearly an early-stage product's
+  placeholder — not legal advice). Wired from `SettingsScreen` and from
+  `ProfileScreen`'s existing dead "Payment Method"/"Notifications" menu
+  items.
+- **[ ] In-app Notifications screen (task #66)** — a
+  `notifications/{uid}/items` Firestore subcollection (free, no Cloud
+  Functions — written directly by the client at the moment each event
+  happens: order placed, order status change, chef-approval granted),
+  read by a new `NotificationsScreen`. This is in addition to the
+  existing FCM push notifications (`NotificationHelper.kt`), not a
+  replacement — push still fires for background notification; this adds
+  an in-app history list the reference screenshots show.
+- **[ ] Self Service + Hire Delivery Man (task #67)** — the reference's
+  "Self Service" concept (a customer-initiated point-to-point delivery
+  request, e.g. Home→Office, independent of ordering from a chef) is a
+  genuinely new feature, not previously scoped. Minimal free version: a
+  `self_service_requests/{id}` Firestore collection, a customer-side
+  request form (pickup/drop address, time, note), and a "Hire Delivery
+  Man" screen listing `delivery_partners` where `isActive == true` so the
+  customer can assign one directly (sets `deliveryPartnerId` +
+  `status: "assigned"` on their own request). Since the actual
+  delivery-partner Android app doesn't exist yet (phase 7, explicitly
+  out of scope — see above), the assigned delivery partner has no app of
+  their own to see this in; to keep the feature honestly end-to-end
+  usable *now* rather than a write-only stub, add a small admin-web page
+  listing self-service requests so the admin can see and manage them
+  manually in the interim, same pattern as the existing admin-provisioned
+  Delivery Partners page.
 
 ### Explicit owner delegation on this task
 

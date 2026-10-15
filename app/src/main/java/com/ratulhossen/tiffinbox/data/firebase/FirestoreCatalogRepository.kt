@@ -103,11 +103,14 @@ object FirestoreCatalogRepository {
             isVerified = getBoolean("isVerified") ?: false,
             isAvailableToday = getBoolean("isAvailableToday") ?: true,
             bkashNumber = getString("bkashNumber") ?: "",
+            nagadNumber = getString("nagadNumber") ?: "",
             latitude = getDouble("latitude") ?: 0.0,
             longitude = getDouble("longitude") ?: 0.0,
             deliveryMode = getString("deliveryMode") ?: "self",
             photoBase64 = getString("photoBase64") ?: "",
-            videos = videos
+            videos = videos,
+            kitchenType = getString("kitchenType") ?: "",
+            yearsOfExperience = (getLong("yearsOfExperience") ?: 0L).toInt()
         )
     }
 

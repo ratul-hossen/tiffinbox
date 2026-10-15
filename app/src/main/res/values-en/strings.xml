@@ -161,7 +161,7 @@
     <string name="payment_method_nagad">Nagad</string>
     <string name="payment_method_card">Card</string>
     <string name="checkout_coming_soon_chip">Coming soon</string>
-    <string name="checkout_bkash_number_notice">Send Money to this bKash number: %1$s</string>
+    <string name="checkout_mobile_banking_number_notice">Send Money to this %1$s number: %2$s</string>
     <string name="checkout_bkash_transaction_id_label">Transaction ID</string>
     <string name="checkout_bkash_transaction_id_required">Transaction ID is required</string>
     <string name="checkout_bkash_select_screenshot_button">Upload Screenshot</string>
@@ -254,7 +254,7 @@
     <string name="chef_dashboard_order_number">Order #%1$s</string>
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
-    <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
+    <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
     <string name="chef_dashboard_view_screenshot_button">View payment screenshot</string>
     <string name="chef_dashboard_screenshot_load_failed">Couldn\'t load screenshot</string>
     <string name="chef_dashboard_delivery_mode_title">Who handles delivery?</string>

@@ -26,8 +26,8 @@ object FirestoreOrderRepository {
         total: Int,
         deliveryAddress: String,
         paymentMethod: String,
-        bkashTransactionId: String? = null,
-        bkashScreenshotBase64: String? = null
+        paymentTransactionId: String? = null,
+        paymentScreenshotBase64: String? = null
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -51,8 +51,8 @@ object FirestoreOrderRepository {
                 "totalPrice" to total,
                 "deliveryAddress" to deliveryAddress,
                 "paymentMethod" to paymentMethod,
-                "bkashTransactionId" to bkashTransactionId.orEmpty(),
-                "bkashScreenshotBase64" to bkashScreenshotBase64.orEmpty(),
+                "paymentTransactionId" to paymentTransactionId.orEmpty(),
+                "paymentScreenshotBase64" to paymentScreenshotBase64.orEmpty(),
                 // "self" = the chef delivers it; "tiffinbox" = needs a delivery
                 // partner assigned (deliveryPartnerId is set later, once the
                 // separate delivery-partner app exists to do that assignment).
@@ -144,8 +144,8 @@ object FirestoreOrderRepository {
                         status = doc.getString("status") ?: "Placed",
                         placedAt = doc.getLong("placedAt") ?: 0L,
                         paymentMethod = doc.getString("paymentMethod").orEmpty(),
-                        bkashTransactionId = doc.getString("bkashTransactionId").orEmpty(),
-                        bkashScreenshotBase64 = doc.getString("bkashScreenshotBase64").orEmpty()
+                        paymentTransactionId = doc.getString("paymentTransactionId").orEmpty(),
+                        paymentScreenshotBase64 = doc.getString("paymentScreenshotBase64").orEmpty()
                     )
                 }
         } catch (e: Exception) {

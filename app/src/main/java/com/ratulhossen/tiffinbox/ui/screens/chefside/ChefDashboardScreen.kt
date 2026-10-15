@@ -409,16 +409,16 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    if (order.bkashTransactionId.isNotBlank()) {
+                    if (order.paymentTransactionId.isNotBlank()) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            stringResource(R.string.chef_dashboard_bkash_transaction_label, order.bkashTransactionId),
+                            stringResource(R.string.chef_dashboard_payment_transaction_label, order.paymentMethod, order.paymentTransactionId),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (order.bkashScreenshotBase64.isNotBlank()) {
+                        if (order.paymentScreenshotBase64.isNotBlank()) {
                             TextButton(
-                                onClick = { viewingScreenshotBase64 = order.bkashScreenshotBase64 },
+                                onClick = { viewingScreenshotBase64 = order.paymentScreenshotBase64 },
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
