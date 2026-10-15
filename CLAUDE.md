@@ -268,49 +268,46 @@ Owner asked for a single reconciled plan covering done work + phases
 weren't in the original phase list. Tracked as tasks #62–67 (see task
 list), all free-tier:
 
-- **[ ] Nagad payment (task #62)** — `CheckoutScreen`'s `PaymentMethod`
-  enum already has `NAGAD` defined (`available = false`); flip it to
-  `true` and reuse the exact same manual-proof pattern already built for
-  bKash (transaction ID + screenshot, same Firestore fields
-  `bkashTransactionId`/`bkashScreenshotBase64` reused as a generic
-  "mobile banking proof" regardless of method, to avoid an admin-web
-  schema change for what is a UI-only distinction). Add an optional
+- **[x] Nagad payment (task #62) — DONE.** `CheckoutScreen`'s
+  `PaymentMethod.NAGAD` is now `available = true`, using the same manual-
+  proof flow as bKash (transaction ID + screenshot). Ended up *better*
+  than originally planned: rather than reusing bKash-named fields, the
+  order's proof fields were generalized to `paymentTransactionId`/
+  `paymentScreenshotBase64` (app + admin-web `OrderDetail.tsx`), so the
+  label shown is correct for whichever method was actually used. Added
   `nagadNumber` on the chef doc alongside `bkashNumber`. **Card stays
   "coming soon"** — real card processing needs a paid merchant gateway
-  (SSLCommerz/Stripe/etc.), which is out of scope for the free-tier
-  constraint; this is an honest limitation, not an oversight.
-- **[ ] Settings sub-pages (task #65)** — Change Password (functional,
-  `FirebaseAuth` reauthenticate + `updatePassword`), Payment Methods
-  (static — lists bKash/Nagad/COD as active, Card as coming soon), Help
-  & Support (static FAQ + contact), Terms & Conditions, Privacy Policy
-  (static placeholder legal text, clearly an early-stage product's
-  placeholder — not legal advice). Wired from `SettingsScreen` and from
-  `ProfileScreen`'s existing dead "Payment Method"/"Notifications" menu
+  (SSLCommerz/Stripe/etc.), out of scope for the free-tier constraint;
+  an honest limitation, not an oversight.
+- **[x] Settings sub-pages (task #65) — DONE.** Change Password
+  (functional, `FirebaseAuthRepository.changePassword()` — reauthenticate
+  + `updatePassword`; `hasPasswordProvider` guards Google-only accounts),
+  Payment Methods, Help & Support, Terms & Conditions, Privacy Policy
+  (the last three static — Terms/Privacy explicitly labeled early-stage
+  placeholders, not legal advice). Wired from `SettingsScreen` and from
+  `ProfileScreen`'s previously-dead "Payment Method"/"Notifications" menu
   items.
-- **[ ] In-app Notifications screen (task #66)** — a
-  `notifications/{uid}/items` Firestore subcollection (free, no Cloud
-  Functions — written directly by the client at the moment each event
-  happens: order placed, order status change, chef-approval granted),
-  read by a new `NotificationsScreen`. This is in addition to the
-  existing FCM push notifications (`NotificationHelper.kt`), not a
-  replacement — push still fires for background notification; this adds
-  an in-app history list the reference screenshots show.
-- **[ ] Self Service + Hire Delivery Man (task #67)** — the reference's
-  "Self Service" concept (a customer-initiated point-to-point delivery
-  request, e.g. Home→Office, independent of ordering from a chef) is a
-  genuinely new feature, not previously scoped. Minimal free version: a
-  `self_service_requests/{id}` Firestore collection, a customer-side
-  request form (pickup/drop address, time, note), and a "Hire Delivery
-  Man" screen listing `delivery_partners` where `isActive == true` so the
-  customer can assign one directly (sets `deliveryPartnerId` +
-  `status: "assigned"` on their own request). Since the actual
-  delivery-partner Android app doesn't exist yet (phase 7, explicitly
-  out of scope — see above), the assigned delivery partner has no app of
-  their own to see this in; to keep the feature honestly end-to-end
-  usable *now* rather than a write-only stub, add a small admin-web page
-  listing self-service requests so the admin can see and manage them
-  manually in the interim, same pattern as the existing admin-provisioned
-  Delivery Partners page.
+- **[x] In-app Notifications screen (task #66) — DONE.** A
+  `notifications/{uid}/items` Firestore subcollection
+  (`FirestoreNotificationRepository.kt`, free — no Cloud Functions,
+  written directly by the client at the moment each event happens: order
+  placed, order status change by the chef, chef-approval granted via
+  admin-web), read by `NotificationsScreen`. In addition to the existing
+  FCM push (`NotificationHelper.kt`), not a replacement. Wired from
+  ProfileScreen (customer) and a new bell icon on ChefDashboardScreen's
+  header (chef). `firestore.rules` documents why writes are deliberately
+  cross-user here (no Cloud Function to broker it).
+- **[x] Self Service + Hire Delivery Man (task #67) — DONE.** A
+  `self_service_requests/{id}` Firestore collection
+  (`FirestoreSelfServiceRepository.kt`), `SelfServiceRequestScreen`
+  (pickup/drop address, time, note — reached from a new ProfileScreen
+  menu item) and `HireDeliveryManScreen` (lists `delivery_partners` where
+  `isActive == true`; hiring sets `deliveryPartnerId` +
+  `status: "assigned"`). Since the actual delivery-partner Android app
+  doesn't exist yet (phase 7, still out of scope), admin-web gets a
+  **Self Service** page to see every request and manually assign/reassign
+  a partner via a dropdown, so the feature is end-to-end usable now
+  rather than a write-only stub.
 
 ### Explicit owner delegation on this task
 

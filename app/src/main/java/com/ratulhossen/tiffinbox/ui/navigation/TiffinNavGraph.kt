@@ -35,6 +35,8 @@ import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
 import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
+import com.ratulhossen.tiffinbox.ui.screens.selfservice.HireDeliveryManScreen
+import com.ratulhossen.tiffinbox.ui.screens.selfservice.SelfServiceRequestScreen
 import com.ratulhossen.tiffinbox.ui.screens.settings.ChangePasswordScreen
 import com.ratulhossen.tiffinbox.ui.screens.settings.HelpSupportScreen
 import com.ratulhossen.tiffinbox.ui.screens.settings.PaymentMethodsScreen
@@ -185,6 +187,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
                 onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
                 onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
+                onSelfServiceClick = { navController.navigate(Routes.SELF_SERVICE_REQUEST) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -241,6 +244,21 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.NOTIFICATIONS) {
             NotificationsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.SELF_SERVICE_REQUEST) {
+            SelfServiceRequestScreen(
+                onBack = { navController.popBackStack() },
+                onRequestCreated = { requestId -> navController.navigate(Routes.hireDeliveryMan(requestId)) }
+            )
+        }
+
+        composable(
+            route = Routes.HIRE_DELIVERY_MAN,
+            arguments = listOf(navArgument("requestId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val requestId = backStackEntry.arguments?.getString("requestId").orEmpty()
+            HireDeliveryManScreen(requestId = requestId, onBack = { navController.popBackStack() })
         }
 
         composable(

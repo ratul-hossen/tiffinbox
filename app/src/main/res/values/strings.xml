@@ -214,6 +214,24 @@
     <string name="profile_menu_notifications">Notifications</string>
     <string name="notifications_title">নোটিফিকেশন</string>
     <string name="notifications_empty">এখনো কোনো নোটিফিকেশন নেই</string>
+    <string name="profile_menu_self_service">সেলফ সার্ভিস ডেলিভারি</string>
+
+    <!-- SelfServiceRequestScreen -->
+    <string name="self_service_title">সেলফ সার্ভিস</string>
+    <string name="self_service_subtitle">একটি পয়েন্ট-টু-পয়েন্ট ডেলিভারি রিকোয়েস্ট করুন (যেমন: বাসা থেকে অফিস)।</string>
+    <string name="self_service_pickup_label">পিকআপ ঠিকানা</string>
+    <string name="self_service_drop_label">ড্রপ ঠিকানা</string>
+    <string name="self_service_time_label">পছন্দের সময় (ঐচ্ছিক)</string>
+    <string name="self_service_note_label">নোট (ঐচ্ছিক)</string>
+    <string name="self_service_fields_required">পিকআপ এবং ড্রপ ঠিকানা দিন</string>
+    <string name="self_service_submit_button">রিকোয়েস্ট পাঠান</string>
+
+    <!-- HireDeliveryManScreen -->
+    <string name="hire_delivery_man_title">ডেলিভারি ম্যান বেছে নিন</string>
+    <string name="hire_delivery_man_subtitle">নিচের তালিকা থেকে একজন ডেলিভারি পার্টনার বেছে নিন</string>
+    <string name="hire_delivery_man_empty">এই মুহূর্তে কোনো ডেলিভারি পার্টনার সক্রিয় নেই</string>
+    <string name="hire_delivery_man_hire_button">নিয়োগ দিন</string>
+    <string name="hire_delivery_man_hired">নিয়োগ দেওয়া হয়েছে: %1$s</string>
     <string name="profile_menu_settings">Settings</string>
     <string name="profile_demo_user_name">Rafi Ahmed</string>
     <string name="profile_demo_phone">+880 1XXXXXXXXX</string>

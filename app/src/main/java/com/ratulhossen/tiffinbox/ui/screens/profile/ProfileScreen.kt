@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +40,8 @@ fun ProfileScreen(
     onSubscriptionsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onPaymentMethodClick: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    onSelfServiceClick: () -> Unit = {}
 ) {
     var seedStatus by remember { mutableStateOf<String?>(null) }
     val fallbackName = stringResource(R.string.profile_demo_user_name)
@@ -54,6 +56,7 @@ fun ProfileScreen(
         ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management)),
         ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method), onPaymentMethodClick),
         ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications), onNotificationsClick),
+        ProfileMenuItem(Icons.Filled.TwoWheeler, stringResource(R.string.profile_menu_self_service), onSelfServiceClick),
         ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings), onSettingsClick)
     )
     val seedingSendingMessage = stringResource(R.string.profile_seeding_status_sending)

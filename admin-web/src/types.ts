@@ -167,6 +167,22 @@ export interface DeliveryPartner {
   createdAt?: number | FirestoreTimestampLike | null;
 }
 
+// self_service_requests/{id} - a customer-initiated point-to-point delivery
+// request, independent of ordering from a chef (see
+// FirestoreSelfServiceRepository.kt). No delivery-partner app exists yet to
+// act on these, so this is visible/manageable here in the interim.
+export interface SelfServiceRequest {
+  id: string;
+  customerId?: string;
+  pickupAddress?: string;
+  dropAddress?: string;
+  preferredTime?: string;
+  note?: string;
+  status?: "pending" | "assigned" | string;
+  deliveryPartnerId?: string;
+  createdAt?: number | FirestoreTimestampLike | null;
+}
+
 export interface Subscription {
   id: string;
   customerId?: string;

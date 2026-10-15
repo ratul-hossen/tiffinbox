@@ -212,6 +212,24 @@
     <string name="profile_menu_notifications">Notifications</string>
     <string name="notifications_title">Notifications</string>
     <string name="notifications_empty">No notifications yet</string>
+    <string name="profile_menu_self_service">Self Service Delivery</string>
+
+    <!-- SelfServiceRequestScreen -->
+    <string name="self_service_title">Self Service</string>
+    <string name="self_service_subtitle">Request a point-to-point delivery (e.g. Home to Office).</string>
+    <string name="self_service_pickup_label">Pickup address</string>
+    <string name="self_service_drop_label">Drop address</string>
+    <string name="self_service_time_label">Preferred time (optional)</string>
+    <string name="self_service_note_label">Note (optional)</string>
+    <string name="self_service_fields_required">Enter both pickup and drop addresses</string>
+    <string name="self_service_submit_button">Send Request</string>
+
+    <!-- HireDeliveryManScreen -->
+    <string name="hire_delivery_man_title">Hire a Delivery Man</string>
+    <string name="hire_delivery_man_subtitle">Choose a delivery partner from the list below</string>
+    <string name="hire_delivery_man_empty">No delivery partners are active right now</string>
+    <string name="hire_delivery_man_hire_button">Hire</string>
+    <string name="hire_delivery_man_hired">Hired: %1$s</string>
     <string name="profile_menu_settings">Settings</string>
     <string name="profile_demo_user_name">Rafi Ahmed</string>
     <string name="profile_demo_phone">+880 1XXXXXXXXX</string>
