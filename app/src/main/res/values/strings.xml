@@ -35,6 +35,17 @@
     <string name="login_whatsapp_number_invalid">সঠিক বাংলাদেশি নম্বর দিন (যেমন: 01XXXXXXXXX)</string>
     <string name="login_bkash_number_label">bKash নম্বর</string>
     <string name="login_bkash_number_required">bKash নম্বর দিন (পেমেন্ট গ্রহণের জন্য)</string>
+    <string name="login_nagad_number_label">Nagad নম্বর (ঐচ্ছিক)</string>
+    <string name="login_kitchen_type_label">কিচেনের ধরন</string>
+    <string name="login_years_experience_label">অভিজ্ঞতা (বছর)</string>
+    <string name="kitchen_type_home">Home Kitchen</string>
+    <string name="kitchen_type_cloud">Cloud Kitchen</string>
+    <string name="kitchen_type_restaurant">Restaurant</string>
+    <string name="login_step_personal_info_title">ব্যক্তিগত তথ্য</string>
+    <string name="login_step_kitchen_info_title">কিচেনের তথ্য</string>
+    <string name="login_step_confirm_title">নিশ্চিত করুন</string>
+    <string name="login_step_next_button">পরবর্তী</string>
+    <string name="login_step_back_button">পেছনে</string>
     <string name="login_button">Login</string>
     <string name="complete_google_profile_title">আর একটু বাকি</string>
     <string name="complete_google_profile_subtitle">চালিয়ে যাওয়ার আগে এই তথ্যগুলো দিন</string>

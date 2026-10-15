@@ -1,7 +1,9 @@
 package com.ratulhossen.tiffinbox.ui.screens.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -11,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,6 +33,7 @@ import com.ratulhossen.tiffinbox.data.firebase.AuthResult
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import com.ratulhossen.tiffinbox.util.normalizeBangladeshPhone
 import kotlinx.coroutines.launch
@@ -60,10 +64,16 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var kitchenName by remember { mutableStateOf("") }
+    var kitchenType by remember { mutableStateOf("") }
+    var yearsOfExperience by remember { mutableStateOf("") }
     var whatsappNumber by remember { mutableStateOf("") }
     var bkashNumber by remember { mutableStateOf("") }
+    var nagadNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    // Only chef signup uses the 3-step stepper (Personal Info -> Kitchen Info -> Confirm);
+    // login and customer signup stay on the single-screen form below.
+    var step by remember { mutableStateOf(0) }
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -142,7 +152,10 @@ fun LoginScreen(
                                 kitchenName = kitchenName.trim(),
                                 ownerName = name.trim(),
                                 whatsappNumber = normalizedPhone.orEmpty(),
-                                bkashNumber = bkashNumber.trim()
+                                bkashNumber = bkashNumber.trim(),
+                                nagadNumber = nagadNumber.trim(),
+                                kitchenType = kitchenType.trim(),
+                                yearsOfExperience = yearsOfExperience.toIntOrNull() ?: 0
                             )
                         }
                         FirestoreUserRepository.registerFcmToken(uid)
@@ -227,6 +240,33 @@ fun LoginScreen(
         }
     }
 
+    fun toggleMode() {
+        isLoginMode = !isLoginMode
+        errorMessage = null
+        step = 0
+    }
+
+    if (!isLoginMode && isChefRole) {
+        ChefSignupStepper(
+            step = step,
+            onStepChange = { step = it },
+            name = name, onNameChange = { name = it },
+            email = email, onEmailChange = { email = it },
+            password = password, onPasswordChange = { password = it },
+            kitchenName = kitchenName, onKitchenNameChange = { kitchenName = it },
+            kitchenType = kitchenType, onKitchenTypeChange = { kitchenType = it },
+            yearsOfExperience = yearsOfExperience, onYearsOfExperienceChange = { yearsOfExperience = it },
+            whatsappNumber = whatsappNumber, onWhatsappNumberChange = { whatsappNumber = it },
+            bkashNumber = bkashNumber, onBkashNumberChange = { bkashNumber = it },
+            nagadNumber = nagadNumber, onNagadNumberChange = { nagadNumber = it },
+            isLoading = isLoading,
+            errorMessage = errorMessage,
+            onSubmit = { submit() },
+            onToggleToLogin = { toggleMode() }
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -257,17 +297,6 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (isChefRole) {
-                OutlinedTextField(
-                    value = kitchenName,
-                    onValueChange = { kitchenName = it },
-                    label = { Text(stringResource(R.string.login_kitchen_name_label)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
             OutlinedTextField(
                 value = whatsappNumber,
                 onValueChange = { whatsappNumber = it },
@@ -277,18 +306,6 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
-
-            if (isChefRole) {
-                OutlinedTextField(
-                    value = bkashNumber,
-                    onValueChange = { bkashNumber = it },
-                    label = { Text(stringResource(R.string.login_bkash_number_label)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
         }
 
         OutlinedTextField(
@@ -342,16 +359,219 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
         TextButton(
-            onClick = {
-                isLoginMode = !isLoginMode
-                errorMessage = null
-            },
+            onClick = { toggleMode() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 if (isLoginMode) stringResource(R.string.login_toggle_to_signup)
                 else stringResource(R.string.login_toggle_to_login)
             )
+        }
+    }
+}
+
+/**
+ * Chef-only signup flow, split into 3 steps (Personal Info -> Kitchen Info ->
+ * Confirm) matching the reference mockups. The real Firebase submission and
+ * all required-field validation still lives in [LoginScreen]'s submit() -
+ * this only gates which step is showing and does light per-step validation
+ * for the Next button.
+ */
+@Composable
+private fun ChefSignupStepper(
+    step: Int,
+    onStepChange: (Int) -> Unit,
+    name: String, onNameChange: (String) -> Unit,
+    email: String, onEmailChange: (String) -> Unit,
+    password: String, onPasswordChange: (String) -> Unit,
+    kitchenName: String, onKitchenNameChange: (String) -> Unit,
+    kitchenType: String, onKitchenTypeChange: (String) -> Unit,
+    yearsOfExperience: String, onYearsOfExperienceChange: (String) -> Unit,
+    whatsappNumber: String, onWhatsappNumberChange: (String) -> Unit,
+    bkashNumber: String, onBkashNumberChange: (String) -> Unit,
+    nagadNumber: String, onNagadNumberChange: (String) -> Unit,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onSubmit: () -> Unit,
+    onToggleToLogin: () -> Unit
+) {
+    val stepTitles = listOf(
+        stringResource(R.string.login_step_personal_info_title),
+        stringResource(R.string.login_step_kitchen_info_title),
+        stringResource(R.string.login_step_confirm_title)
+    )
+    val canProceed = when (step) {
+        0 -> name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+        1 -> kitchenName.isNotBlank() && whatsappNumber.isNotBlank()
+        else -> bkashNumber.isNotBlank()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp)
+    ) {
+        Text(stringResource(R.string.login_create_account_title), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            stepTitles.forEachIndexed { index, title ->
+                val isDone = index < step
+                val isCurrent = index == step
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(
+                            if (isDone || isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "${index + 1}",
+                        color = if (isDone || isCurrent) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                if (index != stepTitles.lastIndex) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(2.dp)
+                            .background(if (isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(stepTitles[step], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(20.dp))
+
+        when (step) {
+            0 -> {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = onNameChange,
+                    label = { Text(stringResource(R.string.login_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = onEmailChange,
+                    label = { Text(stringResource(R.string.login_email_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = onPasswordChange,
+                    label = { Text(stringResource(R.string.login_password_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            1 -> {
+                OutlinedTextField(
+                    value = kitchenName,
+                    onValueChange = onKitchenNameChange,
+                    label = { Text(stringResource(R.string.login_kitchen_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                KitchenTypeDropdown(
+                    value = kitchenType,
+                    onValueChange = onKitchenTypeChange,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = yearsOfExperience,
+                    onValueChange = { v -> onYearsOfExperienceChange(v.filter { it.isDigit() }) },
+                    label = { Text(stringResource(R.string.login_years_experience_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = whatsappNumber,
+                    onValueChange = onWhatsappNumberChange,
+                    label = { Text(stringResource(R.string.login_whatsapp_number_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            else -> {
+                OutlinedTextField(
+                    value = bkashNumber,
+                    onValueChange = onBkashNumberChange,
+                    label = { Text(stringResource(R.string.login_bkash_number_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = nagadNumber,
+                    onValueChange = onNagadNumberChange,
+                    label = { Text(stringResource(R.string.login_nagad_number_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(errorMessage, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (step > 0) {
+                OutlinedButton(
+                    onClick = { onStepChange(step - 1) },
+                    enabled = !isLoading,
+                    modifier = Modifier.weight(1f).height(52.dp)
+                ) {
+                    Text(stringResource(R.string.login_step_back_button))
+                }
+            }
+            Button(
+                onClick = {
+                    if (step < stepTitles.lastIndex) onStepChange(step + 1) else onSubmit()
+                },
+                enabled = !isLoading && canProceed,
+                modifier = Modifier.weight(1f).height(52.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        if (step < stepTitles.lastIndex) stringResource(R.string.login_step_next_button)
+                        else stringResource(R.string.signup_button)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = onToggleToLogin, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.login_toggle_to_login))
         }
     }
 }

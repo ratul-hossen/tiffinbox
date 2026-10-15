@@ -32,6 +32,17 @@
     <string name="login_whatsapp_number_required">Enter your WhatsApp number</string>
     <string name="login_whatsapp_number_invalid">Enter a valid Bangladeshi number (e.g. 01XXXXXXXXX)</string>
     <string name="login_bkash_number_label">bKash number</string>
+    <string name="login_nagad_number_label">Nagad number (optional)</string>
+    <string name="login_kitchen_type_label">Kitchen type</string>
+    <string name="login_years_experience_label">Experience (years)</string>
+    <string name="kitchen_type_home">Home Kitchen</string>
+    <string name="kitchen_type_cloud">Cloud Kitchen</string>
+    <string name="kitchen_type_restaurant">Restaurant</string>
+    <string name="login_step_personal_info_title">Personal Info</string>
+    <string name="login_step_kitchen_info_title">Kitchen Info</string>
+    <string name="login_step_confirm_title">Confirm</string>
+    <string name="login_step_next_button">Next</string>
+    <string name="login_step_back_button">Back</string>
     <string name="login_bkash_number_required">Enter your bKash number (to receive payments)</string>
     <string name="login_button">Login</string>
     <string name="complete_google_profile_title">Just a bit more</string>

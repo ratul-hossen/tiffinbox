@@ -21,6 +21,7 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import com.ratulhossen.tiffinbox.util.normalizeBangladeshPhone
 import kotlinx.coroutines.launch
@@ -41,8 +42,11 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
     val email = user?.email.orEmpty()
 
     var kitchenName by remember { mutableStateOf("") }
+    var kitchenType by remember { mutableStateOf("") }
+    var yearsOfExperience by remember { mutableStateOf("") }
     var whatsappNumber by remember { mutableStateOf("") }
     var bkashNumber by remember { mutableStateOf("") }
+    var nagadNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -87,7 +91,10 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
                     kitchenName = kitchenName.trim(),
                     ownerName = name,
                     whatsappNumber = normalizedPhone,
-                    bkashNumber = bkashNumber.trim()
+                    bkashNumber = bkashNumber.trim(),
+                    nagadNumber = nagadNumber.trim(),
+                    kitchenType = kitchenType.trim(),
+                    yearsOfExperience = yearsOfExperience.toIntOrNull() ?: 0
                 )
             }
             FirestoreUserRepository.registerFcmToken(uid)
@@ -121,6 +128,21 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
+            KitchenTypeDropdown(
+                value = kitchenType,
+                onValueChange = { kitchenType = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = yearsOfExperience,
+                onValueChange = { v -> yearsOfExperience = v.filter { it.isDigit() } },
+                label = { Text(stringResource(R.string.login_years_experience_label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         OutlinedTextField(
@@ -138,6 +160,15 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
                 value = bkashNumber,
                 onValueChange = { bkashNumber = it },
                 label = { Text(stringResource(R.string.login_bkash_number_label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = nagadNumber,
+                onValueChange = { nagadNumber = it },
+                label = { Text(stringResource(R.string.login_nagad_number_label)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
