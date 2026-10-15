@@ -200,6 +200,8 @@
 
     <!-- OrdersScreen -->
     <string name="orders_empty_message">এখনো কোনো অর্ডার নেই</string>
+    <string name="orders_stat_total_orders">মোট অর্ডার</string>
+    <string name="orders_stat_total_spent">মোট খরচ</string>
 
     <!-- FavoritesScreen -->
     <string name="favorites_empty_title">এখনো কোনো Favorite chef যোগ করেননি</string>

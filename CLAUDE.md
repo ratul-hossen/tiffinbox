@@ -249,13 +249,18 @@ literally.
    `MealUi.availableQuantity` (already built) already is each meal's daily
    capacity; re-use it rather than adding a second, parallel capacity
    number that could drift out of sync.
-6. **[ ] General visual polish pass** — stat-tile dashboards (chef
-   dashboard already has `EarningStat` tiles), order status vertical
-   timeline (`OrderTrackingScreen` already has one, built earlier this
-   project — nothing to add there). Remaining: apply the same
-   stat-tile/timeline visual language to the customer Orders/history list
-   if time allows once tasks #62–67 land; not a blocking gap, just
-   unfinished polish.
+6. **[x] General visual polish pass — DONE.** Extracted a shared
+   `StatTile` composable (`ui/components/StatTile.kt`) from what was a
+   private `EarningStat` in `ChefDashboardScreen.kt`, and used it in both
+   places. `OrdersScreen` (customer order history) — which was silently
+   showing `SampleData.pastOrders` forever and never real orders — now
+   fetches real data via a new `FirestoreOrderRepository.getMyOrders()`,
+   shows a Total Orders/Total Spent stat-tile row at the top, and replaced
+   the old binary "Delivered or not" badge with a `MiniProgressTimeline`
+   (small dot-and-line stepper matching `OrderTrackingScreen`'s visual
+   language) for any order still in progress; Delivered/Cancelled keep a
+   badge, now correctly color-coded (Cancelled was previously drawn with
+   the same tone as "in progress" — a real bug, not just cosmetic).
 7. **[ ] (Much larger, separate effort, not in this redesign pass) The
    actual delivery-partner Android app** — tracked here only as a
    pointer, see "Delivery system groundwork" above. Do not start this

@@ -30,7 +30,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -42,6 +41,7 @@ import com.ratulhossen.tiffinbox.data.model.EarningsSummary
 import com.ratulhossen.tiffinbox.domain.DemandForecastEngine
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.ui.components.EarningsChart
+import com.ratulhossen.tiffinbox.ui.components.StatTile
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import kotlinx.coroutines.launch
 
@@ -339,9 +339,9 @@ fun ChefDashboardScreen(
         Spacer(modifier = Modifier.height(16.dp))
         val earningsSnapshot = earnings
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            EarningStat(stringResource(R.string.chef_dashboard_earning_today), stringResource(R.string.price_tag, earningsSnapshot?.todayTotal ?: 0), Modifier.weight(1f))
-            EarningStat(stringResource(R.string.chef_dashboard_earning_week), stringResource(R.string.price_tag, earningsSnapshot?.weekTotal ?: 0), Modifier.weight(1f))
-            EarningStat(stringResource(R.string.chef_dashboard_earning_recent_orders), "${earningsSnapshot?.recentOrderCount ?: 0}", Modifier.weight(1f))
+            StatTile(stringResource(R.string.chef_dashboard_earning_today), stringResource(R.string.price_tag, earningsSnapshot?.todayTotal ?: 0), Modifier.weight(1f))
+            StatTile(stringResource(R.string.chef_dashboard_earning_week), stringResource(R.string.price_tag, earningsSnapshot?.weekTotal ?: 0), Modifier.weight(1f))
+            StatTile(stringResource(R.string.chef_dashboard_earning_recent_orders), "${earningsSnapshot?.recentOrderCount ?: 0}", Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -483,20 +483,3 @@ fun ChefDashboardScreen(
     }
 }
 
-@Composable
-private fun EarningStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}

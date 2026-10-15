@@ -5,6 +5,9 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
+import com.ratulhossen.tiffinbox.data.model.OrderStage
+import com.ratulhossen.tiffinbox.data.model.PastOrderUi
+import com.ratulhossen.tiffinbox.data.model.toOrderStage
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -190,6 +193,52 @@ object FirestoreOrderRepository {
             recentOrderCount = orders.size,
             dailyTotals = dailyTotals
         )
+    }
+
+    /**
+     * A customer's own order history (OrdersScreen) — real Firestore data,
+     * not the SampleData placeholder it showed before. Chef name/emoji are
+     * looked up per distinct chefId (a handful of orders at demo scale, so
+     * one lookup per chef rather than a join).
+     */
+    suspend fun getMyOrders(): List<PastOrderUi> {
+        return try {
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return emptyList()
+            val snapshot = FirebaseFirestore.getInstance()
+                .collection("orders")
+                .whereEqualTo("customerId", customerId)
+                .limit(100)
+                .get()
+                .await()
+
+            val dateFormat = SimpleDateFormat("MMM d, h:mm a", Locale.US)
+            val chefCache = HashMap<String, Pair<String, String>>()
+
+            snapshot.documents
+                .sortedByDescending { it.getLong("placedAt") ?: 0L }
+                .mapNotNull { doc ->
+                    val chefId = doc.getString("chefId") ?: return@mapNotNull null
+                    val (chefName, chefEmoji) = chefCache.getOrPut(chefId) {
+                        val chef = FirestoreCatalogRepository.getChef(chefId)
+                        (chef?.kitchenName ?: "—") to (chef?.emoji ?: "🍽️")
+                    }
+                    val itemNames = (doc.get("items") as? List<*>)
+                        ?.mapNotNull { (it as? Map<*, *>)?.get("mealName") as? String }
+                        .orEmpty()
+                    val placedAt = doc.getLong("placedAt") ?: 0L
+                    PastOrderUi(
+                        id = doc.id,
+                        chefName = chefName,
+                        chefEmoji = chefEmoji,
+                        itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
+                        total = (doc.getLong("totalPrice") ?: 0L).toInt(),
+                        status = (doc.getString("status") ?: "Placed").toOrderStage() ?: OrderStage.PLACED,
+                        placedOn = if (placedAt > 0) dateFormat.format(Date(placedAt)) else ""
+                    )
+                }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     fun updateOrderStatus(orderId: String, status: String, customerId: String? = null) {

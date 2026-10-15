@@ -198,6 +198,8 @@
 
     <!-- OrdersScreen -->
     <string name="orders_empty_message">No orders yet</string>
+    <string name="orders_stat_total_orders">Total Orders</string>
+    <string name="orders_stat_total_spent">Total Spent</string>
 
     <!-- FavoritesScreen -->
     <string name="favorites_empty_title">You haven\'t added any favorite chefs yet</string>
