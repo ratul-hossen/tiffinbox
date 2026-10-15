@@ -332,6 +332,9 @@
     <string name="chef_dashboard_delivery_mode_title">ডেলিভারি কে করবে?</string>
     <string name="chef_dashboard_delivery_mode_self">আমি নিজে ডেলিভারি করব</string>
     <string name="chef_dashboard_delivery_mode_tiffinbox">TiffinBox-এর ডেলিভারি সার্ভিস ব্যবহার করব</string>
+    <string name="chef_dashboard_delivery_coming_soon_title">শীঘ্রই আসছে</string>
+    <string name="chef_dashboard_delivery_coming_soon_message">দুঃখিত, আমরা এখনো নিজস্ব ডেলিভারি সিস্টেম চালু করিনি। আপাতত আপনি বাইরের কোনো ডেলিভারি সার্ভিস ব্যবহার করতে পারেন। আগ্রহ দেখানোর জন্য ধন্যবাদ — আমরা শীঘ্রই ডেলিভারি সিস্টেম চালু করব।</string>
+    <string name="chef_dashboard_delivery_coming_soon_ok">ঠিক আছে</string>
     <string name="chef_dashboard_kitchen_photo_title">কিচেনের ছবি</string>
     <string name="chef_dashboard_kitchen_photo_button">ছবি আপলোড করুন</string>
     <string name="chef_dashboard_videos_title">ভিডিও পোস্ট করুন</string>

@@ -65,6 +65,7 @@ fun ChefDashboardScreen(
     var videos by remember { mutableStateOf<List<ChefVideoUi>>(emptyList()) }
     var videoUrl by remember { mutableStateOf("") }
     var videoCaption by remember { mutableStateOf("") }
+    var showDeliveryComingSoonDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -242,10 +243,12 @@ fun ChefDashboardScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
                         selected = deliveryMode == "tiffinbox",
-                        onClick = {
-                            deliveryMode = "tiffinbox"
-                            FirestoreChefRepository.updateDeliveryMode(chefId, "tiffinbox")
-                        }
+                        // TiffinBox's own delivery system doesn't exist yet (see
+                        // CLAUDE.md phase 7) - selecting this shows an apology
+                        // dialog instead of actually switching deliveryMode, so
+                        // a chef can't silently end up relying on a service that
+                        // isn't really there.
+                        onClick = { showDeliveryComingSoonDialog = true }
                     )
                     Text(
                         stringResource(R.string.chef_dashboard_delivery_mode_tiffinbox),
@@ -480,6 +483,19 @@ fun ChefDashboardScreen(
                 }
             }
         }
+    }
+
+    if (showDeliveryComingSoonDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeliveryComingSoonDialog = false },
+            title = { Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_title)) },
+            text = { Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_message)) },
+            confirmButton = {
+                TextButton(onClick = { showDeliveryComingSoonDialog = false }) {
+                    Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_ok))
+                }
+            }
+        )
     }
 }
 

@@ -330,6 +330,9 @@
     <string name="chef_dashboard_delivery_mode_title">Who handles delivery?</string>
     <string name="chef_dashboard_delivery_mode_self">I\'ll deliver it myself</string>
     <string name="chef_dashboard_delivery_mode_tiffinbox">Use TiffinBox\'s delivery service</string>
+    <string name="chef_dashboard_delivery_coming_soon_title">Coming soon</string>
+    <string name="chef_dashboard_delivery_coming_soon_message">Sorry, we don\'t have our own delivery system yet. For now, please use an external delivery service. Thanks for your interest — we\'ll be launching our delivery system soon.</string>
+    <string name="chef_dashboard_delivery_coming_soon_ok">OK</string>
     <string name="chef_dashboard_kitchen_photo_title">Kitchen photo</string>
     <string name="chef_dashboard_kitchen_photo_button">Upload photo</string>
     <string name="chef_dashboard_videos_title">Post a video</string>

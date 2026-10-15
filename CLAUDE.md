@@ -128,6 +128,16 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   order. **The actual delivery-partner Android app (job list,
   accept/decline, live location, navigation) does not exist yet** — that's
   the single largest remaining piece of unbuilt work in the whole project.
+  Because of this, selecting **"tiffinbox" delivery mode on
+  `ChefDashboardScreen` no longer actually switches `deliveryMode`** — it
+  shows a "Coming soon" apology dialog instead (apologizes, thanks the
+  chef for their interest, tells them to use an external delivery service
+  for now, says TiffinBox's own system is coming soon) and leaves
+  `deliveryMode` unchanged. The radio option stays visible (so the
+  feature reads as "coming soon," not missing) but can no longer be
+  silently selected while there's no real system behind it. This is the
+  explicit owner decision — don't wire it back to a real toggle until the
+  delivery-partner app (phase 7) actually exists.
 - admin-web: Dashboard, Chefs, Meals, Users, Orders, Reviews,
   Subscriptions, Activity Log, Chats, Delivery Partners, Admins (with a
   super-admin tier) pages — all built and deployed.
