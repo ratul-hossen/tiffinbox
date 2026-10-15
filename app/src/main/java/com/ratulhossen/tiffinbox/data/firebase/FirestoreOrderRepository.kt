@@ -62,7 +62,13 @@ object FirestoreOrderRepository {
                 "placedAt" to System.currentTimeMillis()
             )
 
-            FirebaseFirestore.getInstance().collection("orders").add(orderData).await().id
+            val orderId = FirebaseFirestore.getInstance().collection("orders").add(orderData).await().id
+            FirestoreNotificationRepository.addNotification(
+                uid = customerId,
+                title = "Order placed",
+                body = "Your order has been placed and is waiting for the chef to accept it."
+            )
+            orderId
         } catch (e: Exception) {
             null
         }
@@ -186,9 +192,16 @@ object FirestoreOrderRepository {
         )
     }
 
-    fun updateOrderStatus(orderId: String, status: String) {
+    fun updateOrderStatus(orderId: String, status: String, customerId: String? = null) {
         try {
             FirebaseFirestore.getInstance().collection("orders").document(orderId).update("status", status)
+            if (customerId != null) {
+                FirestoreNotificationRepository.addNotification(
+                    uid = customerId,
+                    title = "Order update",
+                    body = "Your order is now: $status"
+                )
+            }
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
         }

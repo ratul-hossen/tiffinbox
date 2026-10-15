@@ -210,6 +210,8 @@
     <string name="profile_menu_address_management">Address Management</string>
     <string name="profile_menu_payment_method">Payment Method</string>
     <string name="profile_menu_notifications">Notifications</string>
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_empty">No notifications yet</string>
     <string name="profile_menu_settings">Settings</string>
     <string name="profile_demo_user_name">Rafi Ahmed</string>
     <string name="profile_demo_phone">+880 1XXXXXXXXX</string>

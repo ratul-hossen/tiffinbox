@@ -41,6 +41,13 @@ data class ChefVideoUi(
     val postedAt: Long
 )
 
+data class NotificationUi(
+    val id: String,
+    val title: String,
+    val body: String,
+    val createdAt: Long
+)
+
 data class MealUi(
     val id: String,
     val chefId: String,

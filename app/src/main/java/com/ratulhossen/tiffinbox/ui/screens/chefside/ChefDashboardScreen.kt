@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
@@ -45,7 +46,13 @@ import com.ratulhossen.tiffinbox.util.ImageCompressor
 import kotlinx.coroutines.launch
 
 @Composable
-fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -> Unit, onOpenMessages: () -> Unit) {
+fun ChefDashboardScreen(
+    chefId: String,
+    onLogout: () -> Unit,
+    onManageMenu: () -> Unit,
+    onOpenMessages: () -> Unit,
+    onOpenNotifications: () -> Unit = {}
+) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
     var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
@@ -93,7 +100,8 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
     }
 
     fun respondToOrder(orderId: String, newStatus: String) {
-        FirestoreOrderRepository.updateOrderStatus(orderId, newStatus)
+        val customerId = orders.find { it.id == orderId }?.customerId
+        FirestoreOrderRepository.updateOrderStatus(orderId, newStatus, customerId)
         orders = orders.filterNot { it.id == orderId }
     }
 
@@ -150,7 +158,12 @@ fun ChefDashboardScreen(chefId: String, onLogout: () -> Unit, onManageMenu: () -
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            TextButton(onClick = onLogout) { Text(stringResource(R.string.action_logout)) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onOpenNotifications) {
+                    Icon(Icons.Filled.Notifications, contentDescription = stringResource(R.string.notifications_title))
+                }
+                TextButton(onClick = onLogout) { Text(stringResource(R.string.action_logout)) }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

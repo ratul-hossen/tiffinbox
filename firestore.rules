@@ -181,5 +181,21 @@ service cloud.firestore {
         ));
       }
     }
+
+    // notifications/{uid}/items/{itemId} — a user's in-app notification
+    // history (see FirestoreNotificationRepository.kt), separate from FCM
+    // push. Only the owner (or an admin) may ever READ their own inbox.
+    // Writes are deliberately cross-user: a chef writes into their
+    // customer's inbox on an order-status change, and admin-web writes into
+    // a chef's inbox on approval — there's no Cloud Function to broker this
+    // (free-tier constraint), so any signed-in user may create an entry in
+    // anyone's inbox. The content written is always a plain, non-sensitive
+    // status string from trusted client code paths, never arbitrary
+    // user-authored text, and entries are never updatable or deletable.
+    match /notifications/{uid}/items/{itemId} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create: if isSignedIn() || isAdmin();
+      allow update, delete: if false;
+    }
   }
 }

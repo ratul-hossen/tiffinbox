@@ -29,6 +29,7 @@ import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
 import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefListScreen
 import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
 import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
+import com.ratulhossen.tiffinbox.ui.screens.notifications.NotificationsScreen
 import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
 import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
 import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
@@ -183,8 +184,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
                 onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
-                // Wired once NotificationsScreen/Routes.NOTIFICATIONS composable lands (task #66).
-                onNotificationsClick = { },
+                onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -239,6 +239,10 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             PrivacyPolicyScreen(onBack = { navController.popBackStack() })
         }
 
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(onBack = { navController.popBackStack() })
+        }
+
         composable(
             route = Routes.SUBSCRIBE,
             arguments = listOf(navArgument("chefId") { type = NavType.StringType })
@@ -260,7 +264,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 },
                 onManageMenu = { navController.navigate(Routes.MENU_MANAGER) },
-                onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) }
+                onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) },
+                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
             )
         }
 
