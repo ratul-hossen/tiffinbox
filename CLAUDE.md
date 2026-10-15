@@ -381,12 +381,13 @@ constraint (see "Known billing constraint" above).
   runtime, no server, no new Gradle dependency (uses Android's built-in
   `org.json`). Both load once in `MainActivity.onCreate` and fail
   gracefully to a neutral/no-op result if the asset can't be parsed.
-- **Full report with dataset/model/F1 details:** `ml/MODEL_REPORT.docx`
-  (generated via `ml/generate_report.js`). Training data CSVs and build
-  output (`ml/data/*.csv`, `ml/export/`) are gitignored as large/
-  regenerable — see `ml/data/SOURCE.md` for exact reproduction steps; the
-  shipped model artifacts the app actually reads live in
-  `app/src/main/assets/ml/` and **are** committed.
+- **Full report with dataset/model/F1 details:** `ml/MODEL_REPORT.md` —
+  plain Markdown (not `.docx`) so it reads directly on GitHub when
+  browsing the `ml/` folder. Training data CSVs and build output
+  (`ml/data/*.csv`, `ml/export/`) are gitignored as large/regenerable —
+  see `ml/data/SOURCE.md` for exact reproduction steps; the shipped model
+  artifacts the app actually reads live in `app/src/main/assets/ml/` and
+  **are** committed.
 - **Scope note:** this covers exactly the 2 features the owner asked for
   (recommendation + NL search) — not a general ML platform. Don't expand
   it with more trained models without a fresh explicit ask.
