@@ -85,11 +85,11 @@ export default function DeliveryPartnersPage() {
   if (error) return <p className="text-sm text-apple-red">Error: {error}</p>;
 
   const inputClass =
-    "rounded-xl border border-black/10 px-3.5 py-2.5 text-sm text-apple-text placeholder:text-apple-secondary/70 focus:outline-none focus:ring-2 focus:ring-apple-blue/40";
+    "rounded-xl border border-apple-border2 bg-apple-surface2 px-3.5 py-2.5 text-sm text-apple-text placeholder:text-apple-secondary/70 focus:outline-none focus:ring-2 focus:ring-apple-blue/40";
 
   return (
     <div className="space-y-6">
-      <div className="bg-apple-surface rounded-2xl shadow-card border border-black/5 p-5">
+      <div className="bg-apple-surface rounded-2xl shadow-card border border-apple-border p-5">
         <h2 className="text-sm font-semibold text-apple-text mb-3 flex items-center gap-2">
           <UserPlus size={16} /> Add a delivery partner
         </h2>
@@ -140,9 +140,9 @@ export default function DeliveryPartnersPage() {
         )}
       </div>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-hidden">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-black/[0.02] text-apple-secondary text-xs uppercase tracking-wide">
+          <thead className="bg-apple-subtle text-apple-secondary text-xs uppercase tracking-wide">
             <tr>
               <th className="text-left px-5 py-3 font-medium">Name</th>
               <th className="text-left px-5 py-3 font-medium">Email</th>
@@ -151,7 +151,7 @@ export default function DeliveryPartnersPage() {
               <th className="text-right px-5 py-3 font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/5">
+          <tbody className="divide-y divide-apple-border">
             {partners.map((partner) => (
               <tr key={partner.id}>
                 <td className="px-5 py-3 text-apple-text font-medium flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function DeliveryPartnersPage() {
                     className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors duration-150 ${
                       partner.isActive
                         ? "bg-apple-blue/10 text-apple-blue"
-                        : "bg-black/5 text-apple-secondary"
+                        : "bg-apple-hover text-apple-secondary"
                     }`}
                   >
                     {partner.isActive ? "Active" : "Inactive"}

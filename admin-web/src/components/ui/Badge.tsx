@@ -7,7 +7,7 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
   amber: "bg-apple-amber/10 text-apple-amber",
   red: "bg-apple-red/10 text-apple-red",
   blue: "bg-apple-blue/10 text-apple-blue",
-  neutral: "bg-black/5 text-apple-secondary",
+  neutral: "bg-apple-hover text-apple-secondary",
 };
 
 interface Props {

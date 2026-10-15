@@ -33,18 +33,16 @@ export default function ActivityLogPage({ search }: Props) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-apple-text tracking-tight">
-        Activity Log ({filtered.length})
-      </h2>
+      <p className="text-sm text-apple-secondary">{filtered.length} entries</p>
       <p className="text-xs text-apple-secondary">
         Every verify/edit/delete/status-change action taken from this admin panel is recorded
         here, newest first. Append-only — entries can't be edited or deleted from the UI.
       </p>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+            <tr className="text-left text-xs text-apple-secondary border-b border-apple-border">
               <th className="px-4 py-3">When</th>
               <th className="px-4 py-3">Admin</th>
               <th className="px-4 py-3">Action</th>
@@ -54,7 +52,7 @@ export default function ActivityLogPage({ search }: Props) {
           </thead>
           <tbody>
             {filtered.map((entry) => (
-              <tr key={entry.id} className="border-b border-black/5 last:border-0 align-top">
+              <tr key={entry.id} className="border-b border-apple-border last:border-0 align-top">
                 <td className="px-4 py-3 text-apple-secondary whitespace-nowrap">
                   {formatDateTime(entry.timestamp)}
                 </td>

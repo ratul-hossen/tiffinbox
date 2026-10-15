@@ -40,9 +40,9 @@ export default function SelfServiceRequestsPage() {
   if (error) return <p className="text-sm text-apple-red">Error: {error}</p>;
 
   return (
-    <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-hidden">
+    <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-black/[0.02] text-apple-secondary text-xs uppercase tracking-wide">
+        <thead className="bg-apple-subtle text-apple-secondary text-xs uppercase tracking-wide">
           <tr>
             <th className="text-left px-5 py-3 font-medium">Customer</th>
             <th className="text-left px-5 py-3 font-medium">Pickup</th>
@@ -52,7 +52,7 @@ export default function SelfServiceRequestsPage() {
             <th className="text-left px-5 py-3 font-medium">Delivery Partner</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-black/5">
+        <tbody className="divide-y divide-apple-border">
           {requests.map((request) => (
             <tr key={request.id}>
               <td className="px-5 py-3 text-apple-secondary">{request.customerId ?? "–"}</td>
@@ -69,7 +69,7 @@ export default function SelfServiceRequestsPage() {
                   value={request.deliveryPartnerId ?? ""}
                   onChange={(e) => assignPartner(request, e.target.value)}
                   disabled={busyId === request.id}
-                  className="text-xs border border-black/10 rounded-lg px-2 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
+                  className="text-xs border border-apple-border2 rounded-lg px-2 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
                 >
                   <option value="">Unassigned</option>
                   {partners.map((partner) => (

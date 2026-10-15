@@ -141,6 +141,7 @@
     <string name="chef_card_rating_orders">%1$s (%2$s)</string>
     <string name="chef_card_distance_km">%1$s km</string>
     <string name="chef_card_tiffinbox_delivery_badge">🛵 TiffinBox Delivery</string>
+    <string name="chef_card_demo_badge">DEMO</string>
 
     <!-- MealDetailScreen -->
     <string name="meal_detail_title">Meal Details</string>

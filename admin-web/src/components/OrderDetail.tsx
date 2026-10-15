@@ -35,7 +35,7 @@ function StatusTimeline({ status }: { status?: string }) {
             <div className="flex flex-col items-center gap-1">
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200 ${
-                  done ? "bg-apple-blue text-white" : "bg-black/5 text-apple-secondary"
+                  done ? "bg-apple-blue text-white" : "bg-apple-hover text-apple-secondary"
                 }`}
               >
                 {done ? <Check size={13} /> : <span className="text-[10px]">{idx + 1}</span>}
@@ -50,7 +50,7 @@ function StatusTimeline({ status }: { status?: string }) {
             </div>
             {!isLast && (
               <div
-                className={`h-0.5 flex-1 mx-1 rounded ${idx < currentIndex ? "bg-apple-blue" : "bg-black/5"}`}
+                className={`h-0.5 flex-1 mx-1 rounded ${idx < currentIndex ? "bg-apple-blue" : "bg-apple-hover"}`}
               />
             )}
           </div>
@@ -111,7 +111,7 @@ export default function OrderDetail({ order, chefName, onClose }: Props) {
               <img
                 src={`data:image/jpeg;base64,${order.paymentScreenshotBase64}`}
                 alt="Payment screenshot"
-                className="max-h-60 rounded-xl border border-black/10"
+                className="max-h-60 rounded-xl border border-apple-border2"
               />
             </a>
           </section>
@@ -138,7 +138,7 @@ export default function OrderDetail({ order, chefName, onClose }: Props) {
                   </tr>
                 ) : (
                   items.map((it, idx) => (
-                    <tr key={idx} className="border-t border-black/5">
+                    <tr key={idx} className="border-t border-apple-border">
                       <td className="px-3 py-2">{it.mealName ?? it.mealId ?? "–"}</td>
                       <td className="px-3 py-2 text-right">{it.quantity ?? 0}</td>
                       <td className="px-3 py-2 text-right">{formatCurrency(it.unitPrice ?? 0)}</td>
@@ -166,7 +166,7 @@ export default function OrderDetail({ order, chefName, onClose }: Props) {
             <span className="text-apple-secondary">Platform fee</span>
             <span>{formatCurrency(order.platformFee ?? 0)}</span>
           </div>
-          <div className="flex justify-between text-base font-semibold border-t border-black/5 pt-2 mt-1">
+          <div className="flex justify-between text-base font-semibold border-t border-apple-border pt-2 mt-1">
             <span>Total</span>
             <span>{formatCurrency(order.totalPrice ?? 0)}</span>
           </div>

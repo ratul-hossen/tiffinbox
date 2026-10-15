@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { ChefHat, Package, Repeat, Soup, Users as UsersIcon, Wallet } from "lucide-react";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, AppUser, Order, OrderStatus, Subscription } from "../types";
 import { ORDER_STATUSES } from "../types";
@@ -87,19 +86,17 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-apple-text tracking-tight">Dashboard</h2>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard label="Chefs" value={chefs.length} icon={ChefHat} />
-        <StatCard label="Meals" value={meals.length} icon={Soup} />
-        <StatCard label="Customers" value={customers} icon={UsersIcon} />
-        <StatCard label="Orders" value={orders.length} icon={Package} />
-        <StatCard label="Revenue" value={formatCurrency(totalRevenue)} icon={Wallet} />
-        <StatCard label="Active subs" value={activeSubscriptions} icon={Repeat} />
+        <StatCard label="Chefs" value={chefs.length} caption="On the platform" />
+        <StatCard label="Meals" value={meals.length} caption="Across all chefs" />
+        <StatCard label="Customers" value={customers} caption="Registered" />
+        <StatCard label="Orders" value={orders.length} caption="All time" />
+        <StatCard label="Revenue" value={formatCurrency(totalRevenue)} caption="All time" />
+        <StatCard label="Active subs" value={activeSubscriptions} caption="Weekly/monthly plans" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 bg-apple-surface rounded-2xl border border-black/5 p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
+        <div className="lg:col-span-2 bg-apple-surface rounded-2xl border border-apple-border p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
           <h3 className="text-sm font-semibold text-apple-text mb-4">Orders per day (last 14 days)</h3>
           {ordersLoading ? (
             <p className="text-sm text-apple-secondary">Loading…</p>
@@ -121,7 +118,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-apple-surface rounded-2xl border border-black/5 p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
+        <div className="bg-apple-surface rounded-2xl border border-apple-border p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
           <h3 className="text-sm font-semibold text-apple-text mb-4">Orders by status</h3>
           {statusBreakdown.length === 0 ? (
             <p className="text-sm text-apple-secondary">No orders yet.</p>
@@ -131,7 +128,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
         <h3 className="text-sm font-semibold text-apple-text mb-4">Top chefs by order count</h3>
         {topChefs.length === 0 ? (
           <p className="text-sm text-apple-secondary">No orders yet.</p>
@@ -149,7 +146,7 @@ export default function Dashboard() {
                       {c.orders} orders · {formatCurrency(c.revenue)}
                     </span>
                   </div>
-                  <div className="h-1.5 bg-black/5 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-apple-hover rounded-full overflow-hidden">
                     <div
                       className="h-full bg-apple-blue rounded-full"
                       style={{ width: `${(c.orders / maxTopChefOrders) * 100}%` }}
@@ -174,7 +171,14 @@ function StatusDonut({ data }: { data: { status: string; count: number; fill: st
   return (
     <div className="flex flex-col items-center gap-4">
       <svg viewBox="0 0 100 100" width={160} height={160} className="-rotate-90">
-        <circle cx="50" cy="50" r={radius} fill="none" stroke="#00000010" strokeWidth={14} />
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          fill="none"
+          style={{ stroke: "var(--apple-hover2)" }}
+          strokeWidth={14}
+        />
         {data.map((d) => {
           const fraction = total === 0 ? 0 : d.count / total;
           const dash = fraction * circumference;

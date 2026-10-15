@@ -46,13 +46,11 @@ export default function SubscriptionsPage({ search }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-apple-text tracking-tight">
-          Subscriptions ({filtered.length})
-        </h2>
+        <p className="text-sm text-apple-secondary">{filtered.length} subscriptions</p>
         <select
           value={activeFilter}
           onChange={(e) => setActiveFilter(e.target.value as "all" | "active" | "inactive")}
-          className="text-sm border border-black/10 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+          className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
         >
           <option value="all">All</option>
           <option value="active">Active</option>
@@ -60,10 +58,10 @@ export default function SubscriptionsPage({ search }: Props) {
         </select>
       </div>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+            <tr className="text-left text-xs text-apple-secondary border-b border-apple-border">
               <th className="px-4 py-3">Chef</th>
               <th className="px-4 py-3">Plan</th>
               <th className="px-4 py-3">Meal</th>
@@ -76,7 +74,7 @@ export default function SubscriptionsPage({ search }: Props) {
           </thead>
           <tbody>
             {filtered.map((sub) => (
-              <tr key={sub.id} className="border-b border-black/5 last:border-0">
+              <tr key={sub.id} className="border-b border-apple-border last:border-0">
                 <td className="px-4 py-3">{sub.chefName ?? sub.chefId}</td>
                 <td className="px-4 py-3 text-apple-secondary">{sub.plan}</td>
                 <td className="px-4 py-3 text-apple-secondary">{sub.mealType ?? "–"}</td>

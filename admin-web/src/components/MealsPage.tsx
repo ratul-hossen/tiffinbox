@@ -83,11 +83,11 @@ export default function MealsPage({ search }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-apple-text tracking-tight">Meals ({filtered.length})</h2>
+        <p className="text-sm text-apple-secondary">{filtered.length} meals</p>
         <select
           value={chefFilter}
           onChange={(e) => setChefFilter(e.target.value)}
-          className="text-sm border border-black/10 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+          className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
         >
           <option value="all">All chefs</option>
           {chefs.map((c) => (
@@ -98,10 +98,10 @@ export default function MealsPage({ search }: Props) {
         </select>
       </div>
 
-      <div className="bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-x-auto">
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
+            <tr className="text-left text-xs text-apple-secondary border-b border-apple-border">
               <th className="px-4 py-3">Meal</th>
               <th className="px-4 py-3">Chef</th>
               <th className="px-4 py-3">Category</th>
@@ -113,7 +113,7 @@ export default function MealsPage({ search }: Props) {
           </thead>
           <tbody>
             {filtered.map((meal) => (
-              <tr key={meal.id} className="border-b border-black/5 last:border-0">
+              <tr key={meal.id} className="border-b border-apple-border last:border-0">
                 <td className="px-4 py-3">
                   {meal.emoji ?? "🍽️"} {meal.name}
                 </td>
@@ -124,7 +124,7 @@ export default function MealsPage({ search }: Props) {
                 <td className="px-4 py-3">
                   {editingId === meal.id ? (
                     <input
-                      className="w-20 border border-black/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
+                      className="w-20 border border-apple-border2 bg-apple-surface2 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
                       value={draft.price}
                       onChange={(e) => setDraft({ ...draft, price: e.target.value })}
                     />
@@ -135,7 +135,7 @@ export default function MealsPage({ search }: Props) {
                 <td className="px-4 py-3">
                   {editingId === meal.id ? (
                     <input
-                      className="w-16 border border-black/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
+                      className="w-16 border border-apple-border2 bg-apple-surface2 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue/50"
                       value={draft.availableQuantity}
                       onChange={(e) => setDraft({ ...draft, availableQuantity: e.target.value })}
                     />

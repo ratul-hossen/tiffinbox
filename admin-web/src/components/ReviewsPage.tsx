@@ -49,11 +49,11 @@ export default function ReviewsPage({ search }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-apple-text tracking-tight">Reviews ({filtered.length})</h2>
+        <p className="text-sm text-apple-secondary">{filtered.length} reviews</p>
         <select
           value={chefFilter}
           onChange={(e) => setChefFilter(e.target.value)}
-          className="text-sm border border-black/10 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+          className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
         >
           <option value="all">All chefs</option>
           {chefs.map((c) => (
@@ -68,7 +68,7 @@ export default function ReviewsPage({ search }: Props) {
         {filtered.map((review) => (
           <div
             key={review.id}
-            className="bg-apple-surface rounded-2xl border border-black/5 p-5 shadow-card hover:shadow-card-hover transition-shadow duration-200"
+            className="bg-apple-surface rounded-2xl border border-apple-border p-5 shadow-card hover:shadow-card-hover transition-shadow duration-200"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -89,7 +89,7 @@ export default function ReviewsPage({ search }: Props) {
               <div>On-time: {review.onTimeRating ?? "–"}</div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-black/5">
+            <div className="mt-3 pt-3 border-t border-apple-border">
               <button
                 onClick={() => handleDelete(review.id)}
                 disabled={busyId === review.id}

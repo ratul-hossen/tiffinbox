@@ -392,6 +392,119 @@ constraint (see "Known billing constraint" above).
   (recommendation + NL search) — not a general ML platform. Don't expand
   it with more trained models without a fresh explicit ask.
 
+## Demo chefs (seed/remove from admin-web, 2026-10)
+
+Owner's ask: replace any old placeholder/junk chef accounts with 5 fresh,
+fully-detailed demo chefs (unique names, kitchen details, bios, menus),
+clearly marked to real users as demo (not quietly mixed in), skip the
+normal approval workflow (demo data doesn't need verifying), and give the
+admin panel a one-click way to wipe all of it later.
+
+- **Can't be done from this sandbox directly** — this session has no
+  Firebase Admin credential for the live `tiffinbox-2cb8b` project (by
+  design; a service-account key is not something to put in this repo or
+  sandbox). So this is built as an **admin-web feature the owner clicks
+  themselves**, not a one-time script run from here — same reasoning as
+  why delivery-partner accounts are created from admin-web via
+  `secondaryAuth` rather than a backend script.
+- **`admin-web/src/components/ChefsPage.tsx`** now has two buttons above
+  the chef grid: **"🌱 Seed 5 demo chefs"** and **"🗑️ Remove all demo
+  chefs (N)"**. Seeding is safe to click more than once — a demo chef
+  whose fixed email already has a Firebase Auth account is skipped rather
+  than duplicated. Removal is a `writeBatch` delete of every
+  `chefs`/`meals` doc with `isDemo: true` — nothing else is touched, so a
+  real chef or any old non-flagged test account is never affected by this
+  button. **If the owner has older junk/test chef accounts from before
+  this feature existed (no `isDemo` flag), those aren't matched by this
+  button — remove them with ChefsPage's existing per-chef Delete button,
+  which already worked before this feature and needed no changes.**
+- **`admin-web/src/data/demoChefSeed.ts`** — the fixed seed data: 5 unique
+  Bangladeshi home-chef personas (Rashida's Rannaghor / Karim Bhai's
+  Biryani House / Ayesha's Daily Tiffin / Nasreen's Village Flavors /
+  Chittagong Spice Corner), each with a real bio, specialty tags,
+  kitchen type, years of experience, WhatsApp/bKash/Nagad numbers, a
+  Dhaka-area lat/lng, realistic ratings/order counts, and 3 menu items
+  with name/description/price/category/dietary info. Each demo chef
+  account is created via `secondaryAuth` (same pattern as
+  `DeliveryPartnersPage.tsx`) since `firestore.rules` only allows
+  `chefs/{uid}` creation by the signed-in uid itself.
+- **Real photos on 4 of the 5 chefs** — the owner supplied 5 real thali/
+  curry photos directly in chat; 4 were a good thematic fit and are
+  compressed (JPEG, base64, no `data:` prefix — same format
+  `ImageCompressor.kt` produces) into each matching chef's
+  `photoBase64` in `demoChefSeed.ts` (Rashida/Karim/Ayesha/Nasreen). The
+  5th supplied photo (an American chili bowl) didn't fit any of the 5
+  personas' cuisine, so it was deliberately **not** used — forcing a
+  mismatched photo onto a Bangladeshi chef profile would look wrong, not
+  just filler. Chittagong Spice Corner currently has no photo and falls
+  back to its `emoji`, exactly like any other chef/meal that hasn't
+  uploaded one. If the owner wants a photo for it (or wants to replace
+  any of the 4), the existing upload flow (`ChefDashboardScreen`/
+  `MenuManagerScreen`) works on these accounts like any other — sign in
+  as that demo chef with the fixed password from `demoChefSeed.ts`.
+- **`isVerified: true` at creation** — demo chefs skip the normal
+  admin-approval workflow entirely (they're pre-approved since there's no
+  real kitchen to verify).
+- **`isDemo: true`** on both the chef doc and its meal docs is the only
+  new field. It's also read by the Android app
+  (`ChefUi.isDemo`, mapped in `FirestoreCatalogRepository.toChefUi()`) to
+  show a small "DEMO" badge next to the kitchen name on `ChefCard.kt` and
+  `ChefDetailScreen.kt`, so real customers are never misled into thinking
+  a demo chef is a real one.
+
+## admin-web redesign: dark/light "portfolio admin" theme (2026-10)
+
+Owner's ask: restyle the whole admin-web panel to match the Apple-style
+theme on their own portfolio site (`ratul.world/admin`, screenshots shared
+in chat — dark-by-default, grouped sidebar, big page-title headers, stat
+tiles with no icons), make it "user friendly" and fully manageable, and
+keep both a dark and a light mode (explicit follow-up: "Dark mood and
+light mood rakho").
+
+- **Theming mechanism** — `admin-web/src/index.css` defines every
+  `apple-*` color as a CSS variable under `:root` (dark, the default) and
+  `:root[data-theme="light"]` (the original light palette, preserved
+  byte-for-byte so nothing regressed for anyone who prefers it).
+  `tailwind.config.js` maps `apple.bg`/`apple.surface`/`apple.text`/
+  `apple.secondary`/`apple.blue`/`apple.green`/`apple.amber`/`apple.red`
+  through Tailwind's `rgb(var(--x) / <alpha-value>)` pattern (so
+  `bg-apple-blue/10`-style opacity modifiers keep working), plus flat
+  (non-alpha-modifiable) tokens `apple-border`/`apple-border2`/
+  `apple-hover`/`apple-hover2`/`apple-subtle`/`apple-surface2` that
+  replace every hardcoded `border-black/5`, `bg-black/10`, `bg-white/70`,
+  etc. that used to only make sense in light mode. **No component branches
+  on theme** — they just use the same token class names in both modes.
+  `admin-web/src/hooks/useTheme.ts` toggles `data-theme` on `<html>` and
+  persists the choice to `localStorage` (`tiffinbox-admin-theme`); the
+  toggle (sun/moon icon) lives in the sidebar header, next to "TiffinBox /
+  Admin panel".
+- **Sidebar/shell** (`admin-web/src/App.tsx`) — rebuilt to match the
+  portfolio's grouped nav: small uppercase section labels (Overview /
+  Catalog / Operations / People / System) above clusters of nav items,
+  active item gets a blue pill highlight, bottom-of-sidebar status pill
+  ("Writes go live instantly" — this admin's equivalent of the
+  portfolio's "Saves go live instantly", since writes here also go
+  straight to Firestore with no publish step), a "View repo ↗" link (the
+  real GitHub repo — there's no public "site" to link to for an admin
+  panel of a mobile app, so this is the honest equivalent), then
+  email + Sign out. The page title moved from a slim sticky top bar into
+  a large bold `<h1>` + description line at the top of `<main>` itself
+  (matching the portfolio's prominent page-intro block); the Dashboard
+  tab specifically shows a personalized "Hello, {name}." greeting instead
+  of a plain "Dashboard" title. Each page's own now-redundant "X (count)"
+  `<h2>` was downgraded to a small `{count} items` caption under the
+  shared title, so there's no duplicate heading.
+- **`StatCard.tsx`** — simplified to label/huge-number/caption with no
+  icon, matching the portfolio's stat-tile style exactly.
+- **No Firestore/`firestore.rules` changes needed** — this was a pure
+  CSS/presentation change; no new fields, collections, or write paths
+  were introduced (the `isDemo` field from the prior session's demo-chef
+  work was already covered by the existing `chefs`/`meals` rules).
+- Verified visually with Playwright screenshots (dark + light, several
+  pages) against a temporarily-mocked `useAdminAuth` (reverted before
+  commit — real Firestore reads still require real admin sign-in, which
+  this sandbox doesn't have credentials for).
+
 ## File map for things mentioned above
 
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/theme/Color.kt`,

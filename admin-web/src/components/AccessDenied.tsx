@@ -24,7 +24,7 @@ export default function AccessDenied({ user, onBootstrapped }: Props) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-apple-bg px-4">
-      <div className="w-full max-w-md bg-apple-surface rounded-2xl shadow-card border border-black/5 p-8 text-center">
+      <div className="w-full max-w-md bg-apple-surface rounded-2xl shadow-card border border-apple-border p-8 text-center">
         <div className="text-3xl mb-2">🚫</div>
         <h1 className="text-xl font-bold text-apple-text tracking-tight">Access denied</h1>
         <p className="text-sm text-apple-secondary mt-2">
@@ -36,7 +36,7 @@ export default function AccessDenied({ user, onBootstrapped }: Props) {
           Ask an existing admin to add you from the "Admins" tab, using your
           Firebase Auth uid:
         </p>
-        <code className="block text-xs bg-black/5 px-2 py-1.5 rounded mt-2 break-all">
+        <code className="block text-xs bg-apple-hover px-2 py-1.5 rounded mt-2 break-all">
           {user.uid}
         </code>
 

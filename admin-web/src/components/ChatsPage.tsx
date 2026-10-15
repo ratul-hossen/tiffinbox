@@ -96,7 +96,7 @@ export default function ChatsPage({ search }: Props) {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-180px)] min-h-[480px]">
-      <div className="md:w-80 shrink-0 bg-apple-surface rounded-2xl border border-black/5 shadow-card overflow-y-auto">
+      <div className="md:w-80 shrink-0 bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <MessageCircle className="mx-auto mb-2 text-apple-secondary" size={24} />
@@ -107,8 +107,8 @@ export default function ChatsPage({ search }: Props) {
             <button
               key={t.id}
               onClick={() => setSelectedId(t.id)}
-              className={`w-full text-left px-4 py-3 border-b border-black/5 last:border-0 transition-colors duration-150 ${
-                selectedId === t.id ? "bg-apple-blue/10" : "hover:bg-black/[0.03]"
+              className={`w-full text-left px-4 py-3 border-b border-apple-border last:border-0 transition-colors duration-150 ${
+                selectedId === t.id ? "bg-apple-blue/10" : "hover:bg-apple-subtle"
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -130,14 +130,14 @@ export default function ChatsPage({ search }: Props) {
         )}
       </div>
 
-      <div className="flex-1 bg-apple-surface rounded-2xl border border-black/5 shadow-card flex flex-col overflow-hidden">
+      <div className="flex-1 bg-apple-surface rounded-2xl border border-apple-border shadow-card flex flex-col overflow-hidden">
         {!selectedThread ? (
           <div className="flex-1 flex items-center justify-center text-sm text-apple-secondary">
             Select a conversation to view it.
           </div>
         ) : (
           <>
-            <div className="px-5 py-3 border-b border-black/5">
+            <div className="px-5 py-3 border-b border-apple-border">
               <p className="text-sm font-semibold text-apple-text">{selectedThread.chefName || "Chef"}</p>
               <p className="text-xs text-apple-secondary">
                 Customer {(selectedThread.customerId ?? "").slice(0, 10)}… · Chef{" "}
@@ -173,7 +173,7 @@ export default function ChatsPage({ search }: Props) {
                             ? "bg-apple-amber/15 text-apple-text border border-apple-amber/30"
                             : isChefMsg
                               ? "bg-apple-blue text-white"
-                              : "bg-black/5 text-apple-text"
+                              : "bg-apple-hover text-apple-text"
                         }`}
                       >
                         {m.text}
@@ -184,13 +184,13 @@ export default function ChatsPage({ search }: Props) {
               })}
             </div>
 
-            <form onSubmit={handleSend} className="px-4 py-3 border-t border-black/5 flex gap-2">
+            <form onSubmit={handleSend} className="px-4 py-3 border-t border-apple-border flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Message as Admin…"
-                className="flex-1 rounded-xl border border-black/10 px-3.5 py-2.5 text-sm text-apple-text placeholder:text-apple-secondary/70 focus:outline-none focus:ring-2 focus:ring-apple-blue/40"
+                className="flex-1 rounded-xl border border-apple-border2 bg-apple-surface2 px-3.5 py-2.5 text-sm text-apple-text placeholder:text-apple-secondary/70 focus:outline-none focus:ring-2 focus:ring-apple-blue/40"
               />
               <button
                 type="submit"
