@@ -21,10 +21,49 @@ data class ChefUi(
     val isVerified: Boolean,
     val isAvailableToday: Boolean,
     val bkashNumber: String = "",
+    val nagadNumber: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     /** "self" = the chef delivers their own orders; "tiffinbox" = TiffinBox's own delivery system handles it. */
-    val deliveryMode: String = "self"
+    val deliveryMode: String = "self",
+    /** Compressed kitchen photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
+    val photoBase64: String = "",
+    /** Each entry: {url, caption, postedAt} - an external link (YouTube/Facebook/Drive), not an uploaded file. */
+    val videos: List<ChefVideoUi> = emptyList(),
+    /** e.g. "Home Kitchen" / "Cloud Kitchen" / "Restaurant"; blank for chefs who signed up before this field existed. */
+    val kitchenType: String = "",
+    val yearsOfExperience: Int = 0
+)
+
+data class ChefVideoUi(
+    val url: String,
+    val caption: String,
+    val postedAt: Long
+)
+
+data class NotificationUi(
+    val id: String,
+    val title: String,
+    val body: String,
+    val createdAt: Long
+)
+
+data class DeliveryPartnerUi(
+    val id: String,
+    val name: String,
+    val phone: String
+)
+
+/** [status] is "pending" (no partner hired yet) or "assigned". */
+data class SelfServiceRequestUi(
+    val id: String,
+    val pickupAddress: String,
+    val dropAddress: String,
+    val preferredTime: String,
+    val note: String,
+    val status: String,
+    val deliveryPartnerId: String,
+    val createdAt: Long
 )
 
 data class MealUi(
@@ -39,7 +78,9 @@ data class MealUi(
     val allergens: List<String>,
     val dietaryTags: List<String>,
     val availableQuantity: Int,
-    val portionSize: String
+    val portionSize: String,
+    /** Compressed food photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
+    val photoBase64: String = ""
 )
 
 data class CartItemUi(
@@ -87,15 +128,27 @@ data class PastOrderUi(
     val placedOn: String
 )
 
-enum class SubscriptionPlan(val weeks: Int) {
-    WEEKLY(1),
-    MONTHLY(4)
+/** [days] is the package's total duration, matching the "Package Type: 7/10/15/30 Days" reference screen. */
+enum class SubscriptionPlan(val days: Int) {
+    WEEKLY(7),
+    DAYS_10(10),
+    DAYS_15(15),
+    MONTHLY(30)
 }
 
 @Composable
 fun SubscriptionPlan.label(): String = when (this) {
     SubscriptionPlan.WEEKLY -> stringResource(R.string.subscription_plan_weekly)
+    SubscriptionPlan.DAYS_10 -> stringResource(R.string.subscription_plan_days_10)
+    SubscriptionPlan.DAYS_15 -> stringResource(R.string.subscription_plan_days_15)
     SubscriptionPlan.MONTHLY -> stringResource(R.string.subscription_plan_monthly)
+}
+
+/** "Lunch", "Dinner", or "Both" - matches the reference "Meal Type" package field. */
+object MealType {
+    const val LUNCH = "Lunch"
+    const val DINNER = "Dinner"
+    const val BOTH = "Both"
 }
 
 data class SubscriptionUi(
@@ -104,6 +157,7 @@ data class SubscriptionUi(
     val chefName: String,
     val plan: SubscriptionPlan,
     val mealsPerWeek: Int,
+    val mealType: String = MealType.BOTH,
     val pricePerMeal: Int,
     val totalPrice: Int,
     val startedAt: Long
@@ -117,8 +171,9 @@ data class ChefOrderUi(
     val status: String,
     val placedAt: Long,
     val paymentMethod: String = "",
-    val bkashTransactionId: String = "",
-    val bkashScreenshotBase64: String = ""
+    /** A manual mobile-banking proof (bKash or Nagad - same free-tier pattern for both). */
+    val paymentTransactionId: String = "",
+    val paymentScreenshotBase64: String = ""
 )
 
 data class EarningsSummary(

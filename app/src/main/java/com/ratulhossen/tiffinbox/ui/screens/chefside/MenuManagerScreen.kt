@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,15 +10,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +33,9 @@ import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreMealRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
+import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
+import com.ratulhossen.tiffinbox.util.ImageCompressor
+import kotlinx.coroutines.launch
 
 private data class ManagedMeal(val meal: MealUi, val isAvailable: Boolean)
 
@@ -73,7 +83,11 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(item.meal.emoji, fontSize = 28.sp)
+                        Base64Thumbnail(
+                            base64 = item.meal.photoBase64,
+                            emoji = item.meal.emoji,
+                            modifier = Modifier.size(48.dp)
+                        )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(item.meal.name, style = MaterialTheme.typography.titleMedium)
@@ -100,7 +114,7 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
     if (showAddDialog) {
         AddMealDialog(
             onDismiss = { showAddDialog = false },
-            onAdd = { name, price ->
+            onAdd = { name, price, photoBase64 ->
                 val newMeal = MealUi(
                     id = "meal_${System.currentTimeMillis()}",
                     chefId = chefId,
@@ -113,7 +127,8 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
                     allergens = listOf("None"),
                     dietaryTags = emptyList(),
                     availableQuantity = 5,
-                    portionSize = "1 plate"
+                    portionSize = "1 plate",
+                    photoBase64 = photoBase64
                 )
                 meals = meals + ManagedMeal(newMeal, true)
                 FirestoreMealRepository.addMeal(newMeal)
@@ -126,10 +141,18 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
 @Composable
 private fun AddMealDialog(
     onDismiss: () -> Unit,
-    onAdd: (name: String, price: Int) -> Unit
+    onAdd: (name: String, price: Int, photoBase64: String) -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var isCompressing by remember { mutableStateOf(false) }
+
+    val pickPhotoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) photoUri = uri }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -152,18 +175,54 @@ private fun AddMealDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = {
+                        pickPhotoLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(if (photoUri != null) Icons.Filled.CheckCircle else Icons.Filled.Upload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (photoUri != null) {
+                            stringResource(R.string.menu_manager_photo_selected)
+                        } else {
+                            stringResource(R.string.menu_manager_select_photo_button)
+                        }
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
+                enabled = !isCompressing,
                 onClick = {
                     val priceValue = price.toIntOrNull() ?: 0
                     if (name.isNotBlank() && priceValue > 0) {
-                        onAdd(name, priceValue)
+                        val uri = photoUri
+                        if (uri == null) {
+                            onAdd(name, priceValue, "")
+                        } else {
+                            isCompressing = true
+                            scope.launch {
+                                val base64 = ImageCompressor.compressToBase64(context, uri)
+                                isCompressing = false
+                                onAdd(name, priceValue, base64.orEmpty())
+                            }
+                        }
                     }
                 }
             ) {
-                Text(stringResource(R.string.menu_manager_add_button), fontWeight = FontWeight.Medium)
+                if (isCompressing) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(R.string.menu_manager_add_button), fontWeight = FontWeight.Medium)
+                }
             }
         },
         dismissButton = {

@@ -29,11 +29,20 @@ import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
 import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefListScreen
 import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
 import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
+import com.ratulhossen.tiffinbox.ui.screens.notifications.NotificationsScreen
 import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
 import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
 import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
+import com.ratulhossen.tiffinbox.ui.screens.selfservice.HireDeliveryManScreen
+import com.ratulhossen.tiffinbox.ui.screens.selfservice.SelfServiceRequestScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.ChangePasswordScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.HelpSupportScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.PaymentMethodsScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.PrivacyPolicyScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.SettingsScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.TermsScreen
 import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
 import com.ratulhossen.tiffinbox.ui.screens.subscription.MySubscriptionsScreen
 import com.ratulhossen.tiffinbox.ui.screens.subscription.SubscribeScreen
@@ -174,7 +183,11 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onCartClick = { navController.navigate(Routes.CART) },
                 onChatClick = { navController.navigate(Routes.CUSTOMER_CHAT_LIST) },
                 onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
+                onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
+                onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
+                onSelfServiceClick = { navController.navigate(Routes.SELF_SERVICE_REQUEST) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -198,6 +211,56 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             MySubscriptionsScreen(onBack = { navController.popBackStack() })
         }
 
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onChangePasswordClick = { navController.navigate(Routes.CHANGE_PASSWORD) },
+                onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
+                onHelpSupportClick = { navController.navigate(Routes.HELP_SUPPORT) },
+                onTermsClick = { navController.navigate(Routes.TERMS) },
+                onPrivacyPolicyClick = { navController.navigate(Routes.PRIVACY_POLICY) }
+            )
+        }
+
+        composable(Routes.CHANGE_PASSWORD) {
+            ChangePasswordScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PAYMENT_METHODS) {
+            PaymentMethodsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.HELP_SUPPORT) {
+            HelpSupportScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.TERMS) {
+            TermsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PRIVACY_POLICY) {
+            PrivacyPolicyScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.SELF_SERVICE_REQUEST) {
+            SelfServiceRequestScreen(
+                onBack = { navController.popBackStack() },
+                onRequestCreated = { requestId -> navController.navigate(Routes.hireDeliveryMan(requestId)) }
+            )
+        }
+
+        composable(
+            route = Routes.HIRE_DELIVERY_MAN,
+            arguments = listOf(navArgument("requestId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val requestId = backStackEntry.arguments?.getString("requestId").orEmpty()
+            HireDeliveryManScreen(requestId = requestId, onBack = { navController.popBackStack() })
+        }
+
         composable(
             route = Routes.SUBSCRIBE,
             arguments = listOf(navArgument("chefId") { type = NavType.StringType })
@@ -219,7 +282,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 },
                 onManageMenu = { navController.navigate(Routes.MENU_MANAGER) },
-                onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) }
+                onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) },
+                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
             )
         }
 

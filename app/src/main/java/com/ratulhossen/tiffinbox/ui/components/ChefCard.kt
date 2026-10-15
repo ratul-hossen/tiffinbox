@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -62,10 +63,14 @@ fun ChefCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(96.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
             ) {
-                Text(chef.emoji, fontSize = 40.sp)
+                Base64Thumbnail(
+                    base64 = chef.photoBase64,
+                    emoji = chef.emoji,
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RectangleShape,
+                    emojiFontSize = 40.sp
+                )
                 val isFavorite = FavoritesStore.isFavorite(chef.id)
                 Box(
                     modifier = Modifier

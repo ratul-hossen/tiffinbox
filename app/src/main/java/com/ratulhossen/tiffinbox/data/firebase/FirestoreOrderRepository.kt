@@ -5,6 +5,9 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
+import com.ratulhossen.tiffinbox.data.model.OrderStage
+import com.ratulhossen.tiffinbox.data.model.PastOrderUi
+import com.ratulhossen.tiffinbox.data.model.toOrderStage
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -26,8 +29,8 @@ object FirestoreOrderRepository {
         total: Int,
         deliveryAddress: String,
         paymentMethod: String,
-        bkashTransactionId: String? = null,
-        bkashScreenshotBase64: String? = null
+        paymentTransactionId: String? = null,
+        paymentScreenshotBase64: String? = null
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -51,8 +54,8 @@ object FirestoreOrderRepository {
                 "totalPrice" to total,
                 "deliveryAddress" to deliveryAddress,
                 "paymentMethod" to paymentMethod,
-                "bkashTransactionId" to bkashTransactionId.orEmpty(),
-                "bkashScreenshotBase64" to bkashScreenshotBase64.orEmpty(),
+                "paymentTransactionId" to paymentTransactionId.orEmpty(),
+                "paymentScreenshotBase64" to paymentScreenshotBase64.orEmpty(),
                 // "self" = the chef delivers it; "tiffinbox" = needs a delivery
                 // partner assigned (deliveryPartnerId is set later, once the
                 // separate delivery-partner app exists to do that assignment).
@@ -62,7 +65,13 @@ object FirestoreOrderRepository {
                 "placedAt" to System.currentTimeMillis()
             )
 
-            FirebaseFirestore.getInstance().collection("orders").add(orderData).await().id
+            val orderId = FirebaseFirestore.getInstance().collection("orders").add(orderData).await().id
+            FirestoreNotificationRepository.addNotification(
+                uid = customerId,
+                title = "Order placed",
+                body = "Your order has been placed and is waiting for the chef to accept it."
+            )
+            orderId
         } catch (e: Exception) {
             null
         }
@@ -144,8 +153,8 @@ object FirestoreOrderRepository {
                         status = doc.getString("status") ?: "Placed",
                         placedAt = doc.getLong("placedAt") ?: 0L,
                         paymentMethod = doc.getString("paymentMethod").orEmpty(),
-                        bkashTransactionId = doc.getString("bkashTransactionId").orEmpty(),
-                        bkashScreenshotBase64 = doc.getString("bkashScreenshotBase64").orEmpty()
+                        paymentTransactionId = doc.getString("paymentTransactionId").orEmpty(),
+                        paymentScreenshotBase64 = doc.getString("paymentScreenshotBase64").orEmpty()
                     )
                 }
         } catch (e: Exception) {
@@ -186,9 +195,62 @@ object FirestoreOrderRepository {
         )
     }
 
-    fun updateOrderStatus(orderId: String, status: String) {
+    /**
+     * A customer's own order history (OrdersScreen) — real Firestore data,
+     * not the SampleData placeholder it showed before. Chef name/emoji are
+     * looked up per distinct chefId (a handful of orders at demo scale, so
+     * one lookup per chef rather than a join).
+     */
+    suspend fun getMyOrders(): List<PastOrderUi> {
+        return try {
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return emptyList()
+            val snapshot = FirebaseFirestore.getInstance()
+                .collection("orders")
+                .whereEqualTo("customerId", customerId)
+                .limit(100)
+                .get()
+                .await()
+
+            val dateFormat = SimpleDateFormat("MMM d, h:mm a", Locale.US)
+            val chefCache = HashMap<String, Pair<String, String>>()
+
+            snapshot.documents
+                .sortedByDescending { it.getLong("placedAt") ?: 0L }
+                .mapNotNull { doc ->
+                    val chefId = doc.getString("chefId") ?: return@mapNotNull null
+                    val (chefName, chefEmoji) = chefCache.getOrPut(chefId) {
+                        val chef = FirestoreCatalogRepository.getChef(chefId)
+                        (chef?.kitchenName ?: "—") to (chef?.emoji ?: "🍽️")
+                    }
+                    val itemNames = (doc.get("items") as? List<*>)
+                        ?.mapNotNull { (it as? Map<*, *>)?.get("mealName") as? String }
+                        .orEmpty()
+                    val placedAt = doc.getLong("placedAt") ?: 0L
+                    PastOrderUi(
+                        id = doc.id,
+                        chefName = chefName,
+                        chefEmoji = chefEmoji,
+                        itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
+                        total = (doc.getLong("totalPrice") ?: 0L).toInt(),
+                        status = (doc.getString("status") ?: "Placed").toOrderStage() ?: OrderStage.PLACED,
+                        placedOn = if (placedAt > 0) dateFormat.format(Date(placedAt)) else ""
+                    )
+                }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun updateOrderStatus(orderId: String, status: String, customerId: String? = null) {
         try {
             FirebaseFirestore.getInstance().collection("orders").document(orderId).update("status", status)
+            if (customerId != null) {
+                FirestoreNotificationRepository.addNotification(
+                    uid = customerId,
+                    title = "Order update",
+                    body = "Your order is now: $status"
+                )
+            }
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
         }

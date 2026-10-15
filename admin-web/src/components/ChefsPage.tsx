@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, Order, Review } from "../types";
@@ -78,6 +78,16 @@ export default function ChefsPage({ search }: Props) {
         chef.id,
         { [field]: next },
       );
+      if (field === "isVerified" && next) {
+        // In-app notification (notifications/{uid}/items) - the chef's own
+        // dashboard pending-approval screen already reflects this live, but
+        // this also shows up in their notification history.
+        await addDoc(collection(db, "notifications", chef.id, "items"), {
+          title: "Account approved",
+          body: "Your kitchen profile has been approved - you can now manage your menu and receive orders.",
+          createdAt: Date.now(),
+        });
+      }
     } finally {
       setBusyId(null);
     }

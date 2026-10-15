@@ -66,6 +66,7 @@ export default function SubscriptionsPage({ search }: Props) {
             <tr className="text-left text-xs text-apple-secondary border-b border-black/5">
               <th className="px-4 py-3">Chef</th>
               <th className="px-4 py-3">Plan</th>
+              <th className="px-4 py-3">Meal</th>
               <th className="px-4 py-3">Meals/wk</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Started</th>
@@ -78,6 +79,7 @@ export default function SubscriptionsPage({ search }: Props) {
               <tr key={sub.id} className="border-b border-black/5 last:border-0">
                 <td className="px-4 py-3">{sub.chefName ?? sub.chefId}</td>
                 <td className="px-4 py-3 text-apple-secondary">{sub.plan}</td>
+                <td className="px-4 py-3 text-apple-secondary">{sub.mealType ?? "–"}</td>
                 <td className="px-4 py-3">{sub.mealsPerWeek ?? "–"}</td>
                 <td className="px-4 py-3">{formatCurrency(sub.totalPrice ?? 0)}</td>
                 <td className="px-4 py-3 text-apple-secondary">{formatDate(sub.startedAt)}</td>

@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.notifications.ensureNotificationChannel
 import com.ratulhossen.tiffinbox.ui.navigation.TiffinNavGraph
+import com.ratulhossen.tiffinbox.ui.theme.ThemePreferences
 import com.ratulhossen.tiffinbox.ui.theme.TiffinBoxTheme
 import com.ratulhossen.tiffinbox.util.rememberIsOnline
 
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ThemePreferences.init(this)
         ensureNotificationChannel(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

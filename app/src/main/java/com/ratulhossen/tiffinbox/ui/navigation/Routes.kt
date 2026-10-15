@@ -24,6 +24,15 @@ object Routes {
     const val MY_SUBSCRIPTIONS = "my_subscriptions"
     const val CHEF_LIST = "chef_list/{sort}"
     const val CHECKOUT = "checkout"
+    const val SETTINGS = "settings"
+    const val CHANGE_PASSWORD = "change_password"
+    const val PAYMENT_METHODS = "payment_methods"
+    const val HELP_SUPPORT = "help_support"
+    const val TERMS = "terms"
+    const val PRIVACY_POLICY = "privacy_policy"
+    const val NOTIFICATIONS = "notifications"
+    const val SELF_SERVICE_REQUEST = "self_service_request"
+    const val HIRE_DELIVERY_MAN = "hire_delivery_man/{requestId}"
 
     fun login(role: String) = "login/$role"
     fun phoneVerification(phoneNumber: String, role: String) = "phone_verification/$phoneNumber/$role"
@@ -37,6 +46,7 @@ object Routes {
     fun chefChat(customerId: String, chefId: String) = "chef_chat/$customerId/$chefId"
     fun subscribe(chefId: String) = "subscribe/$chefId"
     fun chefList(sort: String) = "chef_list/$sort"
+    fun hireDeliveryMan(requestId: String) = "hire_delivery_man/$requestId"
 }
 
 object BottomTab {

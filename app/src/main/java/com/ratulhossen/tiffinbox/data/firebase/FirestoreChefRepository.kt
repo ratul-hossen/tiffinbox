@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
@@ -21,7 +22,10 @@ object FirestoreChefRepository {
         kitchenName: String,
         ownerName: String,
         whatsappNumber: String = "",
-        bkashNumber: String = ""
+        bkashNumber: String = "",
+        nagadNumber: String = "",
+        kitchenType: String = "",
+        yearsOfExperience: Int = 0
     ) {
         try {
             db.collection("chefs").document(uid).set(
@@ -31,6 +35,9 @@ object FirestoreChefRepository {
                     "ownerName" to ownerName,
                     "whatsappNumber" to whatsappNumber,
                     "bkashNumber" to bkashNumber,
+                    "nagadNumber" to nagadNumber,
+                    "kitchenType" to kitchenType,
+                    "yearsOfExperience" to yearsOfExperience,
                     "emoji" to "🍱",
                     "bio" to "",
                     "specialty" to emptyList<String>(),
@@ -79,6 +86,40 @@ object FirestoreChefRepository {
             db.collection("chefs").document(uid).set(
                 hashMapOf("deliveryMode" to mode),
                 SetOptions.merge()
+            )
+        } catch (e: Exception) {
+            // Firebase not configured yet, or offline — safe to ignore.
+        }
+    }
+
+    /** [base64] is a pre-compressed photo (see ImageCompressor.kt) - no Firebase Storage involved. */
+    fun updatePhoto(uid: String, base64: String) {
+        try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf("photoBase64" to base64),
+                SetOptions.merge()
+            )
+        } catch (e: Exception) {
+            // Firebase not configured yet, or offline — safe to ignore.
+        }
+    }
+
+    /**
+     * Chef video "posts" are external links (YouTube/Facebook/Drive share
+     * URLs), not uploaded files - true video upload needs Firebase Storage
+     * (Blaze plan), which this project deliberately avoids. See CLAUDE.md.
+     */
+    fun addVideo(uid: String, url: String, caption: String) {
+        try {
+            db.collection("chefs").document(uid).update(
+                "videos",
+                FieldValue.arrayUnion(
+                    hashMapOf(
+                        "url" to url,
+                        "caption" to caption,
+                        "postedAt" to System.currentTimeMillis()
+                    )
+                )
             )
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.

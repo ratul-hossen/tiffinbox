@@ -38,3 +38,29 @@ val TiffinSurfaceDimDark = Color(0xFF1F2428)
 val TiffinOnSurfaceDark = Color(0xFFF3F4F6)
 val TiffinOnSurfaceMutedDark = Color(0xFF9CA3AF)
 val TiffinOutlineDark = Color(0xFF2C3236)
+
+// Black + White + Red palette — a bolder, higher-contrast alternative
+// theme, user-selectable in Settings (ThemePreferences).
+val BlackRedPrimary = Color(0xFFE11D2E)
+val BlackRedPrimaryDark = Color(0xFF8C0F1C)
+val BlackRedPrimaryLight = Color(0xFFFBD7DA)
+val BlackRedPrimaryBright = Color(0xFFFF3B4E)
+val BlackRedOnPrimaryBright = Color(0xFF1A0004)
+
+val BlackRedSecondary = Color(0xFF1A1A1A)
+val BlackRedSecondaryLight = Color(0xFFEDEDED)
+val BlackRedSecondaryDark = Color(0xFF2B2B2B)
+
+val BlackRedBackground = Color(0xFFFFFFFF)
+val BlackRedSurface = Color(0xFFFFFFFF)
+val BlackRedSurfaceDim = Color(0xFFF2F2F2)
+val BlackRedOnSurface = Color(0xFF0D0D0D)
+val BlackRedOnSurfaceMuted = Color(0xFF5C5C5C)
+val BlackRedOutline = Color(0xFFDADADA)
+
+val BlackRedBackgroundDark = Color(0xFF000000)
+val BlackRedSurfaceDark = Color(0xFF121212)
+val BlackRedSurfaceDimDark = Color(0xFF1E1E1E)
+val BlackRedOnSurfaceDark = Color(0xFFF5F5F5)
+val BlackRedOnSurfaceMutedDark = Color(0xFFABABAB)
+val BlackRedOutlineDark = Color(0xFF333333)

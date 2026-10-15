@@ -1,8 +1,10 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.ratulhossen.tiffinbox.data.model.MealType
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
+import kotlin.math.roundToInt
 import kotlinx.coroutines.tasks.await
 
 object FirestoreSubscriptionRepository {
@@ -15,11 +17,15 @@ object FirestoreSubscriptionRepository {
         chefName: String,
         plan: SubscriptionPlan,
         mealsPerWeek: Int,
+        mealType: String,
         pricePerMeal: Int
     ) {
         try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return
-            val totalPrice = pricePerMeal * mealsPerWeek * plan.weeks
+            // mealsPerWeek stays a weekly cadence the customer picks; plan.days/7
+            // scales it to however many days the chosen package actually runs.
+            val totalMeals = (mealsPerWeek * plan.days / 7.0).roundToInt()
+            val totalPrice = pricePerMeal * totalMeals
 
             val data = hashMapOf(
                 "customerId" to customerId,
@@ -27,6 +33,7 @@ object FirestoreSubscriptionRepository {
                 "chefName" to chefName,
                 "plan" to plan.name,
                 "mealsPerWeek" to mealsPerWeek,
+                "mealType" to mealType,
                 "pricePerMeal" to pricePerMeal,
                 "totalPrice" to totalPrice,
                 "startedAt" to System.currentTimeMillis(),
@@ -58,6 +65,7 @@ object FirestoreSubscriptionRepository {
                         chefName = chefName,
                         plan = plan,
                         mealsPerWeek = (doc.getLong("mealsPerWeek") ?: 0L).toInt(),
+                        mealType = doc.getString("mealType") ?: MealType.BOTH,
                         pricePerMeal = (doc.getLong("pricePerMeal") ?: 0L).toInt(),
                         totalPrice = (doc.getLong("totalPrice") ?: 0L).toInt(),
                         startedAt = doc.getLong("startedAt") ?: 0L

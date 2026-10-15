@@ -35,6 +35,17 @@
     <string name="login_whatsapp_number_invalid">সঠিক বাংলাদেশি নম্বর দিন (যেমন: 01XXXXXXXXX)</string>
     <string name="login_bkash_number_label">bKash নম্বর</string>
     <string name="login_bkash_number_required">bKash নম্বর দিন (পেমেন্ট গ্রহণের জন্য)</string>
+    <string name="login_nagad_number_label">Nagad নম্বর (ঐচ্ছিক)</string>
+    <string name="login_kitchen_type_label">কিচেনের ধরন</string>
+    <string name="login_years_experience_label">অভিজ্ঞতা (বছর)</string>
+    <string name="kitchen_type_home">Home Kitchen</string>
+    <string name="kitchen_type_cloud">Cloud Kitchen</string>
+    <string name="kitchen_type_restaurant">Restaurant</string>
+    <string name="login_step_personal_info_title">ব্যক্তিগত তথ্য</string>
+    <string name="login_step_kitchen_info_title">কিচেনের তথ্য</string>
+    <string name="login_step_confirm_title">নিশ্চিত করুন</string>
+    <string name="login_step_next_button">পরবর্তী</string>
+    <string name="login_step_back_button">পেছনে</string>
     <string name="login_button">Login</string>
     <string name="complete_google_profile_title">আর একটু বাকি</string>
     <string name="complete_google_profile_subtitle">চালিয়ে যাওয়ার আগে এই তথ্যগুলো দিন</string>
@@ -119,6 +130,7 @@
     <string name="chef_rating_summary">%1$s  (%2$s orders)  •  %3$s km away</string>
     <string name="chef_detail_view_subscription_button">Weekly / Monthly Subscription দেখুন</string>
     <string name="chef_detail_rating_breakdown_title">Rating Breakdown</string>
+    <string name="chef_detail_videos_title">ভিডিও</string>
     <string name="chef_detail_menu_title">Menu</string>
     <string name="rating_taste_label">🍽️ স্বাদ</string>
     <string name="rating_hygiene_label">🧼 Hygiene</string>
@@ -162,7 +174,7 @@
     <string name="payment_method_nagad">Nagad</string>
     <string name="payment_method_card">Card</string>
     <string name="checkout_coming_soon_chip">আসছে</string>
-    <string name="checkout_bkash_number_notice">bKash নাম্বারে Send Money করুন: %1$s</string>
+    <string name="checkout_mobile_banking_number_notice">%1$s নাম্বারে Send Money করুন: %2$s</string>
     <string name="checkout_bkash_transaction_id_label">Transaction ID</string>
     <string name="checkout_bkash_transaction_id_required">Transaction ID আবশ্যক</string>
     <string name="checkout_bkash_select_screenshot_button">স্ক্রিনশট আপলোড করুন</string>
@@ -188,6 +200,8 @@
 
     <!-- OrdersScreen -->
     <string name="orders_empty_message">এখনো কোনো অর্ডার নেই</string>
+    <string name="orders_stat_total_orders">মোট অর্ডার</string>
+    <string name="orders_stat_total_spent">মোট খরচ</string>
 
     <!-- FavoritesScreen -->
     <string name="favorites_empty_title">এখনো কোনো Favorite chef যোগ করেননি</string>
@@ -200,9 +214,73 @@
     <string name="profile_menu_address_management">ঠিকানা ব্যবস্থাপনা</string>
     <string name="profile_menu_payment_method">Payment পদ্ধতি</string>
     <string name="profile_menu_notifications">Notifications</string>
+    <string name="notifications_title">নোটিফিকেশন</string>
+    <string name="notifications_empty">এখনো কোনো নোটিফিকেশন নেই</string>
+    <string name="profile_menu_self_service">সেলফ সার্ভিস ডেলিভারি</string>
+
+    <!-- SelfServiceRequestScreen -->
+    <string name="self_service_title">সেলফ সার্ভিস</string>
+    <string name="self_service_subtitle">একটি পয়েন্ট-টু-পয়েন্ট ডেলিভারি রিকোয়েস্ট করুন (যেমন: বাসা থেকে অফিস)।</string>
+    <string name="self_service_pickup_label">পিকআপ ঠিকানা</string>
+    <string name="self_service_drop_label">ড্রপ ঠিকানা</string>
+    <string name="self_service_time_label">পছন্দের সময় (ঐচ্ছিক)</string>
+    <string name="self_service_note_label">নোট (ঐচ্ছিক)</string>
+    <string name="self_service_fields_required">পিকআপ এবং ড্রপ ঠিকানা দিন</string>
+    <string name="self_service_submit_button">রিকোয়েস্ট পাঠান</string>
+
+    <!-- HireDeliveryManScreen -->
+    <string name="hire_delivery_man_title">ডেলিভারি ম্যান বেছে নিন</string>
+    <string name="hire_delivery_man_subtitle">নিচের তালিকা থেকে একজন ডেলিভারি পার্টনার বেছে নিন</string>
+    <string name="hire_delivery_man_empty">এই মুহূর্তে কোনো ডেলিভারি পার্টনার সক্রিয় নেই</string>
+    <string name="hire_delivery_man_hire_button">নিয়োগ দিন</string>
+    <string name="hire_delivery_man_hired">নিয়োগ দেওয়া হয়েছে: %1$s</string>
     <string name="profile_menu_settings">Settings</string>
     <string name="profile_demo_user_name">Rafi Ahmed</string>
     <string name="profile_demo_phone">+880 1XXXXXXXXX</string>
+
+    <!-- SettingsScreen -->
+    <string name="settings_title">সেটিংস</string>
+    <string name="settings_theme_title">থিম</string>
+    <string name="settings_theme_subtitle">অ্যাপের রঙ পছন্দ করুন</string>
+    <string name="settings_theme_black_red">Black &amp; Red</string>
+    <string name="settings_theme_classic_green">Classic Green</string>
+    <string name="settings_menu_change_password">পাসওয়ার্ড পরিবর্তন করুন</string>
+    <string name="settings_menu_payment_methods">পেমেন্ট মেথড</string>
+    <string name="settings_menu_help_support">সাহায্য ও সাপোর্ট</string>
+    <string name="settings_menu_terms">শর্তাবলী</string>
+    <string name="settings_menu_privacy_policy">প্রাইভেসি পলিসি</string>
+
+    <!-- ChangePasswordScreen -->
+    <string name="change_password_title">পাসওয়ার্ড পরিবর্তন করুন</string>
+    <string name="change_password_google_only">Google দিয়ে সাইন-ইন করা অ্যাকাউন্টের কোনো পাসওয়ার্ড নেই</string>
+    <string name="change_password_current_label">বর্তমান পাসওয়ার্ড</string>
+    <string name="change_password_new_label">নতুন পাসওয়ার্ড</string>
+    <string name="change_password_confirm_label">নতুন পাসওয়ার্ড নিশ্চিত করুন</string>
+    <string name="change_password_mismatch">পাসওয়ার্ড মিলছে না</string>
+    <string name="change_password_too_short">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে</string>
+    <string name="change_password_success">পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে</string>
+    <string name="change_password_submit_button">পরিবর্তন করুন</string>
+
+    <!-- PaymentMethodsScreen -->
+    <string name="payment_methods_title">পেমেন্ট মেথড</string>
+    <string name="payment_methods_active">সক্রিয়</string>
+    <string name="payment_methods_card_note">কার্ড পেমেন্ট আনতে একটি পেইড merchant gateway লাগবে — এখনো যুক্ত করা হয়নি।</string>
+
+    <!-- HelpSupportScreen -->
+    <string name="help_support_title">সাহায্য ও সাপোর্ট</string>
+    <string name="help_support_faq_title">সাধারণ জিজ্ঞাসা</string>
+    <string name="help_support_faq_body">অর্ডার, পেমেন্ট, বা ডেলিভারি নিয়ে প্রশ্ন থাকলে অ্যাপের চ্যাট ফিচার দিয়ে সরাসরি শেফের সাথে যোগাযোগ করতে পারেন।</string>
+    <string name="help_support_contact_title">যোগাযোগ করুন</string>
+    <string name="help_support_contact_body">সাপোর্ট প্রয়োজনে: support@tiffinbox.app</string>
+
+    <!-- TermsScreen -->
+    <string name="terms_title">শর্তাবলী</string>
+    <string name="terms_body">TiffinBox বর্তমানে একটি early-stage প্রজেক্ট। এই শর্তাবলী placeholder হিসেবে রাখা হয়েছে এবং আইনি পরামর্শ নয় — অ্যাপ পাবলিশ করার আগে একজন আইনজীবীর সাথে চূড়ান্ত শর্তাবলী তৈরি করে নিন।</string>
+
+    <!-- PrivacyPolicyScreen -->
+    <string name="privacy_policy_title">প্রাইভেসি পলিসি</string>
+    <string name="privacy_policy_body">TiffinBox আপনার নাম, ইমেইল, ফোন নম্বর, এবং লোকেশন ব্যবহার করে অর্ডার এবং ডেলিভারি সম্পন্ন করতে। এই নীতি বর্তমানে একটি early-stage placeholder — অ্যাপ পাবলিশ করার আগে একজন আইনজীবীর সাথে চূড়ান্ত প্রাইভেসি পলিসি তৈরি করে নিন।</string>
+
     <string name="profile_seeding_status_sending">পাঠানো হচ্ছে...</string>
     <string name="profile_seeding_status_success">✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে</string>
     <string name="profile_seeding_status_failure">❌ %1$s</string>
@@ -248,12 +326,22 @@
     <string name="chef_dashboard_order_number">Order #%1$s</string>
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
-    <string name="chef_dashboard_bkash_transaction_label">bKash Transaction ID: %1$s</string>
+    <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
     <string name="chef_dashboard_view_screenshot_button">পেমেন্ট স্ক্রিনশট দেখুন</string>
     <string name="chef_dashboard_screenshot_load_failed">স্ক্রিনশট লোড করা যায়নি</string>
     <string name="chef_dashboard_delivery_mode_title">ডেলিভারি কে করবে?</string>
     <string name="chef_dashboard_delivery_mode_self">আমি নিজে ডেলিভারি করব</string>
     <string name="chef_dashboard_delivery_mode_tiffinbox">TiffinBox-এর ডেলিভারি সার্ভিস ব্যবহার করব</string>
+    <string name="chef_dashboard_delivery_coming_soon_title">শীঘ্রই আসছে</string>
+    <string name="chef_dashboard_delivery_coming_soon_message">দুঃখিত, আমরা এখনো নিজস্ব ডেলিভারি সিস্টেম চালু করিনি। আপাতত আপনি বাইরের কোনো ডেলিভারি সার্ভিস ব্যবহার করতে পারেন। আগ্রহ দেখানোর জন্য ধন্যবাদ — আমরা শীঘ্রই ডেলিভারি সিস্টেম চালু করব।</string>
+    <string name="chef_dashboard_delivery_coming_soon_ok">ঠিক আছে</string>
+    <string name="chef_dashboard_kitchen_photo_title">কিচেনের ছবি</string>
+    <string name="chef_dashboard_kitchen_photo_button">ছবি আপলোড করুন</string>
+    <string name="chef_dashboard_videos_title">ভিডিও পোস্ট করুন</string>
+    <string name="chef_dashboard_video_url_label">ভিডিও লিংক (YouTube/Facebook/Drive)</string>
+    <string name="chef_dashboard_video_caption_label">ক্যাপশন</string>
+    <string name="chef_dashboard_post_video_button">পোস্ট করুন</string>
+    <string name="chef_dashboard_video_untitled">ভিডিও</string>
     <string name="chef_dashboard_pending_title">অ্যাকাউন্ট যাচাইয়ের অপেক্ষায়</string>
     <string name="chef_dashboard_pending_message">অ্যাডমিন আপনার কিচেন প্রোফাইল যাচাই করার পর আপনি মেনু ম্যানেজ করতে এবং অর্ডার নিতে পারবেন। অনুগ্রহ করে অপেক্ষা করুন।</string>
 
@@ -263,6 +351,8 @@
     <string name="menu_manager_item_price_quantity">৳%1$d  •  %2$d plates</string>
     <string name="menu_manager_add_meal_name_label">মিলের নাম</string>
     <string name="menu_manager_add_meal_price_label">দাম (৳)</string>
+    <string name="menu_manager_select_photo_button">ছবি যোগ করুন</string>
+    <string name="menu_manager_photo_selected">ছবি নির্বাচিত হয়েছে ✓</string>
     <string name="menu_manager_add_button">যোগ করুন</string>
     <string name="menu_manager_cancel_button">বাতিল</string>
 
@@ -271,13 +361,19 @@
     <string name="subscribe_header">%1$s-এর সাথে নিয়মিত খাবার</string>
     <string name="subscribe_subtitle">প্রতিবার আলাদা অর্ডার না করে একটা প্ল্যান নিন</string>
     <string name="subscribe_choose_plan_title">Plan বেছে নিন</string>
-    <string name="subscription_plan_weekly">Weekly</string>
-    <string name="subscription_plan_monthly">Monthly</string>
+    <string name="subscription_plan_weekly">7 Days</string>
+    <string name="subscription_plan_days_10">10 Days</string>
+    <string name="subscription_plan_days_15">15 Days</string>
+    <string name="subscription_plan_monthly">30 Days</string>
+    <string name="subscribe_meal_type_title">মিল টাইপ</string>
+    <string name="subscribe_meal_type_lunch">দুপুরের খাবার</string>
+    <string name="subscribe_meal_type_dinner">রাতের খাবার</string>
+    <string name="subscribe_meal_type_both">উভয়</string>
     <string name="subscribe_meals_per_week_title">সপ্তাহে কয়টা মিল চান</string>
     <string name="subscribe_summary_price_per_meal">প্রতি মিল আনুমানিক</string>
     <string name="subscribe_summary_meals_per_week">সপ্তাহে মিল</string>
     <string name="subscribe_summary_duration">মেয়াদ</string>
-    <string name="subscribe_summary_duration_value">%1$d সপ্তাহ</string>
+    <string name="subscribe_summary_duration_value">%1$d দিন</string>
     <string name="subscribe_summary_total">মোট (%1$s)</string>
     <string name="subscribe_button">Subscribe করুন</string>
 

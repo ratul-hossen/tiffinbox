@@ -3,6 +3,7 @@ package com.ratulhossen.tiffinbox.data.firebase
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.data.model.ChefVideoUi
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import kotlinx.coroutines.tasks.await
 
@@ -74,6 +75,17 @@ object FirestoreCatalogRepository {
         val kitchenName = getString("kitchenName") ?: return null
         @Suppress("UNCHECKED_CAST")
         val specialty = (get("specialty") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+        @Suppress("UNCHECKED_CAST")
+        val videos = (get("videos") as? List<*>)?.mapNotNull { entry ->
+            (entry as? Map<String, Any?>)?.let {
+                val url = it["url"] as? String ?: return@let null
+                ChefVideoUi(
+                    url = url,
+                    caption = it["caption"] as? String ?: "",
+                    postedAt = (it["postedAt"] as? Number)?.toLong() ?: 0L
+                )
+            }
+        } ?: emptyList()
         return ChefUi(
             id = id,
             kitchenName = kitchenName,
@@ -91,9 +103,14 @@ object FirestoreCatalogRepository {
             isVerified = getBoolean("isVerified") ?: false,
             isAvailableToday = getBoolean("isAvailableToday") ?: true,
             bkashNumber = getString("bkashNumber") ?: "",
+            nagadNumber = getString("nagadNumber") ?: "",
             latitude = getDouble("latitude") ?: 0.0,
             longitude = getDouble("longitude") ?: 0.0,
-            deliveryMode = getString("deliveryMode") ?: "self"
+            deliveryMode = getString("deliveryMode") ?: "self",
+            photoBase64 = getString("photoBase64") ?: "",
+            videos = videos,
+            kitchenType = getString("kitchenType") ?: "",
+            yearsOfExperience = (getLong("yearsOfExperience") ?: 0L).toInt()
         )
     }
 
@@ -114,7 +131,8 @@ object FirestoreCatalogRepository {
             allergens = allergens,
             dietaryTags = dietaryTags,
             availableQuantity = (getLong("availableQuantity") ?: 0L).toInt(),
-            portionSize = getString("portionSize") ?: "1 plate"
+            portionSize = getString("portionSize") ?: "1 plate",
+            photoBase64 = getString("photoBase64") ?: ""
         )
     }
 }

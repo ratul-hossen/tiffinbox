@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,7 +35,14 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 private data class ProfileMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit = {})
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    onSubscriptionsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onPaymentMethodClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    onSelfServiceClick: () -> Unit = {}
+) {
     var seedStatus by remember { mutableStateOf<String?>(null) }
     val fallbackName = stringResource(R.string.profile_demo_user_name)
     val user = FirebaseAuthRepository.currentUser
@@ -46,9 +54,10 @@ fun ProfileScreen(onLogout: () -> Unit, onSubscriptionsClick: () -> Unit) {
         ProfileMenuItem(Icons.Filled.DateRange, stringResource(R.string.profile_menu_my_subscriptions), onSubscriptionsClick),
         ProfileMenuItem(Icons.Filled.Favorite, stringResource(R.string.profile_menu_favorites)),
         ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management)),
-        ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method)),
-        ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications)),
-        ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings))
+        ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method), onPaymentMethodClick),
+        ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications), onNotificationsClick),
+        ProfileMenuItem(Icons.Filled.TwoWheeler, stringResource(R.string.profile_menu_self_service), onSelfServiceClick),
+        ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings), onSettingsClick)
     )
     val seedingSendingMessage = stringResource(R.string.profile_seeding_status_sending)
     val seedingSuccessMessage = stringResource(R.string.profile_seeding_status_success)

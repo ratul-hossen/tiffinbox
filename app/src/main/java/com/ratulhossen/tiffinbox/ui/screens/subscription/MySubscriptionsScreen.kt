@@ -73,6 +73,11 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Text(
+                                subscription.mealType,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 stringResource(R.string.price_tag, subscription.totalPrice),

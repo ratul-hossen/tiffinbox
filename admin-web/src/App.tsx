@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageCircle,
+  Navigation,
   Package,
   Soup,
   Star,
@@ -30,6 +31,7 @@ import ActivityLogPage from "./components/ActivityLogPage";
 import AdminsPage from "./components/AdminsPage";
 import ChatsPage from "./components/ChatsPage";
 import DeliveryPartnersPage from "./components/DeliveryPartnersPage";
+import SelfServiceRequestsPage from "./components/SelfServiceRequestsPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -43,7 +45,8 @@ type Tab =
   | "activity"
   | "admins"
   | "chats"
-  | "deliveryPartners";
+  | "deliveryPartners"
+  | "selfServiceRequests";
 
 const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -61,6 +64,7 @@ const TABS: { key: Tab; label: string; icon: LucideIcon; searchPlaceholder?: str
   { key: "activity", label: "Activity Log", icon: History, searchPlaceholder: "Search activity…" },
   { key: "chats", label: "Chats", icon: MessageCircle, searchPlaceholder: "Search chats…" },
   { key: "deliveryPartners", label: "Delivery Partners", icon: Bike },
+  { key: "selfServiceRequests", label: "Self Service", icon: Navigation },
   { key: "admins", label: "Admins", icon: ShieldCheck },
 ];
 
@@ -160,6 +164,7 @@ export default function App() {
           {tab === "activity" && <ActivityLogPage search={search} />}
           {tab === "chats" && <ChatsPage search={search} />}
           {tab === "deliveryPartners" && <DeliveryPartnersPage />}
+          {tab === "selfServiceRequests" && <SelfServiceRequestsPage />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
         </main>
       </div>
