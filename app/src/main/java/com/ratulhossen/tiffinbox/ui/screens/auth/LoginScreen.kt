@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.auth
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -175,6 +176,12 @@ fun LoginScreen(
         errorMessage = null
         val webClientId = defaultWebClientIdOrNull(context)
         if (webClientId == null) {
+            // No default_web_client_id resource - google-services.json has
+            // no web OAuth client, which means Firebase Console's Google
+            // Sign-In provider isn't enabled and/or this build's signing
+            // SHA-1 isn't registered there yet. Not a code bug; see
+            // admin-web/README.md section 0 for the Console steps.
+            Log.e("GoogleSignIn", "default_web_client_id missing - Google Sign-In not configured in Firebase Console for this app/SHA-1")
             errorMessage = googleSignInFailedMessage
             return
         }
@@ -234,6 +241,14 @@ fun LoginScreen(
                 isLoading = false
                 errorMessage = googleSignInCancelledMessage
             } catch (e: Exception) {
+                // The user-facing message stays generic on purpose, but log
+                // the real exception - this is almost always a Firebase
+                // Console config issue (Google provider not enabled, or the
+                // signing keystore's SHA-1 isn't registered, so
+                // google-services.json has no web client id / the Credential
+                // Manager call fails) rather than a code bug, and the exact
+                // exception type/message narrows down which.
+                Log.e("GoogleSignIn", "Google sign-in failed", e)
                 isLoading = false
                 errorMessage = googleSignInFailedMessage
             }

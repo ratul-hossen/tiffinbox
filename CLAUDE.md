@@ -512,18 +512,57 @@ failed with `Unresolved reference 'ExposedDropdownMenu'` in
 `ui/components/KitchenTypeDropdown.kt`, plus cascading "errors" reported
 in a couple of unrelated files (`HireDeliveryManScreen.kt`,
 `StaticInfoScreen.kt`) that don't actually reference
-`ExposedDropdownMenu` at all — those were downstream noise from the one
-real failure, not separate bugs; they should clear once the one below is
-fixed.
+`ExposedDropdownMenu` at all — those were downstream noise, not separate
+bugs.
 
 Root cause: this project's `compose-bom` (`2026.08.00`,
 `app/build.gradle.kts`) pulls in a Material3 version where the
-`ExposedDropdownMenuBoxScope.ExposedDropdownMenu` composable has been
-removed/deprecated in favor of using the plain `DropdownMenu` composable
-together with the new `Modifier.exposedDropdownSize()` (which replicates
-the old anchor-width-matching behavior). Fixed by swapping the import and
-the composable call in `KitchenTypeDropdown.kt` - the dropdown's actual
-behavior (anchor-width menu, same options) is unchanged.
+`ExposedDropdownMenuBoxScope.ExposedDropdownMenu` composable no longer
+exists. First attempt swapped to `DropdownMenu` +
+`Modifier.exposedDropdownSize()` (the documented replacement) - that
+*also* failed to resolve on this version. Final fix: rebuilt the
+dropdown from plain `Box` + `DropdownMenu` + a transparent
+click-catching overlay (`ui/components/KitchenTypeDropdown.kt`) - the
+oldest, most stable Compose/Material3 widgets, not at risk of being
+renamed/removed by a BOM bump. No `@OptIn(ExperimentalMaterial3Api)`
+needed anymore either.
+
+**Owner then pushed a "Manual Changes" commit directly to `main`**
+(bypassing the PR flow, their own repo/prerogative) with a few of their
+own IDE-driven import cleanups: added a genuinely-missing
+`import androidx.compose.runtime.setValue` to `HireDeliveryManScreen.kt`
+(fixes `by remember { mutableStateOf(...) }` there), and removed a
+redundant/wrong-package `import androidx.compose.ui.ColumnScope` from
+`StaticInfoScreen.kt` (the real `ColumnScope` was already covered by
+that file's existing `import androidx.compose.foundation.layout.*`
+wildcard) - both fine. But it also **removed
+`import androidx.compose.foundation.layout.matchParentSize` from
+`KitchenTypeDropdown.kt` while the `.matchParentSize()` call on the
+click-overlay `Box` was still there** - almost certainly their IDE's
+auto-"optimize imports" misfiring on an extension-function import,
+since the call site is still present. Caught and re-added the import in
+the very next commit so this didn't silently re-break the build on
+`main`.
+
+## Google Sign-In failure diagnostics (2026-10)
+
+Owner hit "Google sign-in failed, please try again" on a fresh/different
+machine. This generic message (string `login_google_signin_failed`,
+shown in `LoginScreen.kt`'s `submitGoogle()`) is almost always a
+**Firebase Console config issue, not a code bug**: either the
+`default_web_client_id` resource is missing entirely (meaning
+`google-services.json` has no web OAuth client - Google Sign-In isn't
+enabled in Firebase Console and/or this build's signing SHA-1 isn't
+registered there), or the `CredentialManager.getCredential()` call
+itself throws for the same underlying reason. The previous code's
+`catch (e: Exception)` swallowed the real exception entirely, making
+this hard to diagnose remotely - added `Log.e("GoogleSignIn", ...)` at
+both failure points (missing web client id, and the generic catch
+block) so the exact exception is visible in Logcat next time, without
+changing the user-facing message. The fix for an actual mismatch is
+always on the Firebase Console / local-machine side (register the
+current SHA-1, re-download `google-services.json`), not something
+fixable by changing this repo's code.
 
 ## admin-web Recycle Bin (soft delete, 2026-10)
 
