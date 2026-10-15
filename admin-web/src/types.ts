@@ -172,8 +172,9 @@ export interface Subscription {
   customerId?: string;
   chefId?: string;
   chefName?: string;
-  plan?: "WEEKLY" | "MONTHLY" | string;
+  plan?: "WEEKLY" | "DAYS_10" | "DAYS_15" | "MONTHLY" | string;
   mealsPerWeek?: number;
+  mealType?: "Lunch" | "Dinner" | "Both" | string;
   pricePerMeal?: number;
   totalPrice?: number;
   startedAt?: number;

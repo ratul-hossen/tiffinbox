@@ -288,13 +288,19 @@
     <string name="subscribe_header">%1$s-এর সাথে নিয়মিত খাবার</string>
     <string name="subscribe_subtitle">প্রতিবার আলাদা অর্ডার না করে একটা প্ল্যান নিন</string>
     <string name="subscribe_choose_plan_title">Plan বেছে নিন</string>
-    <string name="subscription_plan_weekly">Weekly</string>
-    <string name="subscription_plan_monthly">Monthly</string>
+    <string name="subscription_plan_weekly">7 Days</string>
+    <string name="subscription_plan_days_10">10 Days</string>
+    <string name="subscription_plan_days_15">15 Days</string>
+    <string name="subscription_plan_monthly">30 Days</string>
+    <string name="subscribe_meal_type_title">মিল টাইপ</string>
+    <string name="subscribe_meal_type_lunch">দুপুরের খাবার</string>
+    <string name="subscribe_meal_type_dinner">রাতের খাবার</string>
+    <string name="subscribe_meal_type_both">উভয়</string>
     <string name="subscribe_meals_per_week_title">সপ্তাহে কয়টা মিল চান</string>
     <string name="subscribe_summary_price_per_meal">প্রতি মিল আনুমানিক</string>
     <string name="subscribe_summary_meals_per_week">সপ্তাহে মিল</string>
     <string name="subscribe_summary_duration">মেয়াদ</string>
-    <string name="subscribe_summary_duration_value">%1$d সপ্তাহ</string>
+    <string name="subscribe_summary_duration_value">%1$d দিন</string>
     <string name="subscribe_summary_total">মোট (%1$s)</string>
     <string name="subscribe_button">Subscribe করুন</string>
 

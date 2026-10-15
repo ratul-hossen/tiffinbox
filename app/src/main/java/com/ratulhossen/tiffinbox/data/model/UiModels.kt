@@ -103,15 +103,27 @@ data class PastOrderUi(
     val placedOn: String
 )
 
-enum class SubscriptionPlan(val weeks: Int) {
-    WEEKLY(1),
-    MONTHLY(4)
+/** [days] is the package's total duration, matching the "Package Type: 7/10/15/30 Days" reference screen. */
+enum class SubscriptionPlan(val days: Int) {
+    WEEKLY(7),
+    DAYS_10(10),
+    DAYS_15(15),
+    MONTHLY(30)
 }
 
 @Composable
 fun SubscriptionPlan.label(): String = when (this) {
     SubscriptionPlan.WEEKLY -> stringResource(R.string.subscription_plan_weekly)
+    SubscriptionPlan.DAYS_10 -> stringResource(R.string.subscription_plan_days_10)
+    SubscriptionPlan.DAYS_15 -> stringResource(R.string.subscription_plan_days_15)
     SubscriptionPlan.MONTHLY -> stringResource(R.string.subscription_plan_monthly)
+}
+
+/** "Lunch", "Dinner", or "Both" - matches the reference "Meal Type" package field. */
+object MealType {
+    const val LUNCH = "Lunch"
+    const val DINNER = "Dinner"
+    const val BOTH = "Both"
 }
 
 data class SubscriptionUi(
@@ -120,6 +132,7 @@ data class SubscriptionUi(
     val chefName: String,
     val plan: SubscriptionPlan,
     val mealsPerWeek: Int,
+    val mealType: String = MealType.BOTH,
     val pricePerMeal: Int,
     val totalPrice: Int,
     val startedAt: Long

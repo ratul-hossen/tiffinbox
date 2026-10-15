@@ -286,13 +286,19 @@
     <string name="subscribe_header">Regular meals with %1$s</string>
     <string name="subscribe_subtitle">Choose a plan instead of ordering separately every time</string>
     <string name="subscribe_choose_plan_title">Choose a Plan</string>
-    <string name="subscription_plan_weekly">Weekly</string>
-    <string name="subscription_plan_monthly">Monthly</string>
+    <string name="subscription_plan_weekly">7 Days</string>
+    <string name="subscription_plan_days_10">10 Days</string>
+    <string name="subscription_plan_days_15">15 Days</string>
+    <string name="subscription_plan_monthly">30 Days</string>
+    <string name="subscribe_meal_type_title">Meal Type</string>
+    <string name="subscribe_meal_type_lunch">Lunch</string>
+    <string name="subscribe_meal_type_dinner">Dinner</string>
+    <string name="subscribe_meal_type_both">Both</string>
     <string name="subscribe_meals_per_week_title">How many meals per week</string>
     <string name="subscribe_summary_price_per_meal">Estimated price per meal</string>
     <string name="subscribe_summary_meals_per_week">Meals per week</string>
     <string name="subscribe_summary_duration">Duration</string>
-    <string name="subscribe_summary_duration_value">%1$d weeks</string>
+    <string name="subscribe_summary_duration_value">%1$d days</string>
     <string name="subscribe_summary_total">Total (%1$s)</string>
     <string name="subscribe_button">Subscribe</string>
 

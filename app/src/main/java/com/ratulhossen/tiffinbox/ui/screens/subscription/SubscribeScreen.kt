@@ -23,9 +23,11 @@ import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.data.model.MealType
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.label
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,8 +51,12 @@ fun SubscribeScreen(
 
     var plan by remember { mutableStateOf(SubscriptionPlan.WEEKLY) }
     var mealsPerWeek by remember { mutableIntStateOf(5) }
-    val totalPrice = remember(plan, mealsPerWeek, pricePerMeal) {
-        pricePerMeal * mealsPerWeek * plan.weeks
+    var mealType by remember { mutableStateOf(MealType.BOTH) }
+    val totalMeals = remember(plan, mealsPerWeek) {
+        (mealsPerWeek * plan.days / 7.0).roundToInt()
+    }
+    val totalPrice = remember(totalMeals, pricePerMeal) {
+        pricePerMeal * totalMeals
     }
 
     Scaffold(
@@ -96,6 +102,23 @@ fun SubscribeScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+            Text(stringResource(R.string.subscribe_meal_type_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(
+                    MealType.LUNCH to stringResource(R.string.subscribe_meal_type_lunch),
+                    MealType.DINNER to stringResource(R.string.subscribe_meal_type_dinner),
+                    MealType.BOTH to stringResource(R.string.subscribe_meal_type_both)
+                ).forEach { (value, label) ->
+                    FilterChip(
+                        selected = mealType == value,
+                        onClick = { mealType = value },
+                        label = { Text(label) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
             Text(stringResource(R.string.subscribe_meals_per_week_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -123,7 +146,7 @@ fun SubscribeScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), stringResource(R.string.price_tag, pricePerMeal))
                     SummaryRow(stringResource(R.string.subscribe_summary_meals_per_week), "$mealsPerWeek")
-                    SummaryRow(stringResource(R.string.subscribe_summary_duration), stringResource(R.string.subscribe_summary_duration_value, plan.weeks))
+                    SummaryRow(stringResource(R.string.subscribe_summary_duration), stringResource(R.string.subscribe_summary_duration_value, plan.days))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     SummaryRow(
                         stringResource(R.string.subscribe_summary_total, plan.label()),
@@ -141,6 +164,7 @@ fun SubscribeScreen(
                         chefName = chef?.kitchenName.orEmpty(),
                         plan = plan,
                         mealsPerWeek = mealsPerWeek,
+                        mealType = mealType,
                         pricePerMeal = pricePerMeal
                     )
                     onSubscribed()
