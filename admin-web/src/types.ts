@@ -22,6 +22,16 @@ export interface Chef {
   latitude?: number;
   longitude?: number;
   deliveryMode?: "self" | "tiffinbox" | string;
+  photoBase64?: string;
+  kitchenType?: string;
+  yearsOfExperience?: number;
+  bkashNumber?: string;
+  nagadNumber?: string;
+  whatsappNumber?: string;
+  // true only for chefs created via the "Seed demo chefs" button on
+  // ChefsPage - lets "Remove all demo chefs" find exactly this data and
+  // nothing else, and lets the app show a "Demo" badge to real users.
+  isDemo?: boolean;
 }
 
 export interface Meal {
@@ -38,6 +48,10 @@ export interface Meal {
   availableQuantity?: number;
   portionSize?: string;
   isAvailable?: boolean;
+  photoBase64?: string;
+  // Mirrors the owning chef's isDemo flag, set at creation time so "Remove
+  // all demo chefs" can delete demo meals directly without a join query.
+  isDemo?: boolean;
 }
 
 export interface AppUser {

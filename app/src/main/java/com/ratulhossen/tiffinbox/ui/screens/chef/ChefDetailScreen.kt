@@ -106,6 +106,20 @@ fun ChefDetailScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
+                        if (chef.isDemo) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = MaterialTheme.colorScheme.errorContainer
+                            ) {
+                                Text(
+                                    stringResource(R.string.chef_card_demo_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
                     Text(
                         stringResource(R.string.chef_detail_owner_by, chef.ownerName),

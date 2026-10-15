@@ -32,7 +32,9 @@ data class ChefUi(
     val videos: List<ChefVideoUi> = emptyList(),
     /** e.g. "Home Kitchen" / "Cloud Kitchen" / "Restaurant"; blank for chefs who signed up before this field existed. */
     val kitchenType: String = "",
-    val yearsOfExperience: Int = 0
+    val yearsOfExperience: Int = 0,
+    /** True only for chefs created by admin-web's "Seed demo chefs" button; shown as a "Demo" badge so customers aren't misled. */
+    val isDemo: Boolean = false
 )
 
 data class ChefVideoUi(

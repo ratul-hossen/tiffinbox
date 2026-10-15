@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { addDoc, collection, deleteDoc, doc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signOut as signOutSecondary } from "firebase/auth";
+import { db, secondaryAuth } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, Order, Review } from "../types";
 import { logActivity } from "../lib/activityLog";
+import { DEMO_CHEFS } from "../data/demoChefSeed";
 import Badge from "./ui/Badge";
 import ChefDetail from "./ChefDetail";
 
@@ -24,6 +26,131 @@ export default function ChefsPage({ search }: Props) {
   });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [detailChefId, setDetailChefId] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [removingDemo, setRemovingDemo] = useState(false);
+  const [demoMessage, setDemoMessage] = useState<string | null>(null);
+
+  const demoChefCount = useMemo(() => chefs.filter((c) => c.isDemo).length, [chefs]);
+
+  /**
+   * Creates the 5 fixed demo chefs (and their menus) from demoChefSeed.ts,
+   * each marked isDemo: true. Safe to click more than once - a chef whose
+   * demo email already has an Auth account is skipped rather than
+   * duplicated. Every write goes through secondaryAuth exactly like
+   * DeliveryPartnersPage's account creation, since firestore.rules only
+   * allows `create` on chefs/{uid} to the signed-in uid itself.
+   */
+  async function seedDemoChefs() {
+    setSeeding(true);
+    setDemoMessage(null);
+    let created = 0;
+    let skipped = 0;
+    try {
+      for (const demoChef of DEMO_CHEFS) {
+        try {
+          const credential = await createUserWithEmailAndPassword(
+            secondaryAuth,
+            demoChef.email,
+            demoChef.password,
+          );
+          const uid = credential.user.uid;
+          await setDoc(doc(db, "chefs", uid), {
+            userId: uid,
+            ownerName: demoChef.ownerName,
+            kitchenName: demoChef.kitchenName,
+            kitchenType: demoChef.kitchenType,
+            yearsOfExperience: demoChef.yearsOfExperience,
+            emoji: demoChef.emoji,
+            bio: demoChef.bio,
+            specialty: demoChef.specialty,
+            whatsappNumber: demoChef.whatsappNumber,
+            bkashNumber: demoChef.bkashNumber,
+            nagadNumber: demoChef.nagadNumber,
+            latitude: demoChef.latitude,
+            longitude: demoChef.longitude,
+            distanceKm: 1.0,
+            overallRating: demoChef.overallRating,
+            taste: demoChef.taste,
+            hygiene: demoChef.hygiene,
+            packaging: demoChef.packaging,
+            onTime: demoChef.onTime,
+            totalOrders: demoChef.totalOrders,
+            // Demo chefs don't need the real approval workflow - they're
+            // clearly labeled as demo instead (see isDemo below).
+            isVerified: true,
+            isAvailableToday: true,
+            deliveryMode: "self",
+            isDemo: true,
+          });
+          for (const meal of demoChef.meals) {
+            await addDoc(collection(db, "meals"), {
+              chefId: uid,
+              name: meal.name,
+              emoji: meal.emoji,
+              description: meal.description,
+              price: meal.price,
+              category: meal.category,
+              isVeg: meal.isVeg,
+              dietaryTags: meal.dietaryTags,
+              allergens: meal.allergens,
+              availableQuantity: meal.availableQuantity,
+              portionSize: meal.portionSize,
+              isAvailable: true,
+              isDemo: true,
+            });
+          }
+          await signOutSecondary(secondaryAuth);
+          created += 1;
+        } catch (err) {
+          if (err instanceof Error && err.message.includes("auth/email-already-in-use")) {
+            skipped += 1;
+            continue;
+          }
+          throw err;
+        }
+      }
+      await logActivity("Seeded demo chefs", "chefs", "(bulk)", { created, skipped });
+      setDemoMessage(
+        skipped > 0
+          ? `Created ${created} demo chef(s), skipped ${skipped} already seeded.`
+          : `Created ${created} demo chef(s).`,
+      );
+    } catch (err) {
+      setDemoMessage(err instanceof Error ? `Failed: ${err.message}` : "Failed to seed demo chefs.");
+    } finally {
+      setSeeding(false);
+    }
+  }
+
+  /** One-click removal of every chef/meal created by seedDemoChefs(). */
+  async function removeAllDemoChefs() {
+    const demoChefs = chefs.filter((c) => c.isDemo);
+    if (demoChefs.length === 0) {
+      setDemoMessage("No demo chefs to remove.");
+      return;
+    }
+    if (!confirm(`Remove all ${demoChefs.length} demo chefs and their menus? This cannot be undone.`)) {
+      return;
+    }
+    setRemovingDemo(true);
+    setDemoMessage(null);
+    try {
+      const demoMeals = meals.filter((m) => m.isDemo);
+      const batch = writeBatch(db);
+      demoChefs.forEach((c) => batch.delete(doc(db, "chefs", c.id)));
+      demoMeals.forEach((m) => batch.delete(doc(db, "meals", m.id)));
+      await batch.commit();
+      await logActivity("Removed all demo chefs", "chefs", "(bulk)", {
+        chefCount: demoChefs.length,
+        mealCount: demoMeals.length,
+      });
+      setDemoMessage(`Removed ${demoChefs.length} demo chef(s) and ${demoMeals.length} demo meal(s).`);
+    } catch (err) {
+      setDemoMessage(err instanceof Error ? `Failed: ${err.message}` : "Failed to remove demo chefs.");
+    } finally {
+      setRemovingDemo(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -111,7 +238,28 @@ export default function ChefsPage({ search }: Props) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-apple-text tracking-tight">Chefs ({filtered.length})</h2>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-2xl font-bold text-apple-text tracking-tight">Chefs ({filtered.length})</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={seedDemoChefs}
+            disabled={seeding}
+            className="text-xs bg-apple-blue hover:bg-apple-blue-dark disabled:opacity-60 text-white rounded-xl px-3 py-2 font-medium transition-colors duration-150"
+          >
+            {seeding ? "Seeding…" : "🌱 Seed 5 demo chefs"}
+          </button>
+          <button
+            onClick={removeAllDemoChefs}
+            disabled={removingDemo || demoChefCount === 0}
+            className="text-xs bg-apple-red hover:brightness-95 disabled:opacity-40 text-white rounded-xl px-3 py-2 font-medium transition-colors duration-150"
+          >
+            {removingDemo ? "Removing…" : `🗑️ Remove all demo chefs (${demoChefCount})`}
+          </button>
+        </div>
+      </div>
+      {demoMessage && (
+        <p className="text-xs text-apple-secondary bg-black/[0.03] rounded-xl px-3 py-2">{demoMessage}</p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((chef) => (
@@ -160,8 +308,13 @@ export default function ChefsPage({ search }: Props) {
               <>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-semibold text-apple-text">
+                    <div className="font-semibold text-apple-text flex items-center gap-1.5">
                       {chef.emoji ?? "👨‍🍳"} {chef.kitchenName ?? "(unnamed kitchen)"}
+                      {chef.isDemo && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
+                          Demo
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-apple-secondary">{chef.ownerName}</div>
                   </div>

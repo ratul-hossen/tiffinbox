@@ -110,7 +110,8 @@ object FirestoreCatalogRepository {
             photoBase64 = getString("photoBase64") ?: "",
             videos = videos,
             kitchenType = getString("kitchenType") ?: "",
-            yearsOfExperience = (getLong("yearsOfExperience") ?: 0L).toInt()
+            yearsOfExperience = (getLong("yearsOfExperience") ?: 0L).toInt(),
+            isDemo = getBoolean("isDemo") ?: false
         )
     }
 

@@ -392,6 +392,60 @@ constraint (see "Known billing constraint" above).
   (recommendation + NL search) — not a general ML platform. Don't expand
   it with more trained models without a fresh explicit ask.
 
+## Demo chefs (seed/remove from admin-web, 2026-10)
+
+Owner's ask: replace any old placeholder/junk chef accounts with 5 fresh,
+fully-detailed demo chefs (unique names, kitchen details, bios, menus),
+clearly marked to real users as demo (not quietly mixed in), skip the
+normal approval workflow (demo data doesn't need verifying), and give the
+admin panel a one-click way to wipe all of it later.
+
+- **Can't be done from this sandbox directly** — this session has no
+  Firebase Admin credential for the live `tiffinbox-2cb8b` project (by
+  design; a service-account key is not something to put in this repo or
+  sandbox). So this is built as an **admin-web feature the owner clicks
+  themselves**, not a one-time script run from here — same reasoning as
+  why delivery-partner accounts are created from admin-web via
+  `secondaryAuth` rather than a backend script.
+- **`admin-web/src/components/ChefsPage.tsx`** now has two buttons above
+  the chef grid: **"🌱 Seed 5 demo chefs"** and **"🗑️ Remove all demo
+  chefs (N)"**. Seeding is safe to click more than once — a demo chef
+  whose fixed email already has a Firebase Auth account is skipped rather
+  than duplicated. Removal is a `writeBatch` delete of every
+  `chefs`/`meals` doc with `isDemo: true` — nothing else is touched, so a
+  real chef or any old non-flagged test account is never affected by this
+  button. **If the owner has older junk/test chef accounts from before
+  this feature existed (no `isDemo` flag), those aren't matched by this
+  button — remove them with ChefsPage's existing per-chef Delete button,
+  which already worked before this feature and needed no changes.**
+- **`admin-web/src/data/demoChefSeed.ts`** — the fixed seed data: 5 unique
+  Bangladeshi home-chef personas (Rashida's Rannaghor / Karim Bhai's
+  Biryani House / Ayesha's Daily Tiffin / Nasreen's Village Flavors /
+  Chittagong Spice Corner), each with a real bio, specialty tags,
+  kitchen type, years of experience, WhatsApp/bKash/Nagad numbers, a
+  Dhaka-area lat/lng, realistic ratings/order counts, and 3 menu items
+  with name/description/price/category/dietary info. Each demo chef
+  account is created via `secondaryAuth` (same pattern as
+  `DeliveryPartnersPage.tsx`) since `firestore.rules` only allows
+  `chefs/{uid}` creation by the signed-in uid itself.
+- **No photos bundled** — this sandbox's network access doesn't reach
+  stock-photo hosts, and pulling images from an unlicensed scraped
+  dataset into a real app repo is a copyright risk not worth taking. Demo
+  chefs/meals fall back to their `emoji` field exactly like any real
+  chef/meal that hasn't uploaded a photo. If the owner wants real photos
+  later, the existing upload flow (`ChefDashboardScreen`/
+  `MenuManagerScreen`) works on these accounts like any other — just sign
+  in as the demo chef with the fixed password from `demoChefSeed.ts`.
+- **`isVerified: true` at creation** — demo chefs skip the normal
+  admin-approval workflow entirely (they're pre-approved since there's no
+  real kitchen to verify).
+- **`isDemo: true`** on both the chef doc and its meal docs is the only
+  new field. It's also read by the Android app
+  (`ChefUi.isDemo`, mapped in `FirestoreCatalogRepository.toChefUi()`) to
+  show a small "DEMO" badge next to the kitchen name on `ChefCard.kt` and
+  `ChefDetailScreen.kt`, so real customers are never misled into thinking
+  a demo chef is a real one.
+
 ## File map for things mentioned above
 
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/theme/Color.kt`,
