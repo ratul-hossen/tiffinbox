@@ -220,6 +220,43 @@
     <string name="settings_theme_subtitle">Choose the app\'s color theme</string>
     <string name="settings_theme_black_red">Black &amp; Red</string>
     <string name="settings_theme_classic_green">Classic Green</string>
+    <string name="settings_menu_change_password">Change Password</string>
+    <string name="settings_menu_payment_methods">Payment Methods</string>
+    <string name="settings_menu_help_support">Help &amp; Support</string>
+    <string name="settings_menu_terms">Terms &amp; Conditions</string>
+    <string name="settings_menu_privacy_policy">Privacy Policy</string>
+
+    <!-- ChangePasswordScreen -->
+    <string name="change_password_title">Change Password</string>
+    <string name="change_password_google_only">Accounts signed in with Google have no password to change</string>
+    <string name="change_password_current_label">Current password</string>
+    <string name="change_password_new_label">New password</string>
+    <string name="change_password_confirm_label">Confirm new password</string>
+    <string name="change_password_mismatch">Passwords don\'t match</string>
+    <string name="change_password_too_short">Password must be at least 6 characters</string>
+    <string name="change_password_success">Password changed successfully</string>
+    <string name="change_password_submit_button">Change Password</string>
+
+    <!-- PaymentMethodsScreen -->
+    <string name="payment_methods_title">Payment Methods</string>
+    <string name="payment_methods_active">Active</string>
+    <string name="payment_methods_card_note">Card payments need a paid merchant gateway - not yet added.</string>
+
+    <!-- HelpSupportScreen -->
+    <string name="help_support_title">Help &amp; Support</string>
+    <string name="help_support_faq_title">Frequently Asked Questions</string>
+    <string name="help_support_faq_body">Questions about an order, payment, or delivery? Use the in-app chat to message the chef directly.</string>
+    <string name="help_support_contact_title">Contact Us</string>
+    <string name="help_support_contact_body">For support: support@tiffinbox.app</string>
+
+    <!-- TermsScreen -->
+    <string name="terms_title">Terms &amp; Conditions</string>
+    <string name="terms_body">TiffinBox is currently an early-stage project. These terms are a placeholder and not legal advice - have a lawyer draft the final terms before publishing the app.</string>
+
+    <!-- PrivacyPolicyScreen -->
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_policy_body">TiffinBox uses your name, email, phone number, and location to fulfill orders and deliveries. This policy is currently an early-stage placeholder - have a lawyer draft the final privacy policy before publishing the app.</string>
+
     <string name="profile_seeding_status_sending">Sending...</string>
     <string name="profile_seeding_status_success">✅ Sample chefs/meals sent to Firestore</string>
     <string name="profile_seeding_status_failure">❌ %1$s</string>

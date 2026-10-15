@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -62,6 +63,23 @@ object FirebaseAuthRepository {
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             val result = auth.signInWithCredential(credential).await()
             val user = result.user ?: return AuthResult.Failure("Google দিয়ে সাইন-ইন ব্যর্থ হয়েছে, আবার চেষ্টা করুন")
+            AuthResult.Success(user)
+        } catch (e: Exception) {
+            AuthResult.Failure(friendlyMessage(e))
+        }
+    }
+
+    /** True only for an email/password account - a Google-only sign-in has no password to change. */
+    val hasPasswordProvider: Boolean
+        get() = currentUser?.providerData?.any { it.providerId == EmailAuthProvider.PROVIDER_ID } ?: false
+
+    suspend fun changePassword(currentPassword: String, newPassword: String): AuthResult {
+        val user = currentUser ?: return AuthResult.Failure("Login করা নেই")
+        val email = user.email ?: return AuthResult.Failure("এই অ্যাকাউন্টের পাসওয়ার্ড পরিবর্তন করা যাবে না")
+        return try {
+            val credential = EmailAuthProvider.getCredential(email, currentPassword)
+            user.reauthenticate(credential).await()
+            user.updatePassword(newPassword).await()
             AuthResult.Success(user)
         } catch (e: Exception) {
             AuthResult.Failure(friendlyMessage(e))

@@ -222,6 +222,43 @@
     <string name="settings_theme_subtitle">অ্যাপের রঙ পছন্দ করুন</string>
     <string name="settings_theme_black_red">Black &amp; Red</string>
     <string name="settings_theme_classic_green">Classic Green</string>
+    <string name="settings_menu_change_password">পাসওয়ার্ড পরিবর্তন করুন</string>
+    <string name="settings_menu_payment_methods">পেমেন্ট মেথড</string>
+    <string name="settings_menu_help_support">সাহায্য ও সাপোর্ট</string>
+    <string name="settings_menu_terms">শর্তাবলী</string>
+    <string name="settings_menu_privacy_policy">প্রাইভেসি পলিসি</string>
+
+    <!-- ChangePasswordScreen -->
+    <string name="change_password_title">পাসওয়ার্ড পরিবর্তন করুন</string>
+    <string name="change_password_google_only">Google দিয়ে সাইন-ইন করা অ্যাকাউন্টের কোনো পাসওয়ার্ড নেই</string>
+    <string name="change_password_current_label">বর্তমান পাসওয়ার্ড</string>
+    <string name="change_password_new_label">নতুন পাসওয়ার্ড</string>
+    <string name="change_password_confirm_label">নতুন পাসওয়ার্ড নিশ্চিত করুন</string>
+    <string name="change_password_mismatch">পাসওয়ার্ড মিলছে না</string>
+    <string name="change_password_too_short">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে</string>
+    <string name="change_password_success">পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে</string>
+    <string name="change_password_submit_button">পরিবর্তন করুন</string>
+
+    <!-- PaymentMethodsScreen -->
+    <string name="payment_methods_title">পেমেন্ট মেথড</string>
+    <string name="payment_methods_active">সক্রিয়</string>
+    <string name="payment_methods_card_note">কার্ড পেমেন্ট আনতে একটি পেইড merchant gateway লাগবে — এখনো যুক্ত করা হয়নি।</string>
+
+    <!-- HelpSupportScreen -->
+    <string name="help_support_title">সাহায্য ও সাপোর্ট</string>
+    <string name="help_support_faq_title">সাধারণ জিজ্ঞাসা</string>
+    <string name="help_support_faq_body">অর্ডার, পেমেন্ট, বা ডেলিভারি নিয়ে প্রশ্ন থাকলে অ্যাপের চ্যাট ফিচার দিয়ে সরাসরি শেফের সাথে যোগাযোগ করতে পারেন।</string>
+    <string name="help_support_contact_title">যোগাযোগ করুন</string>
+    <string name="help_support_contact_body">সাপোর্ট প্রয়োজনে: support@tiffinbox.app</string>
+
+    <!-- TermsScreen -->
+    <string name="terms_title">শর্তাবলী</string>
+    <string name="terms_body">TiffinBox বর্তমানে একটি early-stage প্রজেক্ট। এই শর্তাবলী placeholder হিসেবে রাখা হয়েছে এবং আইনি পরামর্শ নয় — অ্যাপ পাবলিশ করার আগে একজন আইনজীবীর সাথে চূড়ান্ত শর্তাবলী তৈরি করে নিন।</string>
+
+    <!-- PrivacyPolicyScreen -->
+    <string name="privacy_policy_title">প্রাইভেসি পলিসি</string>
+    <string name="privacy_policy_body">TiffinBox আপনার নাম, ইমেইল, ফোন নম্বর, এবং লোকেশন ব্যবহার করে অর্ডার এবং ডেলিভারি সম্পন্ন করতে। এই নীতি বর্তমানে একটি early-stage placeholder — অ্যাপ পাবলিশ করার আগে একজন আইনজীবীর সাথে চূড়ান্ত প্রাইভেসি পলিসি তৈরি করে নিন।</string>
+
     <string name="profile_seeding_status_sending">পাঠানো হচ্ছে...</string>
     <string name="profile_seeding_status_success">✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে</string>
     <string name="profile_seeding_status_failure">❌ %1$s</string>

@@ -25,6 +25,12 @@ object Routes {
     const val CHEF_LIST = "chef_list/{sort}"
     const val CHECKOUT = "checkout"
     const val SETTINGS = "settings"
+    const val CHANGE_PASSWORD = "change_password"
+    const val PAYMENT_METHODS = "payment_methods"
+    const val HELP_SUPPORT = "help_support"
+    const val TERMS = "terms"
+    const val PRIVACY_POLICY = "privacy_policy"
+    const val NOTIFICATIONS = "notifications"
 
     fun login(role: String) = "login/$role"
     fun phoneVerification(phoneNumber: String, role: String) = "phone_verification/$phoneNumber/$role"

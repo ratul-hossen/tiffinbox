@@ -34,7 +34,12 @@ import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
 import com.ratulhossen.tiffinbox.ui.screens.review.ReviewScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.RoleSelectionScreen
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
+import com.ratulhossen.tiffinbox.ui.screens.settings.ChangePasswordScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.HelpSupportScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.PaymentMethodsScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.PrivacyPolicyScreen
 import com.ratulhossen.tiffinbox.ui.screens.settings.SettingsScreen
+import com.ratulhossen.tiffinbox.ui.screens.settings.TermsScreen
 import com.ratulhossen.tiffinbox.ui.screens.splash.SplashScreen
 import com.ratulhossen.tiffinbox.ui.screens.subscription.MySubscriptionsScreen
 import com.ratulhossen.tiffinbox.ui.screens.subscription.SubscribeScreen
@@ -177,6 +182,9 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
+                onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
+                // Wired once NotificationsScreen/Routes.NOTIFICATIONS composable lands (task #66).
+                onNotificationsClick = { },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -201,7 +209,34 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable(Routes.SETTINGS) {
-            SettingsScreen(onBack = { navController.popBackStack() })
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onChangePasswordClick = { navController.navigate(Routes.CHANGE_PASSWORD) },
+                onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
+                onHelpSupportClick = { navController.navigate(Routes.HELP_SUPPORT) },
+                onTermsClick = { navController.navigate(Routes.TERMS) },
+                onPrivacyPolicyClick = { navController.navigate(Routes.PRIVACY_POLICY) }
+            )
+        }
+
+        composable(Routes.CHANGE_PASSWORD) {
+            ChangePasswordScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PAYMENT_METHODS) {
+            PaymentMethodsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.HELP_SUPPORT) {
+            HelpSupportScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.TERMS) {
+            TermsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PRIVACY_POLICY) {
+            PrivacyPolicyScreen(onBack = { navController.popBackStack() })
         }
 
         composable(
