@@ -31,26 +31,49 @@ import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
+import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
+import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
 import com.ratulhossen.tiffinbox.util.withRealDistances
 
 @Composable
 fun HomeScreen(
     onChefClick: (String) -> Unit,
+    onMealClick: (String) -> Unit,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onSeeAllClick: (String) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf(SampleData.chefs) }
+    var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     // Only true once we've replaced the static/demo distanceKm with a real
     // haversine distance from the customer's own saved location - until
     // then the 2-3km "nearby" radius filter below would be meaningless.
     var hasRealDistances by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        // "AI Recommended For You" - ranked by MlRecommendModel.kt, a logistic
+        // regression trained offline on a public Swiggy restaurant dataset
+        // (see ml/ at the repo root), run entirely on-device from the meal's
+        // own price/isVeg/availableQuantity - no server involved.
+        val allMeals = FirestoreCatalogRepository.getAllMeals()
+        if (allMeals.isNotEmpty()) {
+            aiRecommendedMeals = allMeals
+                .sortedByDescending { meal ->
+                    MlRecommendModel.predict(
+                        avgPrice = meal.price.toDouble(),
+                        vegFraction = if (meal.isVeg) 1.0 else 0.0,
+                        numOffers = 0.0,
+                        popularity = meal.availableQuantity.toDouble()
+                    )
+                }
+                .take(10)
+        }
+
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
@@ -184,6 +207,28 @@ fun HomeScreen(
                     modifier = Modifier.width(180.dp),
                     onClick = { onChefClick(chef.id) }
                 )
+            }
+        }
+
+        if (aiRecommendedMeals.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                stringResource(R.string.home_section_ai_recommended),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(aiRecommendedMeals, key = { it.id }) { meal ->
+                    MealCard(
+                        meal = meal,
+                        modifier = Modifier.width(220.dp),
+                        onClick = { onMealClick(meal.id) }
+                    )
+                }
             }
         }
 

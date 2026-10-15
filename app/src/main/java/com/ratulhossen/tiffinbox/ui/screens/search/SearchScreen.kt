@@ -21,7 +21,26 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
+import com.ratulhossen.tiffinbox.domain.ml.MlSearchIntentModel
+import com.ratulhossen.tiffinbox.domain.ml.PriceTier
+import com.ratulhossen.tiffinbox.domain.ml.SearchIntent
 import com.ratulhossen.tiffinbox.ui.components.MealCard
+
+/** BDT price bands matching the tiers MlSearchIntentModel.kt's price_tier_intent head was trained on. */
+private fun priceTierOf(price: Int): PriceTier = when {
+    price < 150 -> PriceTier.BUDGET
+    price <= 300 -> PriceTier.MID
+    else -> PriceTier.PREMIUM
+}
+
+private fun intentMatchScore(meal: MealUi, intent: SearchIntent): Double {
+    var score = 0.0
+    if (meal.isVeg) score += intent.vegProbability else score += (1.0 - intent.vegProbability)
+    if (intent.priceTier != null && priceTierOf(meal.price) == intent.priceTier) {
+        score += intent.priceTierConfidence
+    }
+    return score
+}
 
 @Composable
 fun SearchScreen(onMealClick: (String) -> Unit) {
@@ -35,8 +54,17 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
         if (firestoreMeals.isNotEmpty()) allMeals = firestoreMeals
     }
 
-    val results = remember(query, selectedCategory, vegOnly, allMeals) {
-        allMeals.filter { meal ->
+    // Natural-language search intent (veg + price-tier), predicted on-device
+    // by MlSearchIntentModel.kt - a text classifier trained offline on a
+    // public Swiggy restaurant-name dataset (see ml/ at the repo root). This
+    // doesn't replace the substring match below (so it never hides results
+    // the user typed exactly) - it only re-ranks them, so e.g. "cheap veg
+    // food" floats cheap vegetarian dishes to the top even when none of
+    // those words appear in a dish's name/description.
+    val searchIntent = remember(query) { MlSearchIntentModel.predict(query) }
+
+    val results = remember(query, selectedCategory, vegOnly, allMeals, searchIntent) {
+        val filtered = allMeals.filter { meal ->
             val matchesQuery = query.isBlank() ||
                 meal.name.contains(query, ignoreCase = true) ||
                 meal.description.contains(query, ignoreCase = true) ||
@@ -44,6 +72,12 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
             val matchesCategory = selectedCategory == null || meal.category == selectedCategory
             val matchesVeg = !vegOnly || meal.isVeg
             matchesQuery && matchesCategory && matchesVeg
+        }
+        val intent = searchIntent
+        if (intent == null) {
+            filtered
+        } else {
+            filtered.sortedByDescending { meal -> intentMatchScore(meal, intent) }
         }
     }
 

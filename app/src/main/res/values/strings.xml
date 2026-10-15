@@ -111,6 +111,7 @@
     <string name="home_search_content_description">Search</string>
     <string name="search_placeholder">কম তেলে ১২০ টাকার দুপুরের খাবার...</string>
     <string name="home_section_recommended">আপনার জন্য Recommended</string>
+    <string name="home_section_ai_recommended">✨ AI Recommended For You</string>
     <string name="home_section_nearby">কাছাকাছি Home Chef</string>
     <string name="home_see_all">সব দেখুন</string>
 

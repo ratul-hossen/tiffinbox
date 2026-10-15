@@ -101,6 +101,7 @@ fun MainScreen(
             when (selectedTab) {
                 0 -> HomeScreen(
                     onChefClick = onChefClick,
+                    onMealClick = onMealClick,
                     onSearchClick = { selectedTab = 1 },
                     onProfileClick = { selectedTab = 4 },
                     onSeeAllClick = onSeeAllChefsClick
