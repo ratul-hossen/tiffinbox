@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { addDoc, collection, doc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signOut as signOutSecondary } from "firebase/auth";
 import { db, secondaryAuth } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, Order, Review } from "../types";
 import { logActivity } from "../lib/activityLog";
+import { buildRecycleBinData, recycleBinEntryId, softDelete } from "../lib/recycleBin";
 import { DEMO_CHEFS } from "../data/demoChefSeed";
 import Badge from "./ui/Badge";
 import ChefDetail from "./ChefDetail";
@@ -130,7 +131,11 @@ export default function ChefsPage({ search }: Props) {
       setDemoMessage("No demo chefs to remove.");
       return;
     }
-    if (!confirm(`Remove all ${demoChefs.length} demo chefs and their menus? This cannot be undone.`)) {
+    if (
+      !confirm(
+        `Remove all ${demoChefs.length} demo chefs and their menus? They'll move to the Recycle Bin, not disappear forever.`,
+      )
+    ) {
       return;
     }
     setRemovingDemo(true);
@@ -138,8 +143,20 @@ export default function ChefsPage({ search }: Props) {
     try {
       const demoMeals = meals.filter((m) => m.isDemo);
       const batch = writeBatch(db);
-      demoChefs.forEach((c) => batch.delete(doc(db, "chefs", c.id)));
-      demoMeals.forEach((m) => batch.delete(doc(db, "meals", m.id)));
+      demoChefs.forEach((c) => {
+        batch.set(
+          doc(db, "recycle_bin", recycleBinEntryId("chefs", c.id)),
+          buildRecycleBinData("chefs", c.id, c, c.kitchenName ?? c.ownerName ?? c.id),
+        );
+        batch.delete(doc(db, "chefs", c.id));
+      });
+      demoMeals.forEach((m) => {
+        batch.set(
+          doc(db, "recycle_bin", recycleBinEntryId("meals", m.id)),
+          buildRecycleBinData("meals", m.id, m, m.name ?? m.id),
+        );
+        batch.delete(doc(db, "meals", m.id));
+      });
       await batch.commit();
       await logActivity("Removed all demo chefs", "chefs", "(bulk)", {
         chefCount: demoChefs.length,
@@ -221,12 +238,14 @@ export default function ChefsPage({ search }: Props) {
     }
   }
 
-  async function handleDelete(chefId: string) {
-    if (!confirm("Delete this chef? This cannot be undone.")) return;
-    setBusyId(chefId);
+  async function handleDelete(chef: Chef) {
+    if (!confirm(`Delete ${chef.kitchenName ?? chef.id}? It'll move to the Recycle Bin, not disappear forever.`)) {
+      return;
+    }
+    setBusyId(chef.id);
     try {
-      await deleteDoc(doc(db, "chefs", chefId));
-      await logActivity("Deleted chef", "chefs", chefId);
+      await softDelete("chefs", chef.id, chef, chef.kitchenName ?? chef.ownerName ?? chef.id);
+      await logActivity("Deleted chef (moved to recycle bin)", "chefs", chef.id);
     } finally {
       setBusyId(null);
     }
@@ -382,7 +401,7 @@ export default function ChefsPage({ search }: Props) {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(chef.id)}
+                    onClick={() => handleDelete(chef)}
                     disabled={busyId === chef.id}
                     className="text-apple-red hover:opacity-80 transition-opacity duration-150"
                   >

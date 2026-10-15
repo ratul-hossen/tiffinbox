@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { ShieldCheck, Shield, Trash2, UserPlus } from "lucide-react";
 import { auth, db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import { logActivity } from "../lib/activityLog";
+import { softDelete } from "../lib/recycleBin";
 import type { Admin } from "../types";
 
 interface Props {
@@ -66,12 +67,18 @@ export default function AdminsPage({ isSuperAdmin }: Props) {
 
   async function handleRemove(admin: Admin) {
     if (admin.role === "super_admin" || admin.id === currentUid) return;
-    if (!window.confirm(`Remove ${admin.email ?? admin.id} as admin?`)) return;
+    if (
+      !window.confirm(
+        `Remove ${admin.email ?? admin.id} as admin? It'll move to the Recycle Bin, not disappear forever.`,
+      )
+    ) {
+      return;
+    }
 
     setRemovingId(admin.id);
     try {
-      await deleteDoc(doc(db, "admins", admin.id));
-      await logActivity("remove_admin", "admins", admin.id, { email: admin.email ?? null });
+      await softDelete("admins", admin.id, admin, admin.email ?? admin.id);
+      await logActivity("remove_admin (moved to recycle bin)", "admins", admin.id, { email: admin.email ?? null });
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed to remove admin.");
     } finally {

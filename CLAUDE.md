@@ -505,6 +505,54 @@ light mood rakho").
   commit — real Firestore reads still require real admin sign-in, which
   this sandbox doesn't have credentials for).
 
+## admin-web Recycle Bin (soft delete, 2026-10)
+
+Owner's ask: a Recycle Bin section in admin-web — deleting something
+removes it from the app, but it stays in the Recycle Bin until an admin
+either restores it or permanently deletes it.
+
+- **`admin-web/src/lib/recycleBin.ts`** — `softDelete(sourceCollection,
+  sourceId, data, label)` snapshots the full doc into
+  `recycle_bin/{collection}__{id}` (deterministic id, so a given doc never
+  produces duplicate trash entries) and then deletes the real doc.
+  `restoreFromRecycleBin(entry)` writes the snapshot back to its original
+  collection/id and removes the recycle_bin entry.
+  `permanentlyDelete(entryId)` just removes the recycle_bin entry — gone
+  for good. `buildRecycleBinData`/`recycleBinEntryId` are exported
+  separately so a bulk operation (see below) can fold the snapshot write
+  and the real delete into one atomic `writeBatch`.
+- **Every existing "Delete" button now soft-deletes**: `ChefsPage.tsx`
+  (single chef, and the bulk "Remove all demo chefs" button — both now
+  batch-write to `recycle_bin` first), `MealsPage.tsx`,
+  `ReviewsPage.tsx`, `DeliveryPartnersPage.tsx`, `AdminsPage.tsx`. Every
+  confirm() dialog was reworded from "This cannot be undone" to "It'll
+  move to the Recycle Bin, not disappear forever" — the old wording would
+  now be false.
+- **`admin-web/src/components/RecycleBinPage.tsx`** — new page under the
+  sidebar's System group (Trash2 icon), lists every `recycle_bin` entry
+  (type badge, name, deleted-at, deleted-by-email) with **Restore** and
+  **Delete forever** buttons. Restoring an `admins`-type entry is hidden
+  for a non-super-admin (matches `firestore.rules`: admin `create` is
+  super-admin-only) rather than letting them hit a confusing
+  permission-denied error.
+- **`firestore.rules` changes** (owner must re-paste into Firebase
+  Console — not auto-deployed, see below): added an admin-only
+  `recycle_bin/{entryId}` match block, and widened `chefs/{chefId}` and
+  `reviews/{reviewId}` `create` to also accept `isAdmin()` (previously
+  only the doc's own owner could `create`) — restoring one of these via
+  Recycle Bin is a fresh `create` under a different uid (the admin's, not
+  the original owner's), so without this an admin's own Restore click
+  would fail with the exact "Missing or insufficient permissions" error
+  the owner already hit once this session for an unrelated reason (stale
+  live rules). **The owner must re-paste the full `firestore.rules`
+  content into Firebase Console → Firestore Database → Rules → Publish
+  again for Restore to work live** — this file is never auto-synced.
+- **Scope note**: `orders` and `subscriptions` pages don't have a delete
+  button at all today (orders/subscriptions are only ever status-changed,
+  never deleted), so there was nothing to convert there. `users` has no
+  delete button either. If a delete is ever added to those later, route
+  it through `softDelete()` the same way for consistency.
+
 ## File map for things mentioned above
 
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/theme/Color.kt`,

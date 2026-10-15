@@ -17,6 +17,13 @@ rules_version = '2';
 // (admin-provisioned accounts only, no self-signup), and orders/{orderId}
 // read/update access for the delivery partner assigned to that order
 // (deliveryPartnerId) — for the separate delivery-partner app, not yet built.
+//
+// Recycle Bin: an admin-only recycle_bin/{entryId} collection (see below)
+// that every admin-web "Delete" button now writes a snapshot to before the
+// real delete, so deletions are restorable. chefs/{chefId} and
+// reviews/{reviewId} `create` now also accept isAdmin() (in addition to
+// their normal owner check) so the Recycle Bin can restore those doc types
+// back to their original id on behalf of someone else.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -84,10 +91,13 @@ service cloud.firestore {
     // id, so create is restricted to that exact match — otherwise any
     // signed-in user could create or overwrite a kitchen profile under an id
     // they don't own. Admins (admin-web) can also edit/delete any chef
-    // (verify, toggle availability, moderate).
+    // (verify, toggle availability, moderate). isAdmin() is also allowed on
+    // create so admin-web's Recycle Bin (see recycle_bin/{entryId} below)
+    // can restore a soft-deleted chef doc back to its original id even
+    // though the admin isn't that chef's own uid.
     match /chefs/{chefId} {
       allow read: if true;
-      allow create: if isOwner(chefId);
+      allow create: if isOwner(chefId) || isAdmin();
       allow update, delete: if isAdmin() ||
         (isSignedIn() && resource.data.userId == request.auth.uid);
     }
@@ -127,10 +137,12 @@ service cloud.firestore {
     }
 
     // reviews/{reviewId} — public read, only the verified buyer can create.
-    // Admins (admin-web) can delete for moderation (flagging).
+    // Admins (admin-web) can delete for moderation (flagging), and isAdmin()
+    // is also allowed on create so the Recycle Bin can restore a deleted
+    // review on the original customer's behalf.
     match /reviews/{reviewId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow create: if (isSignedIn() && request.resource.data.customerId == request.auth.uid) || isAdmin();
       allow update: if false;
       allow delete: if isAdmin();
     }
@@ -211,6 +223,16 @@ service cloud.firestore {
         resource.data.customerId == request.auth.uid ||
         resource.data.get("deliveryPartnerId", "") == request.auth.uid
       ));
+    }
+
+    // recycle_bin/{collection}__{id} — admin-web's soft-delete trash (see
+    // src/lib/recycleBin.ts): every "Delete" button across admin-web writes
+    // a full data snapshot here right before removing the real doc, so a
+    // deleted chef/meal/review/delivery partner/admin can be restored later
+    // instead of being gone immediately. Admin-only end to end - there is no
+    // customer/chef-facing path that ever reads or writes this collection.
+    match /recycle_bin/{entryId} {
+      allow read, create, update, delete: if isAdmin();
     }
   }
 }

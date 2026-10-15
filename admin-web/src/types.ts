@@ -197,6 +197,20 @@ export interface SelfServiceRequest {
   createdAt?: number | FirestoreTimestampLike | null;
 }
 
+// recycle_bin/{collection}__{id} - a soft-deleted doc's full data snapshot,
+// written by lib/recycleBin.ts right before the real doc is deleted from its
+// own collection. "Restore" writes `data` back to `sourceCollection`/
+// `sourceId`; "Delete forever" just removes this entry.
+export interface RecycleBinEntry {
+  id: string;
+  sourceCollection: string;
+  sourceId: string;
+  data?: Record<string, unknown>;
+  label?: string;
+  deletedAt?: number;
+  deletedByEmail?: string | null;
+}
+
 export interface Subscription {
   id: string;
   customerId?: string;

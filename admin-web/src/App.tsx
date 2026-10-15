@@ -17,6 +17,7 @@ import {
   Star,
   Repeat,
   Sun,
+  Trash2,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -37,6 +38,7 @@ import AdminsPage from "./components/AdminsPage";
 import ChatsPage from "./components/ChatsPage";
 import DeliveryPartnersPage from "./components/DeliveryPartnersPage";
 import SelfServiceRequestsPage from "./components/SelfServiceRequestsPage";
+import RecycleBinPage from "./components/RecycleBinPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -51,7 +53,8 @@ type Tab =
   | "admins"
   | "chats"
   | "deliveryPartners"
-  | "selfServiceRequests";
+  | "selfServiceRequests"
+  | "recycleBin";
 
 interface TabMeta {
   key: Tab;
@@ -157,6 +160,14 @@ const TABS: TabMeta[] = [
     group: "System",
     searchPlaceholder: "Search activity…",
     description: "An audit trail of every admin action.",
+  },
+  {
+    key: "recycleBin",
+    label: "Recycle Bin",
+    icon: Trash2,
+    group: "System",
+    searchPlaceholder: "Search recycle bin…",
+    description: "Deleted chefs, meals, reviews and more - restore or delete forever.",
   },
 ];
 
@@ -337,6 +348,7 @@ export default function App() {
           {tab === "deliveryPartners" && <DeliveryPartnersPage />}
           {tab === "selfServiceRequests" && <SelfServiceRequestsPage />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
+          {tab === "recycleBin" && <RecycleBinPage search={search} isSuperAdmin={isSuperAdmin} />}
         </main>
       </div>
     </div>

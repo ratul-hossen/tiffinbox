@@ -23,6 +23,11 @@ It lets an admin:
   breakdown chart, and a top-chefs leaderboard
 - See an **Activity Log** of every mutating admin action (who did what, to
   what, and when) — a durable, append-only audit trail
+- Use a **Recycle Bin**: every "Delete" button (Chefs, Meals, Reviews,
+  Delivery Partners, Admins) is a soft delete — the item disappears from the
+  app immediately but its full data is kept in `recycle_bin` until an admin
+  either **Restores** it (writes it back to its original collection/id) or
+  **Deletes forever** (actually gone)
 
 A global search box in the top bar filters whichever page is currently open.
 
@@ -112,13 +117,20 @@ Firebase Auth uid**, with any field (e.g. `{ addedAt: <timestamp> }`).
 read/write on `chefs`, `meals`, `orders`, `reviews`, `users` and the
 `subscriptions` collection, plus an append-only `admin_activity_log`
 collection (admins can read and create entries; update/delete are always
-denied, so the Activity Log tab stays a trustworthy audit trail). That file is a **reference** ruleset — per its
-own existing header comment, the Firebase project is currently actually
-running the much looser `allow read, write: if request.auth != null;` rule
-in the console, so this admin panel already works today regardless of
-whether the stricter reference rules get deployed. If/when someone tightens
-the live console rules to match `firestore.rules`, the admin additions are
-already there waiting.
+denied, so the Activity Log tab stays a trustworthy audit trail), plus an
+admin-only `recycle_bin` collection for the soft-delete/Restore feature
+(`chefs` and `reviews` `create` also accept `isAdmin()` now, in addition to
+their normal owner check, so a Restore can write either doc type back to
+its original id on someone else's behalf).
+
+**This file is not auto-deployed.** It's the source of truth to keep the
+*live* Firebase Console rules in sync with, but publishing changes here
+requires manually re-pasting the whole file into **Firebase Console →
+Firestore Database → Rules → Publish** every time it changes — there is no
+CI/CD step that does this automatically. If the admin panel ever shows
+"Missing or insufficient permissions" on a collection the code expects to
+read/write, the live console rules have likely drifted from this file —
+re-paste and republish it.
 
 ## Notes / scope
 

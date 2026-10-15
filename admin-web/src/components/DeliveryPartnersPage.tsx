@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { createUserWithEmailAndPassword, signOut as signOutSecondary } from "firebase/auth";
-import { deleteDoc, doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { Bike, Trash2, UserPlus } from "lucide-react";
 import { db, secondaryAuth } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import { logActivity } from "../lib/activityLog";
+import { softDelete } from "../lib/recycleBin";
 import type { DeliveryPartner } from "../types";
 
 /**
@@ -71,11 +72,17 @@ export default function DeliveryPartnersPage() {
   }
 
   async function handleDelete(partner: DeliveryPartner) {
-    if (!confirm(`Remove ${partner.name ?? partner.email ?? partner.id} from delivery partners?`)) return;
+    if (
+      !confirm(
+        `Remove ${partner.name ?? partner.email ?? partner.id} from delivery partners? It'll move to the Recycle Bin, not disappear forever.`,
+      )
+    ) {
+      return;
+    }
     setBusyId(partner.id);
     try {
-      await deleteDoc(doc(db, "delivery_partners", partner.id));
-      await logActivity("Deleted delivery partner", "delivery_partners", partner.id);
+      await softDelete("delivery_partners", partner.id, partner, partner.name ?? partner.email ?? partner.id);
+      await logActivity("Deleted delivery partner (moved to recycle bin)", "delivery_partners", partner.id);
     } finally {
       setBusyId(null);
     }

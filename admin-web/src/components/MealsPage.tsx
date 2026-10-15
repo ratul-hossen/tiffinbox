@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal } from "../types";
 import { logActivity } from "../lib/activityLog";
+import { softDelete } from "../lib/recycleBin";
 import { formatCurrency } from "../lib/format";
 import Badge from "./ui/Badge";
 
@@ -66,12 +67,14 @@ export default function MealsPage({ search }: Props) {
     }
   }
 
-  async function handleDelete(mealId: string) {
-    if (!confirm("Delete this meal? This cannot be undone.")) return;
-    setBusyId(mealId);
+  async function handleDelete(meal: Meal) {
+    if (!confirm(`Delete ${meal.name ?? meal.id}? It'll move to the Recycle Bin, not disappear forever.`)) {
+      return;
+    }
+    setBusyId(meal.id);
     try {
-      await deleteDoc(doc(db, "meals", mealId));
-      await logActivity("Deleted meal", "meals", mealId);
+      await softDelete("meals", meal.id, meal, meal.name ?? meal.id);
+      await logActivity("Deleted meal (moved to recycle bin)", "meals", meal.id);
     } finally {
       setBusyId(null);
     }
@@ -178,7 +181,7 @@ export default function MealsPage({ search }: Props) {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(meal.id)}
+                        onClick={() => handleDelete(meal)}
                         disabled={busyId === meal.id}
                         className="text-apple-red hover:opacity-80 transition-opacity duration-150"
                       >

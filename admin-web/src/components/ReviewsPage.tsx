@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import { deleteDoc, doc } from "firebase/firestore";
 import { Star } from "lucide-react";
-import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Review } from "../types";
 import { logActivity } from "../lib/activityLog";
+import { softDelete } from "../lib/recycleBin";
 import { formatDateTime } from "../lib/format";
 
 interface Props {
@@ -32,12 +31,12 @@ export default function ReviewsPage({ search }: Props) {
     });
   }, [reviews, chefFilter, search, chefs]);
 
-  async function handleDelete(reviewId: string) {
-    if (!confirm("Delete (flag) this review? This cannot be undone.")) return;
-    setBusyId(reviewId);
+  async function handleDelete(review: Review) {
+    if (!confirm("Delete (flag) this review? It'll move to the Recycle Bin, not disappear forever.")) return;
+    setBusyId(review.id);
     try {
-      await deleteDoc(doc(db, "reviews", reviewId));
-      await logActivity("Flagged/deleted review", "reviews", reviewId);
+      await softDelete("reviews", review.id, review, review.comment ?? review.id);
+      await logActivity("Flagged/deleted review (moved to recycle bin)", "reviews", review.id);
     } finally {
       setBusyId(null);
     }
@@ -91,7 +90,7 @@ export default function ReviewsPage({ search }: Props) {
 
             <div className="mt-3 pt-3 border-t border-apple-border">
               <button
-                onClick={() => handleDelete(review.id)}
+                onClick={() => handleDelete(review)}
                 disabled={busyId === review.id}
                 className="text-xs text-apple-red hover:opacity-80 transition-opacity duration-150"
               >
