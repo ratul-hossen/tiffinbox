@@ -109,6 +109,7 @@
     <string name="home_search_content_description">Search</string>
     <string name="search_placeholder">Lunch under ৳120, less oil...</string>
     <string name="home_section_recommended">Recommended for you</string>
+    <string name="home_section_ai_recommended">✨ AI Recommended For You</string>
     <string name="home_section_nearby">Home Chefs Nearby</string>
     <string name="home_see_all">See all</string>
 

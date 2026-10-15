@@ -11,3 +11,10 @@ local.properties
 *.hprof
 .kotlin/
 /app/google-services.json
+
+# ML training data (large, re-downloadable - see ml/data/SOURCE.md) and
+# regenerable build output. The actual trained-model artifacts the app
+# ships with live in app/src/main/assets/ml/ and ARE committed.
+/ml/data/*.csv
+/ml/export/
+/ml/node_modules/

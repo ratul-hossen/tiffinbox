@@ -335,6 +335,62 @@ multiple times already — always use the free-tier equivalents above) or
 to silently dropping the admin-provisioned-only delivery-partner design
 in favor of the reference screenshots' public self-signup role.
 
+## On-device ML: recommendation engine + natural-language search (2026-10)
+
+Owner's explicit ask (paraphrased from Bengali): real AI integration, not an
+API call — train real models on a real, famous, well-used food-delivery
+dataset, keep it simple (exactly 2 features: a recommendation engine and
+natural-language search), document the dataset/models/F1 scores in a
+`.docx`, integrate the trained models into the app, and **no external
+hosting** — consistent with the project's existing free-tier-only
+constraint (see "Known billing constraint" above).
+
+- **Dataset:** Swiggy restaurant dataset (India-wide, real production
+  listings from one of the largest food-delivery platforms — the closest
+  available analogue to Foodpanda-type data). Kaggle and HuggingFace (the
+  usual mirrors) are network-policy-blocked from this project's dev
+  environment, so a GitHub mirror of the same dataset was used instead
+  (verified identical in structure to the commonly-cited Kaggle
+  `ashishjangra27/swiggy-restaurants-dataset`). Full provenance, pinned
+  commit hash, and reproduction steps: `ml/data/SOURCE.md`.
+- **Model 1 — Recommendation engine:** logistic regression trained on
+  price / veg-status / offers / popularity to predict a binary
+  "recommended" label (rating ≥ 4.0). Shipped model F1 = 0.668 (a
+  gradient-boosting model was also trained as a comparison-only ceiling,
+  F1 = 0.789, but is NOT shipped — a tree ensemble can't be reduced to the
+  simple on-device arithmetic this project needs). Training script:
+  `ml/train_recommend_model.py`. Integrated as a new, additive "✨ AI
+  Recommended For You" meal section on `HomeScreen` (deliberately
+  separate from the pre-existing chef-level `RecommendationEngine.kt`
+  formula, which lacks the price/veg fields this model needs).
+- **Model 2 — Natural-language search:** TF-IDF + logistic regression
+  trained on restaurant names, with two heads: veg-intent (binary, F1 =
+  0.668) and price-tier intent (3-class budget/mid/premium, macro F1 =
+  0.418 — reported as-measured, including this modest number, since the
+  owner asked for honest documentation, not inflated numbers). Training
+  script: `ml/train_search_model.py`. Integrated into `SearchScreen` as a
+  **re-ranking** signal only — the existing substring-match filter is
+  never overridden or hidden by the model, so a misprediction can only
+  reorder results, never make a result the user typed exactly disappear.
+- **No external hosting, by design:** both models are small enough to
+  export as plain weight JSON (`recommend_model.json` 1KB,
+  `search_model.json` 480KB) bundled into `app/src/main/assets/ml/`, with
+  scikit-learn's exact TF-IDF/logistic-regression math hand-reimplemented
+  as plain Kotlin arithmetic in `app/src/main/java/.../domain/ml/`
+  (`MlRecommendModel.kt`, `MlSearchIntentModel.kt`) — no TensorFlow Lite
+  runtime, no server, no new Gradle dependency (uses Android's built-in
+  `org.json`). Both load once in `MainActivity.onCreate` and fail
+  gracefully to a neutral/no-op result if the asset can't be parsed.
+- **Full report with dataset/model/F1 details:** `ml/MODEL_REPORT.docx`
+  (generated via `ml/generate_report.js`). Training data CSVs and build
+  output (`ml/data/*.csv`, `ml/export/`) are gitignored as large/
+  regenerable — see `ml/data/SOURCE.md` for exact reproduction steps; the
+  shipped model artifacts the app actually reads live in
+  `app/src/main/assets/ml/` and **are** committed.
+- **Scope note:** this covers exactly the 2 features the owner asked for
+  (recommendation + NL search) — not a general ML platform. Don't expand
+  it with more trained models without a fresh explicit ask.
+
 ## File map for things mentioned above
 
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/theme/Color.kt`,

@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
+import com.ratulhossen.tiffinbox.domain.ml.MlSearchIntentModel
 import com.ratulhossen.tiffinbox.notifications.ensureNotificationChannel
 import com.ratulhossen.tiffinbox.ui.navigation.TiffinNavGraph
 import com.ratulhossen.tiffinbox.ui.theme.ThemePreferences
@@ -34,6 +36,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         ThemePreferences.init(this)
+        MlRecommendModel.ensureLoaded(this)
+        MlSearchIntentModel.ensureLoaded(this)
         ensureNotificationChannel(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
