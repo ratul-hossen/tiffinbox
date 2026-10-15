@@ -61,6 +61,7 @@ export default function ChefsPage({ search }: Props) {
             kitchenType: demoChef.kitchenType,
             yearsOfExperience: demoChef.yearsOfExperience,
             emoji: demoChef.emoji,
+            photoBase64: demoChef.photoBase64,
             bio: demoChef.bio,
             specialty: demoChef.specialty,
             whatsappNumber: demoChef.whatsappNumber,

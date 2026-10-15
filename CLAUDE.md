@@ -428,14 +428,20 @@ admin panel a one-click way to wipe all of it later.
   account is created via `secondaryAuth` (same pattern as
   `DeliveryPartnersPage.tsx`) since `firestore.rules` only allows
   `chefs/{uid}` creation by the signed-in uid itself.
-- **No photos bundled** — this sandbox's network access doesn't reach
-  stock-photo hosts, and pulling images from an unlicensed scraped
-  dataset into a real app repo is a copyright risk not worth taking. Demo
-  chefs/meals fall back to their `emoji` field exactly like any real
-  chef/meal that hasn't uploaded a photo. If the owner wants real photos
-  later, the existing upload flow (`ChefDashboardScreen`/
-  `MenuManagerScreen`) works on these accounts like any other — just sign
-  in as the demo chef with the fixed password from `demoChefSeed.ts`.
+- **Real photos on 4 of the 5 chefs** — the owner supplied 5 real thali/
+  curry photos directly in chat; 4 were a good thematic fit and are
+  compressed (JPEG, base64, no `data:` prefix — same format
+  `ImageCompressor.kt` produces) into each matching chef's
+  `photoBase64` in `demoChefSeed.ts` (Rashida/Karim/Ayesha/Nasreen). The
+  5th supplied photo (an American chili bowl) didn't fit any of the 5
+  personas' cuisine, so it was deliberately **not** used — forcing a
+  mismatched photo onto a Bangladeshi chef profile would look wrong, not
+  just filler. Chittagong Spice Corner currently has no photo and falls
+  back to its `emoji`, exactly like any other chef/meal that hasn't
+  uploaded one. If the owner wants a photo for it (or wants to replace
+  any of the 4), the existing upload flow (`ChefDashboardScreen`/
+  `MenuManagerScreen`) works on these accounts like any other — sign in
+  as that demo chef with the fixed password from `demoChefSeed.ts`.
 - **`isVerified: true` at creation** — demo chefs skip the normal
   admin-approval workflow entirely (they're pre-approved since there's no
   real kitchen to verify).
