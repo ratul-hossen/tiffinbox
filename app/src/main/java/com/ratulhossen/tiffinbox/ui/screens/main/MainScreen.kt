@@ -133,7 +133,8 @@ fun MainScreen(
                     onMealClick = onMealClick,
                     onSearchClick = { selectedTab = 1 },
                     onProfileClick = { selectedTab = 4 },
-                    onSeeAllClick = onSeeAllChefsClick
+                    onSeeAllClick = onSeeAllChefsClick,
+                    onLocationClick = onEditProfileClick
                 )
                 1 -> SearchScreen(onMealClick = onMealClick)
                 2 -> OrdersScreen()

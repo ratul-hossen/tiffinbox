@@ -23,6 +23,8 @@ export interface Chef {
   isAvailableToday?: boolean;
   latitude?: number;
   longitude?: number;
+  /** Reverse-geocoded kitchen address saved next to latitude/longitude. */
+  address?: string;
   deliveryMode?: "self" | "tiffinbox" | string;
   /** End of the TiffinBox Delivery agreement (epoch ms); past it the chef counts as self-delivery. */
   deliveryUntil?: number;
@@ -94,6 +96,13 @@ export interface AppUser {
   phoneNumber?: string;
   whatsappNumber?: string;
   createdAt?: number; // epoch millis
+  /** Default delivery location (customers) - the point Home's "nearby chefs" distances use. */
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  savedAddresses?: { label?: string; address?: string; latitude?: number; longitude?: number }[];
+  defaultAddressIndex?: number;
+  fcmToken?: string;
 }
 
 export interface OrderItem {

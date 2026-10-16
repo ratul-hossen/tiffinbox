@@ -178,7 +178,7 @@
     <string name="splash_tagline">Home-Cooked Food, One Tap Away</string>
 
     <!-- HomeScreen -->
-    <string name="home_location">Ashulia, Dhaka</string>
+    <string name="home_location_not_set">Set your location</string>
     <string name="home_greeting">What do you feel like eating today?</string>
     <string name="home_profile_content_description">Profile</string>
     <string name="home_search_content_description">Search</string>

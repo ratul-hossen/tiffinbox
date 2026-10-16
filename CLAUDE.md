@@ -471,6 +471,23 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   a pencil icon on ChefDashboard's header. Profile's dead "My Orders" /
   "Favorites" items now switch to those tabs.
 
+## Home location header + admin User Details (2026-10-16)
+
+- Home's gradient-header location pill used to be a **hardcoded string**
+  ("Ashulia, Dhaka", resource `home_location`, now removed). It now shows the
+  customer's real saved address (`users/{uid}.address`, falling back to an
+  on-device reverse geocode of the saved lat/lng, else "Set your location"),
+  i.e. the exact point the nearby-chef distances use; tapping it opens Edit
+  Profile (saved addresses). Deleting the last saved address now also clears
+  the top-level address/lat/lng mirror so Home doesn't keep a stale point.
+- admin-web `UserDetail.tsx` (Users → View details) shows everything:
+  phone / WhatsApp / email with WhatsApp, Call and Gmail buttons, FCM status,
+  order count + spend; customers: current location (the Home one) + every
+  saved address with coordinates and a Google Maps link, plus a check that
+  the default saved address matches it; chefs: kitchen location (chefs/{uid}),
+  approval, delivery mode/until, bKash/Nagad, type, experience, menu size;
+  full order list (orders received for chefs).
+
 ## Animated gradient backdrop everywhere (2026-10-16)
 
 Owner felt plain white screens looked dull and asked for an animated,

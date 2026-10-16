@@ -47,6 +47,9 @@ import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.data.location.LocationRepository
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
@@ -63,8 +66,10 @@ fun HomeScreen(
     onMealClick: (String) -> Unit,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onSeeAllClick: (String) -> Unit
+    onSeeAllClick: (String) -> Unit,
+    onLocationClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
@@ -73,6 +78,9 @@ fun HomeScreen(
     // haversine distance from the customer's own saved location - until
     // then the 2-3km "nearby" radius filter below would be meaningless.
     var hasRealDistances by remember { mutableStateOf(false) }
+    // The customer's own saved (default) address - the same point used for
+    // the distance math below, so the header and "nearby" always agree.
+    var myAddress by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         // "AI Recommended For You" - ranked by MlRecommendModel.kt, a logistic
@@ -109,6 +117,9 @@ fun HomeScreen(
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
         val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        myAddress = uid?.let { FirestoreUserRepository.getProfile(it)?.address }?.ifBlank { null }
+            ?: myLocation?.let { LocationRepository.reverseGeocode(context, it) }
+            ?: ""
         if (myLocation != null) {
             chefs = firestoreChefs.withRealDistances(myLocation)
             hasRealDistances = true
@@ -156,7 +167,8 @@ fun HomeScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Surface(
                             shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.18f)
+                            color = Color.White.copy(alpha = 0.18f),
+                            modifier = Modifier.clickable(onClick = onLocationClick)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -170,9 +182,15 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    stringResource(R.string.home_location),
+                                    when (val a = myAddress) {
+                                        null -> "…"
+                                        "" -> stringResource(R.string.home_location_not_set)
+                                        else -> a
+                                    },
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }

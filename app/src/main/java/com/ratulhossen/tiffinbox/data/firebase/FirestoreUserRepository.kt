@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessaging
@@ -172,10 +173,17 @@ object FirestoreUserRepository {
                 },
                 "defaultAddressIndex" to defaultIndex.coerceIn(0, (trimmed.size - 1).coerceAtLeast(0))
             )
-            trimmed.getOrNull(defaultIndex)?.let { def ->
+            val def = trimmed.getOrNull(defaultIndex.coerceIn(0, (trimmed.size - 1).coerceAtLeast(0)))
+            if (def != null) {
                 data["address"] = def.address
                 data["latitude"] = def.latitude
                 data["longitude"] = def.longitude
+            } else {
+                // Last address removed - clear the mirror so Home doesn't keep
+                // measuring distances from a location the user deleted.
+                data["address"] = FieldValue.delete()
+                data["latitude"] = FieldValue.delete()
+                data["longitude"] = FieldValue.delete()
             }
             db.collection("users").document(uid).set(data, SetOptions.merge()).await()
             true
