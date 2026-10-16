@@ -39,7 +39,7 @@ class TiffinFirebaseMessagingService : FirebaseMessagingService() {
         if (!hasPermission) return
 
         val notification = NotificationCompat.Builder(this, ORDER_UPDATES_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)

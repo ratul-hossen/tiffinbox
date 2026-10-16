@@ -1,0 +1,127 @@
+<!--
+  TiffinBox launcher mark: an open tiffin/bento box viewed from above with
+  colourful food in compartments — white rice with a red item in the centre,
+  green vegetables, orange/yellow curry. Matches the owner's reference image
+  of a colourful, food-filled box with minimal background.
+
+  Adaptive-icon foreground: drawn on the standard 108x108 canvas, with every
+  part kept inside the 66dp-diameter safe circle (centre 54,54, radius 33)
+  so no launcher shape crops it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- === Outer box (rounded rectangle, warm brown/wooden edge) === -->
+    <path
+        android:fillColor="#8B5E3C"
+        android:pathData="M30,28 L78,28 Q82,28 82,32 L82,80 Q82,84 78,84 L30,84 Q26,84 26,80 L26,32 Q26,28 30,28 Z" />
+
+    <!-- Inner box floor (lighter wood / cream) -->
+    <path
+        android:fillColor="#D4A76A"
+        android:pathData="M31,29 L77,29 Q81,29 81,33 L81,79 Q81,83 77,83 L31,83 Q27,83 27,79 L27,33 Q27,29 31,29 Z" />
+
+    <!-- === Dividers (dark brown lines separating compartments) === -->
+    <!-- Horizontal divider -->
+    <path
+        android:fillColor="#6B4226"
+        android:pathData="M27,54 L81,54 L81,56 L27,56 Z" />
+    <!-- Vertical divider (top half only) -->
+    <path
+        android:fillColor="#6B4226"
+        android:pathData="M53,29 L55,29 L55,54 L53,54 Z" />
+    <!-- Vertical divider (bottom half, offset for interest) -->
+    <path
+        android:fillColor="#6B4226"
+        android:pathData="M53,56 L55,56 L55,83 L53,83 Z" />
+
+    <!-- === TOP-LEFT compartment: White rice with red centre === -->
+    <!-- Rice base (white/off-white) -->
+    <path
+        android:fillColor="#FFF8EE"
+        android:pathData="M28,30 L52,30 L52,53 L28,53 Z" />
+    <!-- Rice grain texture dots -->
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M33,35 a1.2,1.2 0 1,1 2.4,0 a1.2,1.2 0 1,1 -2.4,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M38,38 a1,1 0 1,1 2,0 a1,1 0 1,1 -2,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M43,34 a1.1,1.1 0 1,1 2.2,0 a1.1,1.1 0 1,1 -2.2,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M35,43 a1,1 0 1,1 2,0 a1,1 0 1,1 -2,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M44,46 a1.2,1.2 0 1,1 2.4,0 a1.2,1.2 0 1,1 -2.4,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M32,48 a1,1 0 1,1 2,0 a1,1 0 1,1 -2,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M46,39 a0.9,0.9 0 1,1 1.8,0 a0.9,0.9 0 1,1 -1.8,0" />
+    <!-- Centre red item (e.g. cherry tomato / chili / tikka piece) -->
+    <path android:fillColor="#E53935"
+        android:pathData="M37,39 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0" />
+    <path android:fillColor="#C62828"
+        android:pathData="M39,38 a1.8,1.5 0 1,1 3.6,0 a1.8,1.5 0 1,1 -3.6,0" />
+
+    <!-- === TOP-RIGHT compartment: Green vegetables (saag/bhorta) === -->
+    <path
+        android:fillColor="#43A047"
+        android:pathData="M56,30 L80,30 L80,53 L56,53 Z" />
+    <!-- Leaf/vegetable shapes -->
+    <path android:fillColor="#2E7D32"
+        android:pathData="M62,36 Q68,32 72,38 Q68,42 62,36 Z" />
+    <path android:fillColor="#66BB6A"
+        android:pathData="M60,42 Q64,38 70,43 Q66,48 60,42 Z" />
+    <path android:fillColor="#388E3C"
+        android:pathData="M64,46 Q69,43 74,48 Q70,51 64,46 Z" />
+    <!-- Small bright green dots (peas or herb bits) -->
+    <path android:fillColor="#81C784"
+        android:pathData="M59,35 a1.5,1.5 0 1,1 3,0 a1.5,1.5 0 1,1 -3,0" />
+    <path android:fillColor="#A5D6A7"
+        android:pathData="M73,44 a1.3,1.3 0 1,1 2.6,0 a1.3,1.3 0 1,1 -2.6,0" />
+    <path android:fillColor="#81C784"
+        android:pathData="M58,49 a1.2,1.2 0 1,1 2.4,0 a1.2,1.2 0 1,1 -2.4,0" />
+
+    <!-- === BOTTOM-LEFT compartment: Orange/yellow curry (dal/torkari) === -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M28,57 L52,57 L52,82 L28,82 Z" />
+    <!-- Curry surface detail -->
+    <path android:fillColor="#F57C00"
+        android:pathData="M34,64 a4,3 0 1,1 8,0 a4,3 0 1,1 -8,0" />
+    <path android:fillColor="#FFB74D"
+        android:pathData="M36,71 a3.5,2.8 0 1,1 7,0 a3.5,2.8 0 1,1 -7,0" />
+    <path android:fillColor="#E65100"
+        android:pathData="M42,66 a2,2 0 1,1 4,0 a2,2 0 1,1 -4,0" />
+    <!-- Small spice/herb flecks -->
+    <path android:fillColor="#4CAF50"
+        android:pathData="M31,60 a0.8,0.8 0 1,1 1.6,0 a0.8,0.8 0 1,1 -1.6,0" />
+    <path android:fillColor="#4CAF50"
+        android:pathData="M47,76 a0.9,0.9 0 1,1 1.8,0 a0.9,0.9 0 1,1 -1.8,0" />
+    <path android:fillColor="#FFF176"
+        android:pathData="M33,77 a1,1 0 1,1 2,0 a1,1 0 1,1 -2,0" />
+
+    <!-- === BOTTOM-RIGHT compartment: Mixed items (egg/meat/fish pieces) === -->
+    <path
+        android:fillColor="#FFCC80"
+        android:pathData="M56,57 L80,57 L80,82 L56,82 Z" />
+    <!-- Egg slice (white + yellow yolk) -->
+    <path android:fillColor="#FAFAFA"
+        android:pathData="M62,63 a4,3.5 0 1,1 8,0 a4,3.5 0 1,1 -8,0" />
+    <path android:fillColor="#FFC107"
+        android:pathData="M64,62.5 a2.2,2 0 1,1 4.4,0 a2.2,2 0 1,1 -4.4,0" />
+    <!-- Meat/fish piece (warm brown) -->
+    <path android:fillColor="#A1887F"
+        android:pathData="M59,70 Q63,67 68,71 Q65,76 59,70 Z" />
+    <path android:fillColor="#8D6E63"
+        android:pathData="M67,73 Q71,70 76,74 Q73,78 67,73 Z" />
+    <!-- Small red chili accent -->
+    <path android:fillColor="#F44336"
+        android:pathData="M73,62 Q76,60 77,63 Q75,65 73,62 Z" />
+
+    <!-- === Box rim highlight (subtle shine on the wooden edge) === -->
+    <path
+        android:fillColor="#C8956A"
+        android:pathData="M30,28 L78,28 Q82,28 82,32 L82,30 Q82,28 78,28 L30,28 Q26,28 26,30 L26,32 Q26,28 30,28 Z" />
+</vector>

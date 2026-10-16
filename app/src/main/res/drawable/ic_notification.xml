@@ -1,0 +1,35 @@
+<!--
+  Status-bar notification icon. Android flattens a notification small icon to
+  a single colour using only its alpha, so this must be a white-on-transparent
+  silhouette - the full-colour launcher icon that used to be passed to
+  setSmallIcon() just rendered as a solid blob.
+
+  Same tiffin-carrier mark as the launcher, redrawn on the 24x24 canvas
+  notification icons use so it fills the space instead of sitting tiny in the
+  middle of a 108dp viewport.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:pathData="M8.67,7.55 C8.67,2 15.33,2 15.33,7.55"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.85"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7.6,7.55 L16.4,7.55 Q17.55,7.55 17.55,8.7 L17.55,10.5 Q17.55,11.62 16.4,11.62 L7.6,11.62 Q6.45,11.62 6.45,10.5 L6.45,8.7 Q6.45,7.55 7.6,7.55 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7.6,12.73 L16.4,12.73 Q17.55,12.73 17.55,13.88 L17.55,15.68 Q17.55,16.8 16.4,16.8 L7.6,16.8 Q6.45,16.8 6.45,15.68 L6.45,13.88 Q6.45,12.73 7.6,12.73 Z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7.6,17.91 L16.4,17.91 Q17.55,17.91 17.55,19.06 L17.55,20.86 Q17.55,21.98 16.4,21.98 L7.6,21.98 Q6.45,21.98 6.45,20.86 L6.45,19.06 Q6.45,17.91 7.6,17.91 Z" />
+</vector>

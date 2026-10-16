@@ -414,6 +414,8 @@
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
     <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
+    <string name="chef_order_distance">📍 %1$s দূরে</string>
+    <string name="chef_order_chat">Chat</string>
     <string name="chef_dashboard_view_screenshot_button">পেমেন্ট স্ক্রিনশট দেখুন</string>
     <string name="chef_dashboard_screenshot_load_failed">স্ক্রিনশট লোড করা যায়নি</string>
     <string name="chef_dashboard_delivery_mode_title">ডেলিভারি</string>
@@ -649,4 +651,19 @@
     <string name="meal_plans_empty">এখনো কোনো কিচেন মিল প্ল্যান অফার করেনি</string>
     <string name="meal_plans_starting_from">৳%1$d থেকে শুরু</string>
     <string name="meal_plans_subscribe">সাবস্ক্রাইব করুন</string>
+    <string name="checkout_delivery_surcharge_row">%1$s এলাকায় বাড়তি চার্জ</string>
+    <string name="checkout_delivery_surcharge_generic">বাড়তি delivery চার্জ</string>
+    <string name="delivery_charge_title">Delivery চার্জ</string>
+    <string name="delivery_charge_subtitle">নিজে deliver করলে customer-এর কাছ থেকে এই চার্জ নেওয়া হবে।</string>
+    <string name="delivery_charge_base">Base চার্জ (৳)</string>
+    <string name="delivery_charge_per_km">প্রতি extra km (৳)</string>
+    <string name="delivery_charge_included_km">Base-এ যত km</string>
+    <string name="delivery_charge_max_note">Admin-এর ঠিক করা সর্বোচ্চ: ৳%1$d</string>
+    <string name="delivery_charge_over_max">৳%1$d-এর বেশি নেওয়া যাবে না।</string>
+    <string name="delivery_charge_default_note">খালি রাখলে app-এর নিজের চার্জই প্রযোজ্য হবে।</string>
+    <string name="delivery_charge_save">চার্জ save করো</string>
+    <string name="delivery_charge_saved">Delivery চার্জ save হয়েছে।</string>
+    <string name="delivery_charge_tiffinbox_note">TiffinBox Delivery চালু আছে, তাই চার্জ app ঠিক করে।</string>
+    <string name="delivery_charge_example">%1$d km দূরে হলে: ৳%2$d</string>
+    <string name="delivery_charge_invalid">সব ঘরে ঠিক সংখ্যা দাও।</string>
 </resources>

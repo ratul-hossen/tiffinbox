@@ -124,7 +124,12 @@ object FirestoreCatalogRepository {
             approvalStatus = getString("approvalStatus") ?: "",
             story = getString("story") ?: "",
             nidVerified = getBoolean("nidVerified") ?: false,
-            kitchenVerified = getBoolean("kitchenVerified") ?: false
+            kitchenVerified = getBoolean("kitchenVerified") ?: false,
+            // -1 = the chef never set their own rate, so the app's rate applies.
+            selfDeliveryBaseFee = getLong("selfDeliveryBaseFee")?.toInt() ?: -1,
+            selfDeliveryPerKmFee = getLong("selfDeliveryPerKmFee")?.toInt() ?: -1,
+            selfDeliveryIncludedKm = getDouble("selfDeliveryIncludedKm") ?: -1.0,
+            maxDeliveryFee = getLong("maxDeliveryFee")?.toInt() ?: 0
         )
     }
 

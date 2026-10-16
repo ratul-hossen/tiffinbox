@@ -1,0 +1,61 @@
+<!--
+  Themed-icon layer (Android 13+): the launcher recolours this to match the
+  user's wallpaper, using only its alpha. An open bento box outline with
+  compartment dividers — reads as the same tiffin box at any single colour.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer box -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,28 L78,28 Q82,28 82,32 L82,80 Q82,84 78,84 L30,84 Q26,84 26,80 L26,32 Q26,28 30,28 Z" />
+
+    <!-- Inner floor (cutout to create a border effect) -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M32,30 L76,30 Q80,30 80,34 L80,78 Q80,82 76,82 L32,82 Q28,82 28,78 L28,34 Q28,30 32,30 Z" />
+
+    <!-- Re-fill inner area at reduced alpha for a lighter interior -->
+    <path
+        android:fillColor="#80FFFFFF"
+        android:pathData="M32,30 L76,30 Q80,30 80,34 L80,78 Q80,82 76,82 L32,82 Q28,82 28,78 L28,34 Q28,30 32,30 Z" />
+
+    <!-- Horizontal divider -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,54 L80,54 L80,56.5 L28,56.5 Z" />
+
+    <!-- Vertical divider top -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52.5,30 L55.5,30 L55.5,54 L52.5,54 Z" />
+
+    <!-- Vertical divider bottom -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52.5,56.5 L55.5,56.5 L55.5,82 L52.5,82 Z" />
+
+    <!-- Small circle in top-left (rice centre piece) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M37,39 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0" />
+
+    <!-- Leaf shape in top-right (vegetable) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M62,38 Q68,33 74,39 Q68,45 62,38 Z" />
+
+    <!-- Circle in bottom-left (curry) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,67 a4,3.5 0 1,1 8,0 a4,3.5 0 1,1 -8,0" />
+
+    <!-- Oval in bottom-right (egg/meat) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,67 a4,3.5 0 1,1 8,0 a4,3.5 0 1,1 -8,0" />
+</vector>

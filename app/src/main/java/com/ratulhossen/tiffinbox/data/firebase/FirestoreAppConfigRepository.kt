@@ -2,6 +2,7 @@ package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.ratulhossen.tiffinbox.domain.DeliveryPricing
+import com.ratulhossen.tiffinbox.domain.DeliverySurcharge
 import com.ratulhossen.tiffinbox.util.RECOMMEND_RADIUS_KM
 import kotlinx.coroutines.tasks.await
 
@@ -14,7 +15,9 @@ object FirestoreAppConfigRepository {
 
     data class AppConfig(
         val recommendRadiusKm: Double = RECOMMEND_RADIUS_KM,
-        val delivery: DeliveryPricing = DeliveryPricing()
+        val delivery: DeliveryPricing = DeliveryPricing(),
+        /** Global ceiling on a self-delivering chef's own fee; 0 = no cap. */
+        val deliveryMaxFee: Int = 0
     )
 
     @Volatile private var cached: AppConfig? = null
@@ -30,7 +33,8 @@ object FirestoreAppConfigRepository {
                     baseFee = doc.getLong("deliveryBaseFee")?.toInt()?.takeIf { it >= 0 } ?: defaults.baseFee,
                     perKmFee = doc.getLong("deliveryPerKmFee")?.toInt()?.takeIf { it >= 0 } ?: defaults.perKmFee,
                     includedKm = doc.getDouble("deliveryIncludedKm")?.takeIf { it >= 0 } ?: defaults.includedKm
-                )
+                ),
+                deliveryMaxFee = doc.getLong("deliveryMaxFee")?.toInt()?.takeIf { it >= 0 } ?: 0
             ).also { cached = it }
         } catch (e: Exception) {
             AppConfig()
@@ -40,5 +44,43 @@ object FirestoreAppConfigRepository {
     /** Max distance (km) a kitchen may be from the customer and still be recommended. */
     suspend fun recommendRadiusKm(): Double = config().recommendRadiusKm
 
+    /** TiffinBox's own delivery rates (used when a kitchen is on "tiffinbox" delivery). */
     suspend fun deliveryPricing(): DeliveryPricing = config().delivery
+
+    /** Global ceiling on a self-delivering chef's fee when no per-chef cap is set. */
+    suspend fun globalMaxDeliveryFee(): Int = config().deliveryMaxFee
+
+    /**
+     * Area surcharges that are switched on and inside their time window right
+     * now. Read once per app run like the rest of this config - a surge the
+     * admin starts mid-session shows up the next time the app is opened,
+     * which is fine for a "festival day" style setting and keeps this to a
+     * single Firestore read.
+     */
+    suspend fun activeSurcharges(): List<DeliverySurcharge> {
+        cachedSurcharges?.let { return it }
+        return try {
+            val now = System.currentTimeMillis()
+            FirebaseFirestore.getInstance().collection("delivery_surcharges").get().await().documents
+                .mapNotNull { doc ->
+                    DeliverySurcharge(
+                        id = doc.id,
+                        areaName = doc.getString("areaName") ?: "",
+                        latitude = doc.getDouble("latitude") ?: 0.0,
+                        longitude = doc.getDouble("longitude") ?: 0.0,
+                        radiusKm = doc.getDouble("radiusKm") ?: 0.0,
+                        type = doc.getString("type") ?: DeliverySurcharge.TYPE_FLAT,
+                        amount = doc.getDouble("amount") ?: 0.0,
+                        validFrom = doc.getLong("validFrom") ?: 0L,
+                        validUntil = doc.getLong("validUntil") ?: 0L,
+                        isActive = doc.getBoolean("isActive") ?: true
+                    ).takeIf { it.isLiveAt(now) }
+                }
+                .also { cachedSurcharges = it }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    @Volatile private var cachedSurcharges: List<DeliverySurcharge>? = null
 }

@@ -159,6 +159,12 @@ object FirestoreOrderRepository {
             val isPreOrder = scheduledFor > 0
             val mealQuantities = items.groupBy { it.meal.id }.mapValues { (_, list) -> list.sumOf { it.quantity }.toLong() }
             val deliveryHandledBy = FirestoreCatalogRepository.getChef(chefId)?.deliveryMode ?: "self"
+            // Copied onto the order so the chef can see who and where to
+            // deliver to: firestore.rules deliberately doesn't let a chef read
+            // a customer's users/{uid} doc, and shouldn't - this snapshot is
+            // exactly the part of it that this one order needs.
+            val profile = FirestoreUserRepository.getProfile(customerId)
+            val deliveryPoint = FirestoreUserRepository.getLocation(customerId)
 
             val orderData = hashMapOf(
                 "customerId" to customerId,
@@ -183,6 +189,10 @@ object FirestoreOrderRepository {
                 "estimatedDeliveryMinutes" to estimatedDeliveryMinutes,
                 "totalPrice" to total,
                 "deliveryAddress" to deliveryAddress,
+                "customerName" to profile?.name.orEmpty(),
+                "customerPhone" to profile?.phoneNumber.orEmpty(),
+                "deliveryLatitude" to (deliveryPoint?.latitude ?: 0.0),
+                "deliveryLongitude" to (deliveryPoint?.longitude ?: 0.0),
                 "paymentMethod" to paymentMethod,
                 "paymentTransactionId" to paymentTransactionId.orEmpty(),
                 "paymentScreenshotBase64" to paymentScreenshotBase64.orEmpty(),
@@ -320,6 +330,11 @@ object FirestoreOrderRepository {
                         paymentTransactionId = doc.getString("paymentTransactionId").orEmpty(),
                         paymentScreenshotBase64 = doc.getString("paymentScreenshotBase64").orEmpty(),
                         scheduledFor = doc.getLong("scheduledFor") ?: 0L,
+                        customerName = doc.getString("customerName").orEmpty(),
+                        customerPhone = doc.getString("customerPhone").orEmpty(),
+                        deliveryAddress = doc.getString("deliveryAddress").orEmpty(),
+                        deliveryLatitude = doc.getDouble("deliveryLatitude") ?: 0.0,
+                        deliveryLongitude = doc.getDouble("deliveryLongitude") ?: 0.0,
                         itemQuantities = (doc.get("items") as? List<*>).orEmpty()
                             .mapNotNull { it as? Map<*, *> }
                             .groupBy { it["mealName"] as? String ?: "—" }

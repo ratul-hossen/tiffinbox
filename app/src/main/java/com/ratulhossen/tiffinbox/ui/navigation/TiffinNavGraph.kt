@@ -306,7 +306,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
                 onOpenCoupons = { navController.navigate(Routes.CHEF_COUPONS) },
                 onOpenDeliveryOption = { navController.navigate(Routes.DELIVERY_OPTION) },
-                onOpenVerification = { navController.navigate(Routes.CHEF_VERIFICATION) }
+                onOpenVerification = { navController.navigate(Routes.CHEF_VERIFICATION) },
+                onOpenChat = { customerId -> navController.navigate(Routes.chefChat(customerId, chefId)) }
             )
         }
 

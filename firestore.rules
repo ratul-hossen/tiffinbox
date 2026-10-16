@@ -109,7 +109,7 @@ service cloud.firestore {
     // update the owner can't touch the approval/demo fields at all - only
     // admin-web's Chef Approvals page (isAdmin()) can.
     function chefLockedFields() {
-      return ["isVerified", "approvalStatus", "approvalUpdatedAt", "isDemo", "userId", "deliveryUntil", "nidVerified", "kitchenVerified"];
+      return ["isVerified", "approvalStatus", "approvalUpdatedAt", "isDemo", "userId", "deliveryUntil", "nidVerified", "kitchenVerified", "maxDeliveryFee"];
     }
     // A chef may only switch to TiffinBox's delivery (which shows customers
     // the "TiffinBox Delivery" badge) while an admin-approved agreement in
@@ -393,9 +393,19 @@ service cloud.firestore {
     }
 
     // App-wide settings set from admin-web's App Settings page (e.g.
-    // recommendRadiusKm). Everyone may read (the app needs it before login
+    // recommendRadiusKm, deliveryBaseFee, deliveryFeePerKm,
+    // deliveryIncludedKm). Everyone may read (the app needs it before login
     // too); only admins write.
     match /app_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // delivery_surcharges/{surchargeId} — area-based delivery surcharges set
+    // by admin-web (DeliverySurchargesPage). The app reads these before
+    // checkout to apply any active surcharge for the customer's delivery area;
+    // only admins create/update/delete them.
+    match /delivery_surcharges/{surchargeId} {
       allow read: if true;
       allow write: if isAdmin();
     }
