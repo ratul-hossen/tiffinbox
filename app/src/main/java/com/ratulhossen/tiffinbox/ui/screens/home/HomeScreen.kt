@@ -31,6 +31,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -73,7 +75,10 @@ fun HomeScreen(
     onProfileClick: () -> Unit,
     onSeeAllClick: (String) -> Unit,
     onLocationClick: () -> Unit = {},
-    onRewardsClick: () -> Unit = {}
+    onRewardsClick: () -> Unit = {},
+    onChatClick: () -> Unit = {},
+    onCartClick: () -> Unit = {},
+    cartCount: Int = 0
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf<String?>(null) }
@@ -183,18 +188,68 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp)
     ) {
-        // Header: location, points, profile, greeting + orbiting food
-        // plates, search - on a slowly colour-shifting theme gradient.
+        // Header: profile + app name + chat/cart, then location + points,
+        // greeting + orbiting food plates, search - on a slowly colour-shifting
+        // theme gradient that runs up behind the status bar (no separate top bar).
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
                 .shiftingBrandBackground()
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 22.dp)
+                .statusBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 22.dp)
         ) {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    HeaderCircleButton(onClick = onProfileClick) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = stringResource(R.string.home_profile_content_description),
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        stringResource(R.string.app_name),
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    HeaderCircleButton(onClick = onChatClick) {
+                        Icon(
+                            Icons.Filled.Chat,
+                            contentDescription = stringResource(R.string.content_description_chat),
+                            tint = Color(0xFF25D366),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    HeaderCircleButton(onClick = onCartClick) {
+                        BadgedBox(
+                            badge = {
+                                if (cartCount > 0) {
+                                    Badge(
+                                        containerColor = Color.White,
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    ) { Text("$cartCount") }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.ShoppingCart,
+                                contentDescription = stringResource(R.string.content_description_cart),
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.weight(1f)) {
                         Surface(
                             shape = CircleShape,
                             color = Color.White.copy(alpha = 0.18f),
@@ -225,8 +280,8 @@ fun HomeScreen(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
                     rewards?.let { r ->
+                        Spacer(modifier = Modifier.width(8.dp))
                         // Points chip -> Rewards screen.
                         Surface(
                             shape = CircleShape,
@@ -241,22 +296,6 @@ fun HomeScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.22f))
-                            .clickable(onClick = onProfileClick),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Filled.Person,
-                            contentDescription = stringResource(R.string.home_profile_content_description),
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
                     }
                 }
 
@@ -648,4 +687,17 @@ private fun TodaySpecialCard(
             )
         }
     }
+}
+
+/** Round, translucent-white button used in the Home header (profile, chat, cart). */
+@Composable
+private fun HeaderCircleButton(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.22f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) { content() }
 }

@@ -640,6 +640,17 @@ top; photo cards get a ring/tick selection badge, a brand-gradient border when
 chosen, and the other card dims. Motion: one staggered entrance only. Texts
 and the `role_customer` photo unchanged.
 
+## Home header + Meal Details full-bleed photo (2026-10-16)
+
+- Home no longer has the shared top bar (MainScreen shows it only on the
+  other tabs; Home gets no top padding). Its gradient header runs up behind
+  the status bar: row 1 = profile circle, "TiffinBox", chat (green) + cart
+  (badge) circles (`HeaderCircleButton`); row 2 = location pill + points chip;
+  then greeting + `FoodOrbit` (owner likes it - keep), search.
+- Meal Details has no top bar: the 4:3 photo starts at the very top behind
+  the status bar with a dark top fade and a floating round back button; the
+  Today's Special badge moved to the photo's bottom-left.
+
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
 Owner's explicit ask (paraphrased from Bengali): real AI integration, not an

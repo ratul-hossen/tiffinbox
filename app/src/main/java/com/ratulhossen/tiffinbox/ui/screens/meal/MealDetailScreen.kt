@@ -34,6 +34,9 @@ import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,17 +68,6 @@ fun MealDetailScreen(
     Scaffold(
         // Transparent so the app-wide AnimatedGradientBackground shows through.
         containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                title = { Text(stringResource(R.string.meal_detail_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
-                    }
-                }
-            )
-        },
         bottomBar = {
             Surface(shadowElevation = 8.dp) {
                 Row(
@@ -114,9 +106,11 @@ fun MealDetailScreen(
             }
         }
     ) { padding ->
+        // No top bar: the photo runs edge to edge up behind the status bar,
+        // with the back button floating on it.
         Column(
             modifier = Modifier
-                .padding(padding)
+                .padding(bottom = padding.calculateBottomPadding())
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
@@ -134,11 +128,33 @@ fun MealDetailScreen(
                     shape = RectangleShape,
                     emojiFontSize = 72.sp
                 )
+                // Soft dark fade at the top so the status bar and back button stay readable.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent)))
+                )
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.35f))
+                ) {
+                    Icon(
+                        Icons.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_description_back),
+                        tint = Color.White
+                    )
+                }
                 if (meal.isTodaySpecial) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                        modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
                     ) {
                         Text(
                             stringResource(R.string.home_hero_badge),

@@ -63,34 +63,38 @@ fun MainScreen(
         // Transparent so the app-wide AnimatedGradientBackground shows through.
         containerColor = Color.Transparent,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    IconButton(onClick = onChatClick) {
-                        Icon(
-                            Icons.Filled.Chat,
-                            contentDescription = stringResource(R.string.content_description_chat),
-                            tint = Color(0xFF25D366)
-                        )
-                    }
-                    IconButton(onClick = onCartClick) {
-                        BadgedBox(
-                            badge = {
-                                if (cartCount > 0) {
-                                    Badge {
-                                        AnimatedContent(targetState = cartCount, label = "cartCount") { count ->
-                                            Text("$count")
+            // Home draws its own header (profile, app name, chat, cart) up to the
+            // status bar, so the shared top bar is only for the other tabs.
+            if (selectedTab != 0) {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    title = { Text(stringResource(R.string.app_name)) },
+                    actions = {
+                        IconButton(onClick = onChatClick) {
+                            Icon(
+                                Icons.Filled.Chat,
+                                contentDescription = stringResource(R.string.content_description_chat),
+                                tint = Color(0xFF25D366)
+                            )
+                        }
+                        IconButton(onClick = onCartClick) {
+                            BadgedBox(
+                                badge = {
+                                    if (cartCount > 0) {
+                                        Badge {
+                                            AnimatedContent(targetState = cartCount, label = "cartCount") { count ->
+                                                Text("$count")
+                                            }
                                         }
                                     }
                                 }
+                            ) {
+                                Icon(Icons.Filled.ShoppingCart, contentDescription = stringResource(R.string.content_description_cart))
                             }
-                        ) {
-                            Icon(Icons.Filled.ShoppingCart, contentDescription = stringResource(R.string.content_description_cart))
                         }
                     }
-                }
-            )
+                )
+            }
         },
         bottomBar = {
             // Floating, rounded tab bar with a tinted pill behind the active tab.
@@ -127,7 +131,10 @@ fun MainScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
+        Box(
+            modifier = if (selectedTab == 0) Modifier.padding(bottom = padding.calculateBottomPadding())
+            else Modifier.padding(padding)
+        ) {
             when (selectedTab) {
                 0 -> HomeScreen(
                     onChefClick = onChefClick,
@@ -136,7 +143,10 @@ fun MainScreen(
                     onProfileClick = { selectedTab = 4 },
                     onSeeAllClick = onSeeAllChefsClick,
                     onLocationClick = onEditProfileClick,
-                    onRewardsClick = onRewardsClick
+                    onRewardsClick = onRewardsClick,
+                    onChatClick = onChatClick,
+                    onCartClick = onCartClick,
+                    cartCount = cartCount
                 )
                 1 -> SearchScreen(onMealClick = onMealClick)
                 2 -> OrdersScreen()
