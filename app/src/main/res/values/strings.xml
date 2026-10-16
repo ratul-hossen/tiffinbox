@@ -581,4 +581,6 @@
     <string name="orders_eta">⏱ আনুমানিক ডেলিভারি %1$s এর মধ্যে</string>
     <string name="orders_cancel_window_hint">অর্ডার দেওয়ার ৫ মিনিটের মধ্যে বাতিল করা যাবে</string>
     <string name="orders_cancel_with_timer">বাতিল করুন (%1$d:%2$02d)</string>
+    <string name="checkout_success_title">অর্ডার সম্পন্ন! 🎉</string>
+    <string name="checkout_success_eta">আনুমানিক ~%1$d মিনিটে পৌঁছাবে</string>
 </resources>

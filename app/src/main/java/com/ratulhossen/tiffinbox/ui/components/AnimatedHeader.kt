@@ -1,8 +1,10 @@
 package com.ratulhossen.tiffinbox.ui.components
 
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.BoxWithConstraints
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -68,9 +70,10 @@ fun Modifier.shiftingBrandBackground(): Modifier {
 }
 
 /**
- * A big plate in the middle with smaller food photos orbiting it - the
- * rotating-plates header from the reference video. Rotation is applied in
- * the layout/draw phase only.
+ * A big plate in the middle with smaller food photos around it, like the
+ * reference video: the ring turns one slot with an ease-in-out, holds, then
+ * turns again (a choreographed "rotate - settle - rotate", not a constant
+ * screensaver spin). The plate in front grows slightly as it arrives.
  */
 @Composable
 fun FoodOrbit(
@@ -79,41 +82,31 @@ fun FoodOrbit(
     size: Dp,
     modifier: Modifier = Modifier
 ) {
-    val transition = rememberInfiniteTransition(label = "orbit")
-    val angle = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(22_000, easing = LinearEasing)),
-        label = "orbitAngle"
-    )
-    val pulse = transition.animateFloat(
-        initialValue = 0.96f,
-        targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
-        label = "orbitPulse"
-    )
+    val step = 360f / satellites.size.coerceAtLeast(1)
+    val angle = remember { Animatable(-90f) }
+    LaunchedEffect(satellites.size) {
+        while (true) {
+            delay(2200)
+            angle.animateTo(angle.value + step, tween(900, easing = FastOutSlowInEasing))
+        }
+    }
     val satelliteSize = size * 0.28f
     val radiusPx = with(LocalDensity.current) { ((size - satelliteSize) / 2).toPx() }
 
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
-        // Central plate, gently "breathing", spinning slowly the other way.
+        // Central plate turns a little the other way with each step.
         Image(
             painter = painterResource(center),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(size * 0.5f)
-                .graphicsLayer {
-                    scaleX = pulse.value
-                    scaleY = pulse.value
-                    rotationZ = -angle.value / 2
-                }
+                .graphicsLayer { rotationZ = -angle.value / 3 }
                 .shadow(12.dp, CircleShape)
                 .clip(CircleShape)
                 .border(3.dp, Color.White.copy(alpha = 0.85f), CircleShape)
         )
         satellites.forEachIndexed { index, res ->
-            val step = 360f / satellites.size
             Image(
                 painter = painterResource(res),
                 contentDescription = null,
@@ -124,51 +117,17 @@ fun FoodOrbit(
                         IntOffset((cos(rad) * radiusPx).roundToInt(), (sin(rad) * radiusPx).roundToInt())
                     }
                     .size(satelliteSize)
+                    .graphicsLayer {
+                        // The slot at the bottom-front is the "featured" one.
+                        val rad = Math.toRadians((angle.value + index * step - 90.0))
+                        val front = cos(rad).coerceAtLeast(0.0)
+                        val grow = 1f + 0.28f * (front * front * front * front).toFloat()
+                        scaleX = grow
+                        scaleY = grow
+                    }
                     .shadow(6.dp, CircleShape)
                     .clip(CircleShape)
                     .border(2.dp, Color.White, CircleShape)
-            )
-        }
-    }
-}
-
-/**
- * Spices, leaves and sparkles drifting slowly upward over a screen - the
- * "everything moves a little" feel of the reference video. One shared
- * animation clock; each particle only reads it in the layout/draw phase.
- */
-@Composable
-fun FloatingFoodParticles(
-    modifier: Modifier = Modifier,
-    emojis: List<String> = listOf("🌶️", "🍃", "✨", "🧄", "🍋", "✨", "🌿", "🍛", "✨", "🌶️"),
-    durationMillis: Int = 14_000
-) {
-    val transition = rememberInfiniteTransition(label = "particles")
-    val clock = transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(durationMillis, easing = LinearEasing)),
-        label = "particleClock"
-    )
-    BoxWithConstraints(modifier = modifier) {
-        val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
-        emojis.forEachIndexed { i, emoji ->
-            // Fixed pseudo-random lane, size and phase per particle.
-            val lane = ((i * 37) % 100) / 100f
-            val phase = ((i * 53) % 100) / 100f
-            val fontSize = (14 + (i * 7) % 12).sp
-            Text(
-                emoji,
-                fontSize = fontSize,
-                modifier = Modifier.graphicsLayer {
-                    val p = (clock.value + phase) % 1f
-                    translationX = lane * widthPx * 0.92f + sin(p * 6.283f * 2 + i) * 18f
-                    translationY = heightPx * (1f - p) - 40f
-                    rotationZ = (p * 360f * if (i % 2 == 0) 1 else -1) / 3
-                    // Fade in at the bottom, out at the top.
-                    alpha = 0.75f * minOf(1f, p * 5f, (1f - p) * 5f)
-                }
             )
         }
     }

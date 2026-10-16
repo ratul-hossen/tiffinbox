@@ -1,5 +1,9 @@
 package com.ratulhossen.tiffinbox.ui.screens.order
 
+import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -64,6 +68,7 @@ fun OrderTrackingScreen(orderId: String, onDone: (chefId: String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
         Text(stringResource(R.string.order_tracking_title), style = MaterialTheme.typography.headlineSmall)
@@ -83,6 +88,24 @@ fun OrderTrackingScreen(orderId: String, onDone: (chefId: String) -> Unit) {
             )
             OrderStage.CANCELLED -> CancelledState()
             else -> {
+                // What's happening right now, as motion: waiting -> boiling pot ->
+                // pin on the way -> a one-time tick when it's delivered.
+                val stageAnim = when (currentStage) {
+                    OrderStage.COOKING -> R.raw.lottie_cooking_pot
+                    OrderStage.OUT_FOR_DELIVERY -> R.raw.lottie_delivery_pin
+                    OrderStage.DELIVERED -> R.raw.lottie_success_check
+                    else -> R.raw.lottie_hourglass
+                }
+                Crossfade(targetState = stageAnim, label = "stageAnim") { res ->
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        TiffinLottie(
+                            res = res,
+                            loop = res != R.raw.lottie_success_check,
+                            modifier = Modifier.size(150.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
                 val currentIndex = TRACKED_STAGES.indexOf(currentStage).coerceAtLeast(0)
                 TRACKED_STAGES.forEachIndexed { index, trackedStage ->
                     val done = index <= currentIndex

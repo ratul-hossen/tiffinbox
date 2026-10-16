@@ -1,13 +1,13 @@
 package com.ratulhossen.tiffinbox.ui.components
 
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.Animatable
+import com.ratulhossen.tiffinbox.R
+import androidx.annotation.RawRes
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -48,16 +48,13 @@ fun FullBleedPhoto(
     modifier: Modifier = Modifier,
     alignment: Alignment = Alignment.Center,
     scrim: Brush? = null,
-    /** Slow "Ken Burns" zoom + drift so still illustrations feel alive (draw-phase only). */
+    /** A single gentle "settle-in" zoom when the screen opens (1.08x -> 1x), then it stays still. */
     animated: Boolean = true
 ) {
-    val drift = rememberInfiniteTransition(label = "kenBurns")
-    val t = drift.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(14_000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "kenBurnsT"
-    )
+    val zoom = remember { Animatable(if (animated) 1.08f else 1f) }
+    LaunchedEffect(animated) {
+        if (animated) zoom.animateTo(1f, tween(2400, easing = FastOutSlowInEasing))
+    }
     Box(modifier = modifier.clipToBounds()) {
         Image(
             painter = painterResource(resId),
@@ -67,14 +64,8 @@ fun FullBleedPhoto(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    if (animated) {
-                        val p = FastOutSlowInEasing.transform(t.value)
-                        val zoom = 1.04f + 0.08f * p
-                        scaleX = zoom
-                        scaleY = zoom
-                        translationX = (p - 0.5f) * size.width * 0.04f
-                        translationY = (0.5f - p) * size.height * 0.02f
-                    }
+                    scaleX = zoom.value
+                    scaleY = zoom.value
                 }
         )
         if (scrim != null) {
@@ -115,14 +106,20 @@ fun PhotoEmptyState(
     @DrawableRes resId: Int,
     title: String,
     subtitle: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Gently bobbing bowl motion graphic; null shows the [resId] photo instead. */
+    @RawRes animation: Int? = R.raw.lottie_empty_bowl
 ) {
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        CirclePhoto(resId = resId, size = 168.dp)
+        if (animation != null) {
+            TiffinLottie(res = animation, modifier = Modifier.size(180.dp))
+        } else {
+            CirclePhoto(resId = resId, size = 168.dp)
+        }
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             title,
