@@ -1,5 +1,16 @@
 package com.ratulhossen.tiffinbox.ui.screens.review
 
+import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.util.ImageCompressor
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.Icons
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +38,13 @@ fun ReviewScreen(chefId: String, onSubmitted: () -> Unit) {
     var packaging by remember { mutableIntStateOf(0) }
     var onTime by remember { mutableIntStateOf(0) }
     var comment by remember { mutableStateOf("") }
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val pickPhotoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) photoUri = uri }
 
     val canSubmit = taste > 0 && hygiene > 0 && packaging > 0 && onTime > 0
 
@@ -64,20 +82,41 @@ fun ReviewScreen(chefId: String, onSubmitted: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        // Optional food photo with the review.
+        Spacer(modifier = Modifier.height(14.dp))
+        OutlinedButton(
+            onClick = {
+                pickPhotoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(if (photoUri != null) Icons.Filled.CheckCircle else Icons.Filled.AddAPhoto, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                stringResource(if (photoUri != null) R.string.review_photo_selected else R.string.review_add_photo)
+            )
+        }
+
         Spacer(modifier = Modifier.height(28.dp))
         TiffinButton(
             onClick = {
-                FirestoreReviewRepository.submitReview(
-                    chefId = chefId,
-                    taste = taste,
-                    hygiene = hygiene,
-                    packaging = packaging,
-                    onTime = onTime,
-                    comment = comment
-                )
-                onSubmitted()
+                isSubmitting = true
+                scope.launch {
+                    val photoBase64 = photoUri?.let { ImageCompressor.compressToBase64(context, it, maxDimension = 800) }.orEmpty()
+                    FirestoreReviewRepository.submitReview(
+                        chefId = chefId,
+                        taste = taste,
+                        hygiene = hygiene,
+                        packaging = packaging,
+                        onTime = onTime,
+                        comment = comment,
+                        photoBase64 = photoBase64
+                    )
+                    isSubmitting = false
+                    onSubmitted()
+                }
             },
-            enabled = canSubmit,
+            enabled = canSubmit && !isSubmitting,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { Download } from "lucide-react";
 import { db } from "../firebase";
@@ -11,6 +11,8 @@ import { formatCurrency, formatDateTime } from "../lib/format";
 import { STATUS_BADGE_TONE } from "../lib/orderStatus";
 import Badge from "./ui/Badge";
 import OrderDetail from "./OrderDetail";
+
+const ORDER_ACCEPT_TIMEOUT_MS = 12 * 60 * 60 * 1000;
 
 interface Props {
   search: string;
@@ -45,6 +47,23 @@ export default function OrdersPage({ search }: Props) {
   const [chefFilter, setChefFilter] = useState<string>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
+
+  // Same 12h rule as the Android app (FirestoreOrderRepository.ORDER_ACCEPT_TIMEOUT_MS):
+  // a still-"Placed" order the chef never accepted is cancelled automatically.
+  // There are no Cloud Functions on the free plan, so whichever client reads
+  // it first (app or this page) performs the flip.
+  useEffect(() => {
+    const now = Date.now();
+    orders
+      .filter((o) => (o.status ?? "Placed") === "Placed" && o.placedAt && now - o.placedAt > ORDER_ACCEPT_TIMEOUT_MS)
+      .forEach((o) => {
+        updateDoc(doc(db, "orders", o.id), {
+          status: "Cancelled",
+          cancelReason: "auto_expired",
+          cancelledAt: now,
+        }).catch(() => {});
+      });
+  }, [orders]);
 
   const chefName = (chefId?: string) =>
     chefs.find((c) => c.id === chefId)?.kitchenName ?? chefId ?? "(unknown chef)";

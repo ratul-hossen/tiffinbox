@@ -81,10 +81,14 @@ service cloud.firestore {
 
     // users/{userId} — profile data (name, phone, role, addresses)
     // Admins (admin-web) can read/write any user doc for moderation.
+    // Hardening (2026-10-16): a user can't change their own `role` after
+    // signup (e.g. a customer silently turning into a chef).
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isOwner(userId) || isAdmin();
-      allow update, delete: if isOwner(userId) || isAdmin();
+      allow update: if isAdmin() || (isOwner(userId) &&
+        request.resource.data.get("role", "") == resource.data.get("role", ""));
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // chefs/{chefId} — public kitchen profiles, only the owning chef can edit.
@@ -97,10 +101,25 @@ service cloud.firestore {
     // create so admin-web's Recycle Bin (see recycle_bin/{entryId} below)
     // can restore a soft-deleted chef doc back to its original id even
     // though the admin isn't that chef's own uid.
+    //
+    // Hardening (2026-10-16): a chef can never approve themselves. On create
+    // the doc must start unapproved (isVerified false), except admin-web's
+    // seeded demo chefs (isDemo, fixed demo.*@tiffinbox.app accounts). On
+    // update the owner can't touch the approval/demo fields at all - only
+    // admin-web's Chef Approvals page (isAdmin()) can.
+    function chefLockedFields() {
+      return ["isVerified", "approvalStatus", "approvalUpdatedAt", "isDemo", "userId"];
+    }
     match /chefs/{chefId} {
       allow read: if true;
-      allow create: if isOwner(chefId) || isAdmin();
-      allow update, delete: if isAdmin() ||
+      allow create: if isAdmin() || (isOwner(chefId) && (
+        request.resource.data.get("isVerified", false) == false ||
+        (request.resource.data.get("isDemo", false) == true &&
+          request.auth.token.email.matches("^demo[.].*@tiffinbox[.]app$"))
+      ));
+      allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(chefLockedFields()));
+      allow delete: if isAdmin() ||
         (isSignedIn() && resource.data.userId == request.auth.uid);
     }
 
@@ -121,13 +140,59 @@ service cloud.firestore {
     // cancelled-then-removed order back to its original id (admin-web now
     // moves a cancelled order to the Recycle Bin instead of just flipping
     // its status - see OrdersPage.tsx's changeStatus()).
+    //
+    // Hardening (2026-10-16): updates are now field-scoped per role -
+    //  - customer: may only cancel, and only while still "Placed" (this is
+    //    both the in-app Cancel button and the 12h auto-expiry, which runs
+    //    client-side on read since there are no Cloud Functions);
+    //  - chef: may only change status / cancel fields;
+    //  - delivery partner: may only change status.
+    function orderStatusKeysOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(["status", "cancelReason", "cancelledAt"]);
+    }
+    function isOrderChef() {
+      return get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid;
+    }
     match /orders/{orderId} {
-      allow create: if (isSignedIn() && request.resource.data.customerId == request.auth.uid) || isAdmin();
-      allow read, update: if isAdmin() || (isSignedIn() && (
+      allow create: if isAdmin() || (isSignedIn() &&
+        request.resource.data.customerId == request.auth.uid &&
+        request.resource.data.status == "Placed");
+      allow read: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
-        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid ||
+        isOrderChef() ||
         resource.data.get("deliveryPartnerId", "") == request.auth.uid
       ));
+      allow update: if isAdmin() || (isSignedIn() && orderStatusKeysOnly() && (
+        (resource.data.customerId == request.auth.uid &&
+          resource.data.status == "Placed" && request.resource.data.status == "Cancelled") ||
+        isOrderChef() ||
+        (resource.data.get("deliveryPartnerId", "") == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]))
+      ));
+    }
+
+    // coupons/{couponId} - promo codes. createdBy "admin" (platform-wide or
+    // for one chef, from admin-web) or "chef" (a chef's own kitchen only,
+    // from the app). Any signed-in user can read (checkout validates a typed
+    // code). A chef can manage only their own chef-created coupons; admins
+    // can manage (incl. cancel) every coupon. Customers may only bump
+    // usedCount by exactly 1 when an order using the coupon is placed.
+    match /coupons/{couponId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() || (isSignedIn() &&
+        request.resource.data.createdBy == "chef" &&
+        request.resource.data.chefId == request.auth.uid);
+      allow update: if isAdmin() ||
+        (isSignedIn() && resource.data.createdBy == "chef" && resource.data.chefId == request.auth.uid &&
+          request.resource.data.chefId == request.auth.uid && request.resource.data.createdBy == "chef" &&
+          resource.data.get("cancelledByAdmin", false) != true &&
+          request.resource.data.get("cancelledByAdmin", false) != true) ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["usedCount"]) &&
+          request.resource.data.usedCount == resource.data.get("usedCount", 0) + 1);
+      allow delete: if isAdmin() ||
+        (isSignedIn() && resource.data.createdBy == "chef" && resource.data.chefId == request.auth.uid);
     }
 
     // delivery_partners/{partnerId} — doc id = a Firebase Auth uid created

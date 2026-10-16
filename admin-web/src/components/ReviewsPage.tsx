@@ -80,6 +80,13 @@ export default function ReviewsPage({ search }: Props) {
             </div>
 
             <p className="text-sm text-apple-secondary mt-2">{review.comment}</p>
+            {review.photoBase64 && (
+              <img
+                src={`data:image/jpeg;base64,${review.photoBase64}`}
+                alt="Review photo"
+                className="mt-3 w-32 h-32 object-cover rounded-xl border border-apple-border"
+              />
+            )}
 
             <div className="grid grid-cols-4 gap-1 text-xs text-apple-secondary mt-3">
               <div>Taste: {review.tasteRating ?? "–"}</div>

@@ -10,6 +10,7 @@ object Routes {
     // Same LocationSetupScreen, reached from Edit Profile - pops back instead of going home.
     const val LOCATION_EDIT = "location_edit/{uid}/{role}"
     const val EDIT_PROFILE = "edit_profile"
+    const val CHEF_COUPONS = "chef_coupons"
     // next = "location" (fresh signup -> location setup) or "home" (login / app reopen)
     const val EMAIL_VERIFICATION = "email_verification/{role}/{next}"
     const val MAIN = "main"

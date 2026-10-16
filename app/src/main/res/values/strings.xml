@@ -88,6 +88,59 @@
     <string name="location_setup_location_off">ফোনের Location (GPS) বন্ধ আছে — চালু করে আবার চেষ্টা করুন</string>
     <string name="location_setup_open_settings">Location সেটিংস খুলুন</string>
     <string name="whatsapp_same_as_phone">WhatsApp নম্বর আর ফোন নম্বর একই</string>
+    <string name="action_cancel_generic">বাতিল</string>
+    <string name="saved_addresses_title">সেভ করা ঠিকানা (সর্বোচ্চ %1$d টি)</string>
+    <string name="saved_addresses_default">Default</string>
+    <string name="saved_addresses_make_default">Default করুন</string>
+    <string name="saved_addresses_add">নতুন ঠিকানা যোগ করুন</string>
+    <string name="saved_addresses_edit">ঠিকানা এডিট</string>
+    <string name="saved_addresses_delete">মুছে ফেলুন</string>
+    <string name="saved_addresses_no_text">ঠিকানা লেখা নেই</string>
+    <string name="saved_addresses_label_field">নাম (যেমন: বাসা, অফিস)</string>
+    <string name="saved_addresses_label_home">বাসা</string>
+    <string name="saved_addresses_label_office">অফিস</string>
+    <string name="checkout_saved_addresses_hint">সেভ করা ঠিকানা থেকে বেছে নিন</string>
+    <string name="coupon_title">প্রোমো কোড</string>
+    <string name="coupon_placeholder">কুপন কোড লিখুন</string>
+    <string name="coupon_apply">Apply</string>
+    <string name="coupon_applied">✓ কুপন যোগ হয়েছে — ৳%1$d ছাড়</string>
+    <string name="coupon_discount_row">ছাড় (%1$s)</string>
+    <string name="coupon_error_not_found">এই কোডের কোনো কুপন নেই</string>
+    <string name="coupon_error_inactive">এই কুপনটি বাতিল করা হয়েছে</string>
+    <string name="coupon_error_not_started">এই কুপন এখনো চালু হয়নি</string>
+    <string name="coupon_error_expired">এই কুপনের মেয়াদ শেষ</string>
+    <string name="coupon_error_used_up">এই কুপন ব্যবহারের সীমা শেষ</string>
+    <string name="coupon_error_wrong_chef">এই কুপন এই কিচেনে চলবে না</string>
+    <string name="coupon_error_min_order">এই কুপনের জন্য অর্ডার আরও বেশি হতে হবে</string>
+    <string name="coupon_error_network">কুপন যাচাই করা যায়নি, আবার চেষ্টা করুন</string>
+    <string name="coupon_error_bad_code">কোড ৩-২০ অক্ষরের হবে (A-Z, 0-9), স্পেস ছাড়া</string>
+    <string name="coupon_error_bad_value">ছাড়ের পরিমাণ ঠিক নয় (% হলে ১-১০০)</string>
+    <string name="coupon_error_bad_time">মেয়াদ অন্তত ১ ঘণ্টা দিন</string>
+    <string name="coupon_error_code_taken">এই কোড আগে থেকেই আছে, অন্য কোড দিন</string>
+    <string name="coupon_status_active">চালু</string>
+    <string name="coupon_status_paused">বন্ধ</string>
+    <string name="coupon_status_expired">মেয়াদ শেষ</string>
+    <string name="coupon_status_used_up">সীমা শেষ</string>
+    <string name="coupon_status_cancelled_admin">Admin বাতিল করেছে</string>
+    <string name="chef_coupons_title">আমার কুপন</string>
+    <string name="chef_coupons_new">নতুন কুপন</string>
+    <string name="chef_coupons_code_label">কোড (যেমন: EID20)</string>
+    <string name="chef_coupons_percent_label">ছাড় %</string>
+    <string name="chef_coupons_flat_label">ছাড় ৳</string>
+    <string name="chef_coupons_min_order_label">সর্বনিম্ন অর্ডার ৳</string>
+    <string name="chef_coupons_max_discount_label">সর্বোচ্চ ছাড় ৳ (0 = সীমা নেই)</string>
+    <string name="chef_coupons_validity_label">কতদিন চালু থাকবে</string>
+    <string name="chef_coupons_duration_label">সময়</string>
+    <string name="chef_coupons_hours">ঘণ্টা</string>
+    <string name="chef_coupons_days">দিন</string>
+    <string name="chef_coupons_max_uses_label">সর্বোচ্চ কতবার ব্যবহার (0 = সীমাহীন)</string>
+    <string name="chef_coupons_create_button">কুপন তৈরি করুন</string>
+    <string name="chef_coupons_created">✓ কুপন তৈরি হয়েছে</string>
+    <string name="chef_coupons_list_title">আপনার কিচেনের কুপন</string>
+    <string name="chef_coupons_empty">এখনো কোনো কুপন নেই</string>
+    <string name="chef_coupons_valid_until">মেয়াদ: %1$s পর্যন্ত</string>
+    <string name="chef_coupons_pause">বন্ধ করুন</string>
+    <string name="chef_coupons_resume">চালু করুন</string>
     <string name="edit_profile_title">প্রোফাইল এডিট</string>
     <string name="edit_profile_menu">প্রোফাইল এডিট করুন</string>
     <string name="edit_profile_email_label">ইমেইল (পরিবর্তন করা যাবে না)</string>
@@ -140,6 +193,9 @@
     <string name="home_hero_subtitle">কাছের হোম শেফদের তাজা খাবার অর্ডার করুন</string>
     <string name="home_empty_title">এখনো কোনো chef নেই</string>
     <string name="home_empty_subtitle">আপনার এলাকায় chef যোগ হলেই এখানে দেখাবে</string>
+    <string name="home_category_meals_title">%1$s মেনু</string>
+    <string name="home_category_empty">এই ক্যাটাগরিতে এখনো কোনো খাবার নেই</string>
+    <string name="menu_manager_category_label">ক্যাটাগরি</string>
     <string name="home_see_all">সব দেখুন</string>
 
     <!-- SearchScreen -->
@@ -228,6 +284,15 @@
     <string name="order_tracking_review_button">রিভিউ দিন</string>
 
     <!-- OrdersScreen -->
+    <string name="orders_cancel_button">অর্ডার বাতিল</string>
+    <string name="orders_cancel_keep_button">না, রাখুন</string>
+    <string name="orders_cancel_confirm_title">অর্ডার বাতিল করবেন?</string>
+    <string name="orders_cancel_confirm_body">Chef এখনো অর্ডারটি গ্রহণ করেননি, তাই এখন বাতিল করা যাবে।</string>
+    <string name="orders_cancel_failed">বাতিল করা যায়নি — chef হয়তো ইতিমধ্যে অর্ডারটি গ্রহণ করেছেন</string>
+    <string name="orders_waiting_hint">Chef ১২ ঘণ্টার মধ্যে গ্রহণ না করলে অটো বাতিল হবে</string>
+    <string name="orders_cancel_reason_expired">Chef ১২ ঘণ্টার মধ্যে গ্রহণ করেননি, তাই অটো বাতিল হয়েছে</string>
+    <string name="orders_cancel_reason_customer">আপনি বাতিল করেছেন</string>
+    <string name="orders_cancel_reason_other">বাতিল করা হয়েছে</string>
     <string name="orders_empty_message">এখনো কোনো অর্ডার নেই</string>
     <string name="orders_stat_total_orders">মোট অর্ডার</string>
     <string name="orders_stat_total_spent">মোট খরচ</string>
@@ -322,6 +387,10 @@
     <!-- ReviewScreen -->
     <string name="review_title">খাবার কেমন লাগলো?</string>
     <string name="review_subtitle">Rukhsana\'s Kitchen — ৪টা আলাদা দিক থেকে রেটিং দিন</string>
+    <string name="review_add_photo">খাবারের ছবি যোগ করুন (ঐচ্ছিক)</string>
+    <string name="review_photo_selected">ছবি যোগ হয়েছে ✓ (বদলাতে চাপুন)</string>
+    <string name="chef_detail_reviews_title">রিভিউ</string>
+    <string name="chef_detail_no_reviews">এখনো কোনো রিভিউ নেই</string>
     <string name="review_comment_label">মন্তব্য (ঐচ্ছিক)</string>
     <string name="review_submit_button">রিভিউ Submit করুন</string>
     <string name="review_skip_button">এখন না, Skip করুন</string>

@@ -20,6 +20,7 @@ const COLLECTION_LABEL: Record<string, string> = {
   admins: "Admin",
   users: "User",
   orders: "Order (Cancelled)",
+  coupons: "Coupon",
 };
 
 export default function RecycleBinPage({ search, isSuperAdmin }: Props) {

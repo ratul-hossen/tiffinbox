@@ -396,6 +396,46 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   surface with tinted active pill. Cards: bigger images, softer shadows,
   larger radii (Shape.kt).
 
+## Rules hardening, order expiry/cancel, addresses, review photos, category filter, revenue, coupons (2026-10-16)
+
+- **firestore.rules** (owner must re-paste into Console): chefs can't
+  touch `isVerified`/`approvalStatus`/`approvalUpdatedAt`/`isDemo`/`userId`
+  and must be created unapproved (except admin-seeded demo chefs on
+  `demo.*@tiffinbox.app`); users can't change their own `role`; order
+  updates are field-scoped (customer may only cancel while "Placed"; chef
+  only status/cancel fields; delivery partner only status); new `coupons`
+  block.
+- **12h auto-cancel** (`FirestoreOrderRepository.ORDER_ACCEPT_TIMEOUT_MS`):
+  no Cloud Functions, so whichever client reads a still-"Placed" order older
+  than 12h (customer Orders, chef dashboard, admin-web OrdersPage) flips it
+  to Cancelled with `cancelReason: "auto_expired"` and notifies the customer.
+  **Customer cancel**: `cancelOrderByCustomer()` (transaction, only while
+  Placed) via a button on OrdersScreen; notifies the chef.
+- **Saved addresses**: up to 2 (`MAX_SAVED_ADDRESSES`) in
+  `users/{uid}.savedAddresses` + `defaultAddressIndex`; default mirrored to
+  top-level address/lat/lng. UI `ui/screens/profile/SavedAddressesSection.kt`
+  on Edit Profile (customers; chefs keep the single kitchen location card);
+  Checkout shows them as chips and pre-fills the default.
+- **Review photos**: optional `photoBase64` on reviews (ReviewScreen picker);
+  ChefDetailScreen now lists reviews (it never showed them before);
+  admin-web ReviewsPage shows the photo.
+- **Home category filter**: tapping a category tile shows that category's
+  meals and filters chef rows to chefs having such meals. MenuManager's
+  add-meal dialog now has a category picker (it used to hardcode "Lunch").
+- **admin-web Revenue page** (`RevenuePage.tsx`, Overview group): range
+  7/30/90/all, daily/monthly bars with hover, sales / platform earnings
+  (platformFee+deliveryFee) / avg order / coupon discounts / cancelled,
+  top-10 chefs table. Cancelled orders excluded from sales.
+- **Coupons**: `coupons/{CODE}` (doc id = uppercase code). Fields:
+  discountType percent|flat, value, minOrder, maxDiscount, chefId (""=all
+  kitchens, admin only), createdBy admin|chef, validFrom/validUntil,
+  isActive, usedCount, maxUses, cancelledByAdmin. admin-web `CouponsPage.tsx`
+  (create global/per-chef with datetime validity, cancel/reactivate/delete
+  any incl. chefs'); app `ChefCouponsScreen` (tag icon on chef dashboard;
+  validity in hours/days; pause/resume own; can't revive admin-cancelled);
+  Checkout "Promo code" field -> `FirestoreCouponRepository.validate()`,
+  order stores `couponCode`/`discount`, total already discounted.
+
 ## Location fix, WhatsApp-same-as-phone, Edit Profile (2026-10-16)
 
 - **Location detection** (`data/location/LocationRepository.kt`):

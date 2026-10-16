@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.navigation
 
+import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefCouponsScreen
 import com.ratulhossen.tiffinbox.ui.screens.profile.EditProfileScreen
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
@@ -312,7 +313,15 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onManageMenu = { navController.navigate(Routes.MENU_MANAGER) },
                 onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) },
                 onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
-                onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) }
+                onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
+                onOpenCoupons = { navController.navigate(Routes.CHEF_COUPONS) }
+            )
+        }
+
+        composable(Routes.CHEF_COUPONS) {
+            ChefCouponsScreen(
+                chefId = FirebaseAuthRepository.currentUser?.uid.orEmpty(),
+                onBack = { navController.popBackStack() }
             )
         }
 

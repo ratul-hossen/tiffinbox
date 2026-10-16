@@ -225,7 +225,10 @@ fun EditProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Card(
+            if (!isChef) {
+                // Customers: up to 2 saved addresses (Home / Office ...).
+                SavedAddressesSection(uid = uid)
+            } else Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

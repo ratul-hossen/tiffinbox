@@ -16,6 +16,16 @@ data class UserProfile(
     val hasLocation: Boolean
 )
 
+/** One of a user's (max [MAX_SAVED_ADDRESSES]) saved delivery addresses. */
+data class SavedAddress(
+    val label: String,
+    val address: String,
+    val latitude: Double,
+    val longitude: Double
+)
+
+const val MAX_SAVED_ADDRESSES = 2
+
 object FirestoreUserRepository {
 
     private val db: FirebaseFirestore
@@ -108,6 +118,66 @@ object FirestoreUserRepository {
                 ),
                 SetOptions.merge()
             ).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Saved addresses (users/{uid}.savedAddresses) + which one is the
+     * default. Accounts from before this feature only have the top-level
+     * address/latitude/longitude - that's surfaced as a single "Home" entry
+     * so nothing is lost.
+     */
+    suspend fun getSavedAddresses(uid: String): Pair<List<SavedAddress>, Int> {
+        return try {
+            val doc = db.collection("users").document(uid).get().await()
+            val list = (doc.get("savedAddresses") as? List<*>)?.mapNotNull { raw ->
+                val m = raw as? Map<*, *> ?: return@mapNotNull null
+                SavedAddress(
+                    label = m["label"] as? String ?: "",
+                    address = m["address"] as? String ?: "",
+                    latitude = (m["latitude"] as? Number)?.toDouble() ?: 0.0,
+                    longitude = (m["longitude"] as? Number)?.toDouble() ?: 0.0
+                )
+            }.orEmpty()
+            if (list.isNotEmpty()) {
+                list.take(MAX_SAVED_ADDRESSES) to ((doc.getLong("defaultAddressIndex") ?: 0L).toInt().coerceIn(0, list.size - 1))
+            } else {
+                val lat = doc.getDouble("latitude")
+                val lng = doc.getDouble("longitude")
+                if (lat != null && lng != null) {
+                    listOf(SavedAddress("Home", doc.getString("address").orEmpty(), lat, lng)) to 0
+                } else {
+                    emptyList<SavedAddress>() to 0
+                }
+            }
+        } catch (e: Exception) {
+            emptyList<SavedAddress>() to 0
+        }
+    }
+
+    /**
+     * Writes the whole list plus the default index, and mirrors the default
+     * address into the top-level address/latitude/longitude that the
+     * nearby-chef distance math (and chef profile) already reads.
+     */
+    suspend fun saveSavedAddresses(uid: String, addresses: List<SavedAddress>, defaultIndex: Int): Boolean {
+        return try {
+            val trimmed = addresses.take(MAX_SAVED_ADDRESSES)
+            val data = hashMapOf<String, Any>(
+                "savedAddresses" to trimmed.map {
+                    mapOf("label" to it.label, "address" to it.address, "latitude" to it.latitude, "longitude" to it.longitude)
+                },
+                "defaultAddressIndex" to defaultIndex.coerceIn(0, (trimmed.size - 1).coerceAtLeast(0))
+            )
+            trimmed.getOrNull(defaultIndex)?.let { def ->
+                data["address"] = def.address
+                data["latitude"] = def.latitude
+                data["longitude"] = def.longitude
+            }
+            db.collection("users").document(uid).set(data, SetOptions.merge()).await()
             true
         } catch (e: Exception) {
             false

@@ -66,6 +66,7 @@ fun HomeScreen(
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
+    var catalogMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     // Only true once we've replaced the static/demo distanceKm with a real
     // haversine distance from the customer's own saved location - until
     // then the 2-3km "nearby" radius filter below would be meaningless.
@@ -77,6 +78,7 @@ fun HomeScreen(
         // (see ml/ at the repo root), run entirely on-device from the meal's
         // own price/isVeg/availableQuantity - no server involved.
         val allMeals = FirestoreCatalogRepository.getAllMeals()
+        catalogMeals = allMeals
         if (allMeals.isNotEmpty()) {
             aiRecommendedMeals = allMeals
                 .sortedByDescending { meal ->
@@ -102,9 +104,18 @@ fun HomeScreen(
         }
     }
 
-    val recommendedChefs = remember(chefs) { RecommendationEngine.recommend(chefs) }
-    val nearbyChefs = remember(chefs, hasRealDistances) {
-        val sorted = chefs.sortedBy { it.distanceKm }
+    // Category tiles filter both the meals shown and the chef rows: only
+    // chefs who have at least one meal in the selected category remain.
+    val categoryMeals = remember(catalogMeals, selectedCategory) {
+        selectedCategory?.let { cat -> catalogMeals.filter { it.category.equals(cat, ignoreCase = true) } }.orEmpty()
+    }
+    val visibleChefs = remember(chefs, categoryMeals, selectedCategory) {
+        if (selectedCategory == null) chefs
+        else categoryMeals.map { it.chefId }.toSet().let { ids -> chefs.filter { it.id in ids } }
+    }
+    val recommendedChefs = remember(visibleChefs) { RecommendationEngine.recommend(visibleChefs) }
+    val nearbyChefs = remember(visibleChefs, hasRealDistances) {
+        val sorted = visibleChefs.sortedBy { it.distanceKm }
         if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
     }
 
@@ -311,6 +322,38 @@ fun HomeScreen(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
+                }
+            }
+        }
+
+        selectedCategory?.let { cat ->
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                stringResource(R.string.home_category_meals_title, cat),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (categoryMeals.isEmpty()) {
+                Text(
+                    stringResource(R.string.home_category_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+            } else {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(categoryMeals, key = { it.id }) { meal ->
+                        MealCard(
+                            meal = meal,
+                            modifier = Modifier.width(240.dp),
+                            onClick = { onMealClick(meal.id) }
+                        )
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Edit
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -60,7 +61,8 @@ fun ChefDashboardScreen(
     onManageMenu: () -> Unit,
     onOpenMessages: () -> Unit,
     onOpenNotifications: () -> Unit = {},
-    onEditProfile: () -> Unit = {}
+    onEditProfile: () -> Unit = {},
+    onOpenCoupons: () -> Unit = {}
 ) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
@@ -181,6 +183,9 @@ fun ChefDashboardScreen(
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onOpenCoupons) {
+                    Icon(Icons.Filled.LocalOffer, contentDescription = stringResource(R.string.chef_coupons_title))
+                }
                 IconButton(onClick = onEditProfile) {
                     Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.edit_profile_title))
                 }

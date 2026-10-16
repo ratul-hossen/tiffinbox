@@ -41,6 +41,29 @@ export interface Chef {
   isDemo?: boolean;
 }
 
+/**
+ * coupons/{CODE} - doc id is the uppercase code itself, so a code is unique
+ * across the platform. chefId "" = valid at every kitchen (admin-only);
+ * otherwise only for that chef's orders. Times are epoch millis.
+ */
+export interface Coupon {
+  id: string;
+  code?: string;
+  discountType?: "percent" | "flat";
+  value?: number;
+  minOrder?: number;
+  maxDiscount?: number; // percent coupons only; 0 = no cap
+  chefId?: string;
+  createdBy?: "admin" | "chef";
+  validFrom?: number;
+  validUntil?: number;
+  isActive?: boolean;
+  usedCount?: number;
+  maxUses?: number; // 0 = unlimited
+  createdAt?: number;
+  cancelledByAdmin?: boolean;
+}
+
 export interface Meal {
   id: string;
   chefId?: string;
@@ -113,6 +136,10 @@ export interface Order {
   deliveryPartnerId?: string;
   status?: OrderStatus | string;
   placedAt?: number; // epoch millis
+  cancelReason?: string; // "customer" | "auto_expired" | ...
+  cancelledAt?: number;
+  couponCode?: string;
+  discount?: number; // amount taken off by couponCode
 }
 
 export interface Review {
@@ -126,6 +153,7 @@ export interface Review {
   overallRating?: number;
   comment?: string;
   createdAt?: number;
+  photoBase64?: string; // optional food photo, compressed base64
 }
 
 // A Firestore Timestamp as it comes back from onSnapshot (serverTimestamp()
