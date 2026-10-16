@@ -50,6 +50,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.domain.DeliveryQuotes
+import com.ratulhossen.tiffinbox.domain.DeliveryPricing
 import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
@@ -69,6 +71,8 @@ import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.ui.components.MealCard
+import com.ratulhossen.tiffinbox.ui.components.MealPlanPromoCard
+import com.ratulhossen.tiffinbox.ui.components.PlatesLeftBadge
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
 import com.ratulhossen.tiffinbox.util.recommendable
 import com.ratulhossen.tiffinbox.util.withRealDistances
@@ -86,7 +90,8 @@ fun HomeScreen(
     onRewardsClick: () -> Unit = {},
     onChatClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
-    cartCount: Int = 0
+    cartCount: Int = 0,
+    onMealPlansClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     // The header/photo runs behind the status bar - keep its icons white.
@@ -121,13 +126,22 @@ fun HomeScreen(
         HomeAddressCache.write(context, uid, fresh)
     }
     var rewards by remember { mutableStateOf<RewardsStatus?>(null) }
+    // The user's display name (for the initial-letter avatar in the header).
+    // Falls back to the Firebase Auth displayName immediately; refreshed from
+    // Firestore on load so it always matches the Edit Profile name.
+    var userName by remember {
+        mutableStateOf(FirebaseAuthRepository.currentUser?.displayName.orEmpty())
+    }
     LaunchedEffect(Unit) {
-        if (FirebaseAuthRepository.currentUser != null) rewards = FirestoreOrderRepository.getMyRewards()
+        val uid = FirebaseAuthRepository.currentUser?.uid ?: return@LaunchedEffect
+        rewards = FirestoreOrderRepository.getMyRewards()
+        FirestoreUserRepository.getProfile(uid)?.name?.takeIf { it.isNotBlank() }?.let { userName = it }
     }
 
     // Signals the recommender uses (review averages, delivery ratings, the
     // admin-set radius, my orders, offers); filled by the load below.
     var recContext by remember { mutableStateOf(RecommendationContext()) }
+    var deliveryPricing by remember { mutableStateOf<DeliveryPricing?>(null) }
 
     LaunchedEffect(Unit) {
         val allMeals = FirestoreCatalogRepository.getAllMeals()
@@ -183,6 +197,7 @@ fun HomeScreen(
         }
 
         recContext = recCtx
+        deliveryPricing = FirestoreAppConfigRepository.deliveryPricing()
         chefs = loadedChefs
         hasRealDistances = myLocation != null
     }
@@ -262,12 +277,22 @@ fun HomeScreen(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     HeaderCircleButton(onClick = onProfileClick) {
-                        Icon(
-                            Icons.Filled.Person,
-                            contentDescription = stringResource(R.string.home_profile_content_description),
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        val initial = userName.firstOrNull()?.uppercaseChar()?.toString()
+                        if (!initial.isNullOrBlank()) {
+                            Text(
+                                initial,
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Icon(
+                                Icons.Filled.Person,
+                                contentDescription = stringResource(R.string.home_profile_content_description),
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
@@ -591,6 +616,12 @@ fun HomeScreen(
             )
         }
 
+        // Weekly / monthly plans, highlighted for students.
+        if (chefs.isNotEmpty() && !nothingNearby) {
+            Spacer(modifier = Modifier.height(20.dp))
+            MealPlanPromoCard(onClick = onMealPlansClick, modifier = Modifier.padding(horizontal = 20.dp))
+        }
+
         if (recommendedChefs.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))
             SectionHeader(
@@ -606,6 +637,7 @@ fun HomeScreen(
                     ChefCard(
                         chef = chef,
                         modifier = Modifier.width(180.dp),
+                        delivery = deliveryPricing?.takeIf { hasRealDistances }?.let { DeliveryQuotes.quote(chef.distanceKm, it) },
                         onClick = { onChefClick(chef.id) }
                     )
                 }
@@ -649,6 +681,7 @@ fun HomeScreen(
                     ChefCard(
                         chef = chef,
                         modifier = Modifier.width(180.dp),
+                        delivery = deliveryPricing?.takeIf { hasRealDistances }?.let { DeliveryQuotes.quote(chef.distanceKm, it) },
                         onClick = { onChefClick(chef.id) }
                     )
                 }
@@ -753,11 +786,15 @@ private fun TodaySpecialCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                listOf(chefName, "৳${meal.price}").filter { it.isNotBlank() }.joinToString(" · "),
-                color = Color.White.copy(alpha = 0.9f),
-                style = MaterialTheme.typography.bodySmall
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    listOf(chefName, "৳${meal.price}").filter { it.isNotBlank() }.joinToString(" · "),
+                    color = Color.White.copy(alpha = 0.9f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                PlatesLeftBadge(meal.availableQuantity)
+            }
         }
     }
 }

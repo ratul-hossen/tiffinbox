@@ -39,8 +39,16 @@ data class ChefUi(
     /** True only for chefs created by admin-web's "Seed demo chefs" button; shown as a "Demo" badge so customers aren't misled. */
     val isDemo: Boolean = false,
     /** "pending" / "approved" / "rejected", set by admin-web's Chef Approvals page; blank on older docs. */
-    val approvalStatus: String = ""
-)
+    val approvalStatus: String = "",
+    /** The chef's own longer "our story" text for the profile page. */
+    val story: String = "",
+    /** Set by the admin after checking the chef's NID / kitchen photo (admin-only fields). */
+    val nidVerified: Boolean = false,
+    val kitchenVerified: Boolean = false
+) {
+    /** Both checks done: shows the "Verified" badge. */
+    val isFullyVerified: Boolean get() = nidVerified && kitchenVerified
+}
 
 data class ChefVideoUi(
     val url: String,
@@ -134,7 +142,11 @@ data class PastOrderUi(
     /** Estimated minutes from placing to delivery (0 = older order without an estimate). */
     val estimatedDeliveryMinutes: Int = 0,
     /** TiffinBox Points this order earned (only once Delivered). */
-    val pointsEarned: Int = 0
+    val pointsEarned: Int = 0,
+    /** Pre-order slot (epoch millis); 0 = "as soon as possible". */
+    val scheduledFor: Long = 0L,
+    /** mealId -> quantity, for "Order again". */
+    val mealQuantities: Map<String, Int> = emptyMap()
 ) {
     /** Milliseconds left in the customer's cancel window (0 = can't cancel any more). */
     fun cancelMillisLeft(now: Long = System.currentTimeMillis()): Long =
@@ -146,7 +158,11 @@ data class PastOrderUi(
 
     /** Estimated delivery time as epoch millis, or 0 when unknown. */
     val estimatedDeliveryAt: Long
-        get() = if (estimatedDeliveryMinutes > 0 && placedAtMillis > 0) placedAtMillis + estimatedDeliveryMinutes * 60_000L else 0L
+        get() = when {
+            scheduledFor > 0 -> scheduledFor
+            estimatedDeliveryMinutes > 0 && placedAtMillis > 0 -> placedAtMillis + estimatedDeliveryMinutes * 60_000L
+            else -> 0L
+        }
 }
 
 /** Customers can cancel an order for this long after placing it. */
@@ -197,7 +213,11 @@ data class ChefOrderUi(
     val paymentMethod: String = "",
     /** A manual mobile-banking proof (bKash or Nagad - same free-tier pattern for both). */
     val paymentTransactionId: String = "",
-    val paymentScreenshotBase64: String = ""
+    val paymentScreenshotBase64: String = "",
+    /** Pre-order slot (epoch millis); 0 = "as soon as possible". */
+    val scheduledFor: Long = 0L,
+    /** mealName -> quantity, for the pre-order demand summary. */
+    val itemQuantities: Map<String, Int> = emptyMap()
 )
 
 data class EarningsSummary(

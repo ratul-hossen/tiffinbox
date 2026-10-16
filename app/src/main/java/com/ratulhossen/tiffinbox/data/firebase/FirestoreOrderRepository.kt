@@ -4,6 +4,9 @@ import com.ratulhossen.tiffinbox.domain.RewardsStatus
 import com.ratulhossen.tiffinbox.domain.Rewards
 import com.ratulhossen.tiffinbox.data.model.CUSTOMER_CANCEL_WINDOW_MS
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
@@ -25,6 +28,9 @@ import java.util.Locale
 /** A "Placed" order the chef hasn't accepted within this window is cancelled automatically. */
 const val ORDER_ACCEPT_TIMEOUT_MS = 12L * 60 * 60 * 1000
 
+/** [orderId] on success; [soldOutMeal] names a meal that ran out of plates (blank name = unknown). */
+data class PlaceOrderResult(val orderId: String? = null, val soldOutMeal: String? = null)
+
 object FirestoreOrderRepository {
 
     /**
@@ -37,28 +43,61 @@ object FirestoreOrderRepository {
     private fun effectiveStatus(doc: DocumentSnapshot): String {
         val status = doc.getString("status") ?: "Placed"
         val placedAt = doc.getLong("placedAt") ?: 0L
-        if (status == "Placed" && placedAt > 0 && System.currentTimeMillis() - placedAt > ORDER_ACCEPT_TIMEOUT_MS) {
-            try {
-                doc.reference.update(
-                    mapOf(
-                        "status" to "Cancelled",
-                        "cancelReason" to "auto_expired",
-                        "cancelledAt" to System.currentTimeMillis()
-                    )
-                )
-                doc.getString("customerId")?.let { customerId ->
+        // A pre-order isn't "late" before its own slot either.
+        val deadline = maxOf(placedAt + ORDER_ACCEPT_TIMEOUT_MS, doc.getLong("scheduledFor") ?: 0L)
+        if (status == "Placed" && placedAt > 0 && System.currentTimeMillis() > deadline) {
+            // Fire-and-forget: also hands the reserved plates back to the menu.
+            cancelInTransaction(doc.reference, "auto_expired") { it.getString("status") == "Placed" }
+                .addOnSuccessListener { cancelled ->
+                    val customerId = cancelled?.getString("customerId") ?: return@addOnSuccessListener
                     FirestoreNotificationRepository.addNotification(
                         uid = customerId,
                         title = "Order cancelled",
-                        body = "The chef didn't accept your order within 12 hours, so it was cancelled automatically."
+                        body = "The chef didn't accept your order in time, so it was cancelled automatically."
                     )
                 }
-            } catch (e: Exception) {
-                // Offline - it will be retried on the next read.
-            }
             return "Cancelled"
         }
         return status
+    }
+
+    /**
+     * Cancels an order in one transaction and, if it reserved plates when it
+     * was placed, gives those plates back to each meal's availableQuantity
+     * (firestore.rules checks the amounts against the order's mealQuantities).
+     * [guard] sees the fresh order; returning false aborts with no change.
+     * The task's result is the order snapshot, or null when nothing changed.
+     */
+    private fun cancelInTransaction(
+        ref: DocumentReference,
+        reason: String,
+        guard: (DocumentSnapshot) -> Boolean
+    ): Task<DocumentSnapshot?> {
+        val db = FirebaseFirestore.getInstance()
+        return db.runTransaction<DocumentSnapshot?> { tx ->
+            val snap = tx.get(ref)
+            if (!snap.exists() || !guard(snap)) return@runTransaction null
+            val update = mutableMapOf<String, Any>(
+                "status" to "Cancelled",
+                "cancelReason" to reason,
+                "cancelledAt" to System.currentTimeMillis()
+            )
+            val restore = mutableListOf<Pair<DocumentReference, Long>>()
+            if (snap.getBoolean("platesReserved") == true && snap.getBoolean("platesRestored") != true) {
+                update["platesRestored"] = true
+                (snap.get("mealQuantities") as? Map<*, *>)?.forEach { (key, value) ->
+                    val mealRef = db.collection("meals").document(key as? String ?: return@forEach)
+                    val qty = (value as? Number)?.toLong() ?: return@forEach
+                    // Skip meals the chef has deleted since.
+                    if (qty > 0 && tx.get(mealRef).exists()) restore += mealRef to qty
+                }
+            }
+            restore.forEach { (mealRef, qty) ->
+                tx.update(mealRef, mapOf("availableQuantity" to FieldValue.increment(qty), "lastRestoreOrderId" to ref.id))
+            }
+            tx.update(ref, update)
+            snap
+        }
     }
 
     /**
@@ -68,27 +107,12 @@ object FirestoreOrderRepository {
      */
     suspend fun cancelOrderByCustomer(orderId: String): Boolean {
         return try {
-            val db = FirebaseFirestore.getInstance()
-            val ref = db.collection("orders").document(orderId)
-            val chefId = db.runTransaction { tx ->
-                val snap = tx.get(ref)
-                val placedAt = snap.getLong("placedAt") ?: 0L
-                if (snap.getString("status") != "Placed" ||
-                    System.currentTimeMillis() - placedAt > CUSTOMER_CANCEL_WINDOW_MS
-                ) {
-                    null
-                } else {
-                    tx.update(
-                        ref,
-                        mapOf(
-                            "status" to "Cancelled",
-                            "cancelReason" to "customer",
-                            "cancelledAt" to System.currentTimeMillis()
-                        )
-                    )
-                    snap.getString("chefId").orEmpty()
-                }
+            val ref = FirebaseFirestore.getInstance().collection("orders").document(orderId)
+            val snap = cancelInTransaction(ref, "customer") {
+                it.getString("status") == "Placed" &&
+                    System.currentTimeMillis() - (it.getLong("placedAt") ?: 0L) <= CUSTOMER_CANCEL_WINDOW_MS
             }.await() ?: return false
+            val chefId = snap.getString("chefId").orEmpty()
             if (chefId.isNotBlank()) {
                 FirestoreNotificationRepository.addNotification(
                     uid = chefId,
@@ -102,7 +126,16 @@ object FirestoreOrderRepository {
         }
     }
 
-    /** Returns the new order's id on success, or null if it couldn't be placed. */
+    /** Thrown inside the placing transaction when a meal no longer has enough plates. */
+    private class SoldOutException(val mealName: String) : Exception()
+
+    /**
+     * Places the order. An order for now reserves its plates: in the same
+     * transaction each meal's availableQuantity goes down by the quantity
+     * ordered (and fails with [PlaceOrderResult.soldOutMeal] if there aren't
+     * enough left). A pre-order ([scheduledFor] > 0) reserves nothing - it is
+     * the chef's advance demand for that day, so they cook only what's needed.
+     */
     suspend fun placeOrder(
         items: List<CartItemUi>,
         subtotal: Int,
@@ -117,11 +150,14 @@ object FirestoreOrderRepository {
         discount: Int = 0,
         pointsRedeemed: Int = 0,
         rankDiscount: Int = 0,
-        estimatedDeliveryMinutes: Int = 0
-    ): String? {
+        estimatedDeliveryMinutes: Int = 0,
+        scheduledFor: Long = 0L
+    ): PlaceOrderResult {
         return try {
-            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
-            val chefId = items.firstOrNull()?.meal?.chefId ?: return null
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return PlaceOrderResult()
+            val chefId = items.firstOrNull()?.meal?.chefId ?: return PlaceOrderResult()
+            val isPreOrder = scheduledFor > 0
+            val mealQuantities = items.groupBy { it.meal.id }.mapValues { (_, list) -> list.sumOf { it.quantity }.toLong() }
             val deliveryHandledBy = FirestoreCatalogRepository.getChef(chefId)?.deliveryMode ?: "self"
 
             val orderData = hashMapOf(
@@ -156,18 +192,52 @@ object FirestoreOrderRepository {
                 "deliveryHandledBy" to deliveryHandledBy,
                 "deliveryPartnerId" to "",
                 "status" to "Placed",
-                "placedAt" to System.currentTimeMillis()
+                "placedAt" to System.currentTimeMillis(),
+                // Plates bookkeeping (see firestore.rules meals block) + pre-order slot.
+                "mealIds" to mealQuantities.keys.toList(),
+                "mealQuantities" to mealQuantities,
+                "platesReserved" to !isPreOrder,
+                "platesRestored" to false,
+                "isPreOrder" to isPreOrder,
+                "scheduledFor" to scheduledFor
             )
 
-            val orderId = FirebaseFirestore.getInstance().collection("orders").add(orderData).await().id
+            val db = FirebaseFirestore.getInstance()
+            val orderRef = db.collection("orders").document()
+            if (isPreOrder) {
+                orderRef.set(orderData).await()
+            } else {
+                db.runTransaction<Any?> { tx ->
+                    val meals = mealQuantities.keys.map { tx.get(db.collection("meals").document(it)) }
+                    meals.forEach { meal ->
+                        val left = meal.getLong("availableQuantity") ?: 0L
+                        if (!meal.exists() || left < (mealQuantities[meal.id] ?: 0L)) {
+                            throw SoldOutException(meal.getString("name") ?: "")
+                        }
+                    }
+                    tx.set(orderRef, orderData)
+                    meals.forEach { meal ->
+                        val left = meal.getLong("availableQuantity") ?: 0L
+                        tx.update(
+                            meal.reference,
+                            mapOf("availableQuantity" to left - (mealQuantities[meal.id] ?: 0L), "lastOrderId" to orderRef.id)
+                        )
+                    }
+                    null
+                }.await()
+            }
+            val orderId = orderRef.id
             FirestoreNotificationRepository.addNotification(
                 uid = customerId,
                 title = "Order placed",
-                body = "Your order has been placed and is waiting for the chef to accept it."
+                body = if (isPreOrder) "Your pre-order has been placed and is waiting for the chef to accept it."
+                else "Your order has been placed and is waiting for the chef to accept it."
             )
-            orderId
+            PlaceOrderResult(orderId = orderId)
         } catch (e: Exception) {
-            null
+            // The transaction may wrap our exception.
+            val soldOut = (e as? SoldOutException) ?: (e.cause as? SoldOutException)
+            PlaceOrderResult(soldOutMeal = soldOut?.mealName)
         }
     }
 
@@ -248,12 +318,25 @@ object FirestoreOrderRepository {
                         placedAt = doc.getLong("placedAt") ?: 0L,
                         paymentMethod = doc.getString("paymentMethod").orEmpty(),
                         paymentTransactionId = doc.getString("paymentTransactionId").orEmpty(),
-                        paymentScreenshotBase64 = doc.getString("paymentScreenshotBase64").orEmpty()
+                        paymentScreenshotBase64 = doc.getString("paymentScreenshotBase64").orEmpty(),
+                        scheduledFor = doc.getLong("scheduledFor") ?: 0L,
+                        itemQuantities = (doc.get("items") as? List<*>).orEmpty()
+                            .mapNotNull { it as? Map<*, *> }
+                            .groupBy { it["mealName"] as? String ?: "—" }
+                            .mapValues { (_, rows) -> rows.sumOf { (it["quantity"] as? Number)?.toInt() ?: 0 } }
                     )
                 }
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    /** Accepted-or-waiting pre-orders whose slot is still ahead, soonest first. */
+    suspend fun getUpcomingPreOrders(chefId: String): List<ChefOrderUi> {
+        val now = System.currentTimeMillis()
+        return fetchRecentOrders(chefId)
+            .filter { it.scheduledFor > now && it.status != "Cancelled" && it.status != "Delivered" }
+            .sortedBy { it.scheduledFor }
     }
 
     suspend fun getIncomingOrders(chefId: String): List<ChefOrderUi> {
@@ -335,7 +418,16 @@ object FirestoreOrderRepository {
                             ?: if (doc.getString("status") == "Placed") "auto_expired" else "",
                         placedAtMillis = placedAt,
                         estimatedDeliveryMinutes = (doc.getLong("estimatedDeliveryMinutes") ?: 0L).toInt(),
-                        pointsEarned = if (stage == OrderStage.DELIVERED) Rewards.pointsFor(total) else 0
+                        pointsEarned = if (stage == OrderStage.DELIVERED) Rewards.pointsFor(total) else 0,
+                        scheduledFor = doc.getLong("scheduledFor") ?: 0L,
+                        mealQuantities = (doc.get("items") as? List<*>).orEmpty()
+                            .mapNotNull { it as? Map<*, *> }
+                            .mapNotNull { row ->
+                                val id = row["mealId"] as? String ?: return@mapNotNull null
+                                id to ((row["quantity"] as? Number)?.toInt() ?: 1)
+                            }
+                            .groupBy({ it.first }, { it.second })
+                            .mapValues { (_, q) -> q.sum() }
                     )
                 }
         } catch (e: Exception) {
@@ -396,7 +488,13 @@ object FirestoreOrderRepository {
 
     fun updateOrderStatus(orderId: String, status: String, customerId: String? = null) {
         try {
-            FirebaseFirestore.getInstance().collection("orders").document(orderId).update("status", status)
+            val ref = FirebaseFirestore.getInstance().collection("orders").document(orderId)
+            if (status == "Cancelled") {
+                // Chef rejected it: also give the reserved plates back to the menu.
+                cancelInTransaction(ref, "chef") { it.getString("status") != "Cancelled" }
+            } else {
+                ref.update("status", status)
+            }
             if (customerId != null) {
                 FirestoreNotificationRepository.addNotification(
                     uid = customerId,

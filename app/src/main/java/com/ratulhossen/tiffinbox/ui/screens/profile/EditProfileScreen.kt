@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeliveryDining
+import androidx.compose.material.icons.filled.VerifiedUser
+import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -50,7 +52,8 @@ import kotlinx.coroutines.launch
 fun EditProfileScreen(
     onBack: () -> Unit,
     onChangeLocation: (role: String) -> Unit,
-    onOpenDeliveryOption: () -> Unit = {}
+    onOpenDeliveryOption: () -> Unit = {},
+    onOpenVerification: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -66,6 +69,12 @@ fun EditProfileScreen(
     var kitchenName by rememberSaveable { mutableStateOf("") }
     var bkashNumber by rememberSaveable { mutableStateOf("") }
     var nagadNumber by rememberSaveable { mutableStateOf("") }
+    // Public kitchen profile (Chef Detail "About" section).
+    var bio by rememberSaveable { mutableStateOf("") }
+    var story by rememberSaveable { mutableStateOf("") }
+    var specialties by rememberSaveable { mutableStateOf("") }
+    var yearsText by rememberSaveable { mutableStateOf("") }
+    var kitchenType by rememberSaveable { mutableStateOf("") }
     // Re-read every time this screen is shown, so it reflects a location
     // just changed on the location screen.
     var address by remember { mutableStateOf("") }
@@ -92,6 +101,11 @@ fun EditProfileScreen(
                 kitchenName = chef.kitchenName
                 bkashNumber = chef.bkashNumber
                 nagadNumber = chef.nagadNumber
+                bio = chef.bio
+                story = chef.story
+                specialties = chef.specialty.joinToString(", ")
+                yearsText = if (chef.yearsOfExperience > 0) chef.yearsOfExperience.toString() else ""
+                kitchenType = chef.kitchenType
                 if (!hasLocation && chef.latitude != 0.0) hasLocation = true
             }
         }
@@ -129,6 +143,14 @@ fun EditProfileScreen(
                     whatsappNumber = contacts.whatsappNumber,
                     bkashNumber = contacts.bkashNumber,
                     nagadNumber = contacts.nagadNumber
+                ) && ok
+                ok = FirestoreChefRepository.updateProfileStory(
+                    uid = uid,
+                    bio = bio.trim(),
+                    story = story.trim(),
+                    specialty = specialties.split(",", "،").map { it.trim() }.filter { it.isNotBlank() }.take(6),
+                    yearsOfExperience = yearsText.trim().toIntOrNull()?.coerceIn(0, 80) ?: 0,
+                    kitchenType = kitchenType
                 ) && ok
             }
             FirebaseAuthRepository.updateDisplayName(name.trim())
@@ -224,6 +246,59 @@ fun EditProfileScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                // What customers read on the kitchen's profile page.
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    stringResource(R.string.edit_profile_about_section),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { if (it.length <= 160) bio = it },
+                    label = { Text(stringResource(R.string.edit_profile_bio_label)) },
+                    supportingText = { Text("${bio.length}/160") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = story,
+                    onValueChange = { if (it.length <= 800) story = it },
+                    label = { Text(stringResource(R.string.edit_profile_story_label)) },
+                    placeholder = { Text(stringResource(R.string.edit_profile_story_placeholder)) },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = specialties,
+                    onValueChange = { specialties = it },
+                    label = { Text(stringResource(R.string.edit_profile_specialties_label)) },
+                    placeholder = { Text(stringResource(R.string.edit_profile_specialties_placeholder)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = yearsText,
+                        onValueChange = { yearsText = it.filter(Char::isDigit).take(2) },
+                        label = { Text(stringResource(R.string.edit_profile_years_label)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                KitchenTypeDropdown(value = kitchenType, onValueChange = { kitchenType = it }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(onClick = onOpenVerification, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.VerifiedUser, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.verification_title))
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(onClick = onOpenDeliveryOption, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.DeliveryDining, contentDescription = null)

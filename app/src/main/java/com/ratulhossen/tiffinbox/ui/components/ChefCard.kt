@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.domain.DeliveryQuote
 
 private val FavoriteRed = Color(0xFFE0303D)
 
@@ -39,6 +40,8 @@ private val FavoriteRed = Color(0xFFE0303D)
 fun ChefCard(
     chef: ChefUi,
     modifier: Modifier = Modifier,
+    /** Delivery fee + time to the customer; null when their location is unknown. */
+    delivery: DeliveryQuote? = null,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -73,7 +76,8 @@ fun ChefCard(
                     emoji = chef.emoji,
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape,
-                    emojiFontSize = 52.sp
+                    emojiFontSize = 52.sp,
+                    initial = chef.kitchenName.firstOrNull()?.toString()
                 )
                 val isFavorite = FavoritesStore.isFavorite(chef.id)
                 Box(
@@ -101,7 +105,8 @@ fun ChefCard(
                             .scale(heartScale)
                     )
                 }
-                if (chef.isVerified) {
+                // Only kitchens whose NID + kitchen photo the admin checked (every listed kitchen is approved).
+                if (chef.isFullyVerified) {
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -187,6 +192,7 @@ fun ChefCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                delivery?.let { DeliveryQuoteLine(it, Modifier.padding(top = 2.dp)) }
                 if (chef.deliveryMode == "tiffinbox") {
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
@@ -230,4 +236,15 @@ fun NewKitchenBadge(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
         )
     }
+}
+
+/** "🛵 ৳25 · ~35 min" - the delivery fee and time to this customer. */
+@Composable
+fun DeliveryQuoteLine(quote: DeliveryQuote, modifier: Modifier = Modifier) {
+    Text(
+        stringResource(R.string.delivery_quote_line, quote.fee, quote.minutes),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    )
 }

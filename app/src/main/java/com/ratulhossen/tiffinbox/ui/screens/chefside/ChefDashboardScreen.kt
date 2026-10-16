@@ -74,6 +74,7 @@ fun ChefDashboardScreen(
 ) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
+    var preOrders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
     var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
     var kitchenName by remember { mutableStateOf<String?>(null) }
@@ -130,6 +131,7 @@ fun ChefDashboardScreen(
             val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
             forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
             orders = FirestoreOrderRepository.getIncomingOrders(chefId)
+            preOrders = FirestoreOrderRepository.getUpcomingPreOrders(chefId)
             earnings = FirestoreOrderRepository.getEarningsSummary(chefId)
         }
     }
@@ -529,6 +531,11 @@ fun ChefDashboardScreen(
             }
         }
 
+        if (preOrders.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            PreOrderDemandCard(preOrders)
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
         Text(stringResource(R.string.chef_dashboard_new_orders_title), style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(10.dp))
@@ -548,6 +555,14 @@ fun ChefDashboardScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
+                    if (order.scheduledFor > 0) {
+                        Text(
+                            stringResource(R.string.chef_preorder_badge, formatPreOrderSlot(order.scheduledFor)),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     Text(order.itemsSummary, style = MaterialTheme.typography.titleMedium)
                     Text(
                         stringResource(R.string.chef_dashboard_order_number, order.id.take(6)),
@@ -688,6 +703,54 @@ private fun KitchenSetupCard(
                     if (!isDone) {
                         Text("→", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
+                }
+            }
+        }
+    }
+}
+
+private fun formatPreOrderSlot(millis: Long): String =
+    java.text.SimpleDateFormat("EEE d MMM, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(millis))
+
+/**
+ * Upcoming pre-orders grouped by slot with total plates per dish, so the chef
+ * knows exactly how much to cook (and buys only that) - less waste.
+ */
+@Composable
+private fun PreOrderDemandCard(preOrders: List<ChefOrderUi>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(R.string.chef_preorders_title, preOrders.size),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                stringResource(R.string.chef_preorders_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
+            preOrders.groupBy { it.scheduledFor }.entries.take(6).forEach { (slot, slotOrders) ->
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    formatPreOrderSlot(slot),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                val plates = slotOrders.flatMap { it.itemQuantities.entries }
+                    .groupBy({ it.key }, { it.value })
+                    .mapValues { (_, q) -> q.sum() }
+                plates.forEach { (dish, count) ->
+                    Text(
+                        stringResource(R.string.chef_preorders_dish_line, count, dish),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             }
         }

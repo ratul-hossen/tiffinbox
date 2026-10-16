@@ -109,7 +109,7 @@ service cloud.firestore {
     // update the owner can't touch the approval/demo fields at all - only
     // admin-web's Chef Approvals page (isAdmin()) can.
     function chefLockedFields() {
-      return ["isVerified", "approvalStatus", "approvalUpdatedAt", "isDemo", "userId", "deliveryUntil"];
+      return ["isVerified", "approvalStatus", "approvalUpdatedAt", "isDemo", "userId", "deliveryUntil", "nidVerified", "kitchenVerified"];
     }
     // A chef may only switch to TiffinBox's delivery (which shows customers
     // the "TiffinBox Delivery" badge) while an admin-approved agreement in
@@ -139,10 +139,44 @@ service cloud.firestore {
 
     // meals/{mealId} — public menu items, only the owning chef can edit
     // Admins (admin-web) can also edit/delete any meal.
+    //
+    // Plates left (2026-10-16): availableQuantity is "plates left today".
+    // Besides the owning chef, a customer may (1) take plates in the same
+    // transaction that creates their order - the amount must equal that new
+    // order's mealQuantities[mealId] - and (2) give them back in the same
+    // write that cancels a plate-reserving order (platesRestored false ->
+    // true). Each order can reserve and restore only once.
+    function plateReservationOk(mealId) {
+      let oid = request.resource.data.get("lastOrderId", "");
+      let taken = resource.data.get("availableQuantity", 0) - request.resource.data.availableQuantity;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(["availableQuantity", "lastOrderId"]) &&
+        oid is string && oid != "" && oid != resource.data.get("lastOrderId", "") &&
+        request.resource.data.availableQuantity >= 0 && taken > 0 &&
+        !exists(/databases/$(database)/documents/orders/$(oid)) &&
+        getAfter(/databases/$(database)/documents/orders/$(oid)).data.customerId == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/orders/$(oid)).data.get("platesReserved", false) == true &&
+        getAfter(/databases/$(database)/documents/orders/$(oid)).data.mealQuantities[mealId] == taken;
+    }
+    function plateRestoreOk(mealId) {
+      let oid = request.resource.data.get("lastRestoreOrderId", "");
+      let back = request.resource.data.availableQuantity - resource.data.get("availableQuantity", 0);
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(["availableQuantity", "lastRestoreOrderId"]) &&
+        oid is string && oid != "" && back > 0 &&
+        get(/databases/$(database)/documents/orders/$(oid)).data.get("platesReserved", false) == true &&
+        get(/databases/$(database)/documents/orders/$(oid)).data.get("platesRestored", false) == false &&
+        getAfter(/databases/$(database)/documents/orders/$(oid)).data.get("platesRestored", false) == true &&
+        getAfter(/databases/$(database)/documents/orders/$(oid)).data.status == "Cancelled" &&
+        get(/databases/$(database)/documents/orders/$(oid)).data.mealQuantities[mealId] == back;
+    }
     match /meals/{mealId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() &&
+      allow update: if isAdmin() || (isSignedIn() && (
+        get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid ||
+        plateReservationOk(mealId) ||
+        plateRestoreOk(mealId)
+      ));
+      allow delete: if isAdmin() || (isSignedIn() &&
         get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid);
     }
 
@@ -163,7 +197,7 @@ service cloud.firestore {
     //  - delivery partner: may only change status.
     function orderStatusKeysOnly() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(["status", "cancelReason", "cancelledAt"]);
+        .hasOnly(["status", "cancelReason", "cancelledAt", "platesRestored"]);
     }
     function isOrderChef() {
       return get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid;
@@ -183,7 +217,8 @@ service cloud.firestore {
             // Customer's own cancel: only within 5 minutes of placing (+30s clock slack).
             (request.resource.data.cancelReason == "customer" &&
               request.time.toMillis() - resource.data.get("placedAt", 0) < 330000) ||
-            // The 12h "chef never accepted" auto-cancel, applied by whichever client reads it.
+            // The 12h "chef never accepted" auto-cancel, applied by whichever client reads it
+            // (for a pre-order the app also waits until its slot has passed).
             (request.resource.data.cancelReason == "auto_expired" &&
               request.time.toMillis() - resource.data.get("placedAt", 0) > 43200000)
           )) ||
@@ -338,6 +373,23 @@ service cloud.firestore {
     // customer/chef-facing path that ever reads or writes this collection.
     match /recycle_bin/{entryId} {
       allow read, create, update, delete: if isAdmin();
+    }
+
+    // chef_verifications/{uid} — private NID photos + status for the
+    // chef-verification flow. The chef submits their NID photo (base64);
+    // admin-web reviews and sets nidVerified/kitchenVerified on the chef
+    // doc (locked fields above). The NID photo is private: only the chef
+    // themselves and admins can read it.
+    match /chef_verifications/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      // Chef can create/update: submit NID photo, set status to "pending".
+      // Admin can do anything (verify, reject, delete the photo).
+      allow create: if isAdmin() || (isOwner(uid) &&
+        request.resource.data.status == "pending");
+      allow update: if isAdmin() || (isOwner(uid) &&
+        request.resource.data.status == "pending" &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(["nidVerified", "kitchenVerified"]));
+      allow delete: if isAdmin();
     }
 
     // App-wide settings set from admin-web's App Settings page (e.g.

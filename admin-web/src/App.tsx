@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { signOut } from "firebase/auth";
 import {
+  BadgeCheck,
   Bike,
   ChefHat,
   ExternalLink,
@@ -48,6 +49,7 @@ import DeliveryPartnersPage from "./components/DeliveryPartnersPage";
 import DeliveryApplicationsPage from "./components/DeliveryApplicationsPage";
 import RecycleBinPage from "./components/RecycleBinPage";
 import AppSettingsPage from "./components/AppSettingsPage";
+import VerificationsPage from "./components/VerificationsPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -67,7 +69,8 @@ type Tab =
   | "deliveryPartners"
   | "deliveryApplications"
   | "recycleBin"
-  | "appSettings";
+  | "appSettings"
+  | "verifications";
 
 interface TabMeta {
   key: Tab;
@@ -103,6 +106,14 @@ const TABS: TabMeta[] = [
     group: "Catalog",
     searchPlaceholder: "Search pending chefs…",
     description: "New chefs waiting for review - approve, ask for changes, or reject with a message.",
+  },
+  {
+    key: "verifications",
+    label: "Chef Verification",
+    icon: BadgeCheck,
+    group: "Catalog",
+    searchPlaceholder: "Search kitchens…",
+    description: "Check chefs' NID and kitchen photos - both ticked gives them the Verified badge.",
   },
   {
     key: "chefs",
@@ -398,6 +409,7 @@ export default function App() {
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
           {tab === "recycleBin" && <RecycleBinPage search={search} isSuperAdmin={isSuperAdmin} />}
           {tab === "appSettings" && <AppSettingsPage />}
+          {tab === "verifications" && <VerificationsPage search={search} />}
         </main>
       </div>
     </div>

@@ -22,6 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.Icons
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.PastOrderUi
@@ -38,12 +42,13 @@ private val MINI_TRACKED_STAGES = listOf(
 )
 
 @Composable
-fun OrdersScreen() {
+fun OrdersScreen(onOrderAgain: () -> Unit = {}) {
     var orders by remember { mutableStateOf<List<PastOrderUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var reloadKey by remember { mutableStateOf(0) }
     var confirmCancel by remember { mutableStateOf<PastOrderUi?>(null) }
     var cancelFailed by remember { mutableStateOf(false) }
+    var reorderUnavailable by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(reloadKey) {
@@ -109,6 +114,14 @@ fun OrdersScreen() {
                     Modifier.weight(1f)
                 )
             }
+            if (reorderUnavailable) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.orders_reorder_unavailable),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             if (cancelFailed) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -120,13 +133,34 @@ fun OrdersScreen() {
             Spacer(modifier = Modifier.height(4.dp))
         }
         items(orders, key = { it.id }) { order ->
-            OrderRow(order, now = now, onCancel = { confirmCancel = order })
+            OrderRow(
+                order,
+                now = now,
+                onCancel = { confirmCancel = order },
+                onOrderAgain = {
+                    // Refill the cart with the same dishes (whatever is still on
+                    // the menu) and go straight to it - one tap.
+                    scope.launch {
+                        val menu = FirestoreCatalogRepository.getMealsForChef(order.chefId).associateBy { it.id }
+                        val again = order.mealQuantities.mapNotNull { (id, qty) -> menu[id]?.let { it to qty } }
+                        if (again.isEmpty()) {
+                            reorderUnavailable = true
+                        } else {
+                            CartStore.clear()
+                            again.forEach { (meal, qty) ->
+                                CartStore.add(meal, if (meal.availableQuantity > 0) qty.coerceAtMost(meal.availableQuantity) else qty)
+                            }
+                            onOrderAgain()
+                        }
+                    }
+                }
+            )
         }
     }
 }
 
 @Composable
-private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit) {
+private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit, onOrderAgain: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -182,12 +216,24 @@ private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit) {
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }
+                if (order.mealQuantities.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(onClick = onOrderAgain, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Filled.Replay, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.orders_order_again))
+                    }
+                }
             } else {
                 MiniProgressTimeline(order.status)
                 if (order.estimatedDeliveryAt > 0) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        stringResource(
+                        if (order.scheduledFor > 0) stringResource(
+                            R.string.checkout_preorder_for,
+                            java.text.SimpleDateFormat("EEE d MMM, h:mm a", java.util.Locale.getDefault())
+                                .format(java.util.Date(order.scheduledFor))
+                        ) else stringResource(
                             R.string.orders_eta,
                             java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
                                 .format(java.util.Date(order.estimatedDeliveryAt))

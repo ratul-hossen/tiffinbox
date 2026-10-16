@@ -7,12 +7,11 @@ import type { Chef, Order } from "../types";
 import { ORDER_STATUSES } from "../types";
 import { logActivity } from "../lib/activityLog";
 import { softDelete } from "../lib/recycleBin";
+import { cancelOrderReleasingPlates, expiresAt } from "../lib/orderPlates";
 import { formatCurrency, formatDateTime } from "../lib/format";
 import { STATUS_BADGE_TONE } from "../lib/orderStatus";
 import Badge from "./ui/Badge";
 import OrderDetail from "./OrderDetail";
-
-const ORDER_ACCEPT_TIMEOUT_MS = 12 * 60 * 60 * 1000;
 
 interface Props {
   search: string;
@@ -55,13 +54,9 @@ export default function OrdersPage({ search }: Props) {
   useEffect(() => {
     const now = Date.now();
     orders
-      .filter((o) => (o.status ?? "Placed") === "Placed" && o.placedAt && now - o.placedAt > ORDER_ACCEPT_TIMEOUT_MS)
+      .filter((o) => (o.status ?? "Placed") === "Placed" && o.placedAt && now > expiresAt(o))
       .forEach((o) => {
-        updateDoc(doc(db, "orders", o.id), {
-          status: "Cancelled",
-          cancelReason: "auto_expired",
-          cancelledAt: now,
-        }).catch(() => {});
+        cancelOrderReleasingPlates(o, "auto_expired").catch(() => {});
       });
   }, [orders]);
 
@@ -94,7 +89,14 @@ export default function OrdersPage({ search }: Props) {
     setBusyId(order.id);
     try {
       if (status === "Cancelled") {
-        await softDelete("orders", order.id, { ...order, status }, `Order ${order.id.slice(0, 8)}…`);
+        // Give its plates back to the menu first, then move it to the bin.
+        if (order.status !== "Cancelled") await cancelOrderReleasingPlates(order, "admin");
+        await softDelete(
+          "orders",
+          order.id,
+          { ...order, status, platesRestored: order.platesReserved ? true : order.platesRestored },
+          `Order ${order.id.slice(0, 8)}…`,
+        );
         await logActivity("Cancelled order (moved to recycle bin)", "orders", order.id);
       } else {
         await updateDoc(doc(db, "orders", order.id), { status });
@@ -224,7 +226,14 @@ export default function OrdersPage({ search }: Props) {
                   ))}
                 </td>
                 <td className="px-4 py-3 font-medium">{formatCurrency(order.totalPrice ?? 0)}</td>
-                <td className="px-4 py-3 text-apple-secondary">{formatDateTime(order.placedAt)}</td>
+                <td className="px-4 py-3 text-apple-secondary">
+                  {formatDateTime(order.placedAt)}
+                  {order.scheduledFor ? (
+                    <div className="mt-1">
+                      <Badge tone="amber">Pre-order · {formatDateTime(order.scheduledFor)}</Badge>
+                    </div>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3">
                   <select
                     value={order.status ?? "Placed"}

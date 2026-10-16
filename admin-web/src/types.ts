@@ -43,6 +43,26 @@ export interface Chef {
   // ChefsPage - lets "Remove all demo chefs" find exactly this data and
   // nothing else, and lets the app show a "Demo" badge to real users.
   isDemo?: boolean;
+  /** The chef's longer "our story" text (Edit Profile in the app). */
+  story?: string;
+  /** Admin-only: set on the Chef Verification page after checking the NID / kitchen photo. */
+  nidVerified?: boolean;
+  kitchenVerified?: boolean;
+}
+
+/**
+ * chef_verifications/{chefUid} - private (owner + admins only): the chef's NID
+ * photo for the "Verified" badge. Never put this on the public chef doc.
+ */
+export interface ChefVerification {
+  id: string;
+  chefId?: string;
+  nidPhotoBase64?: string;
+  status?: "pending" | "verified" | "rejected" | string;
+  submittedAt?: number;
+  reviewedAt?: number;
+  reviewedBy?: string;
+  note?: string;
 }
 
 /**
@@ -154,6 +174,14 @@ export interface Order {
   pointsRedeemed?: number; // TiffinBox Points spent (10 points = ৳1)
   rankDiscount?: number; // taka off from the customer's rewards rank
   estimatedDeliveryMinutes?: number;
+  // Pre-order: delivery slot (epoch millis); 0/absent = as soon as possible.
+  isPreOrder?: boolean;
+  scheduledFor?: number;
+  // Plates bookkeeping: an order for now takes plates off each meal's
+  // availableQuantity; cancelling gives them back once.
+  mealQuantities?: Record<string, number>;
+  platesReserved?: boolean;
+  platesRestored?: boolean;
 }
 
 export interface Review {

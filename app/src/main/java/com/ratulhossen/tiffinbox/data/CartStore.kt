@@ -1,6 +1,9 @@
 package com.ratulhossen.tiffinbox.data
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
 import com.ratulhossen.tiffinbox.data.model.MealUi
 
@@ -32,9 +35,13 @@ object CartStore {
     val subtotal: Int
         get() = items.sumOf { it.meal.price * it.quantity }
 
+    /** Used until the distance-based quote (DeliveryQuoter) is known. */
     const val DELIVERY_FEE = 20
     const val PLATFORM_FEE = 10
 
+    /** Distance-based delivery fee for the kitchen in the cart; Cart/Checkout refresh it. */
+    var deliveryFee by mutableIntStateOf(DELIVERY_FEE)
+
     val total: Int
-        get() = if (items.isEmpty()) 0 else subtotal + DELIVERY_FEE + PLATFORM_FEE
+        get() = if (items.isEmpty()) 0 else subtotal + deliveryFee + PLATFORM_FEE
 }

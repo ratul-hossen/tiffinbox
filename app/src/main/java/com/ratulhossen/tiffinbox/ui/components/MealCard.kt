@@ -88,13 +88,43 @@ fun MealCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.price_tag, meal.price),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.price_tag, meal.price),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    PlatesLeftBadge(meal.availableQuantity)
+                }
             }
         }
+    }
+}
+
+/** Below this many plates the card shows how many are left. */
+const val FEW_PLATES_THRESHOLD = 5
+
+/**
+ * "3 plates left" when today's stock is low (so a customer knows the chef can
+ * feed only a few more people), "Sold out" at 0, nothing when plenty remain.
+ */
+@Composable
+fun PlatesLeftBadge(platesLeft: Int, modifier: Modifier = Modifier) {
+    if (platesLeft > FEW_PLATES_THRESHOLD) return
+    val soldOut = platesLeft <= 0
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = if (soldOut) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.errorContainer,
+        modifier = modifier
+    ) {
+        Text(
+            if (soldOut) stringResource(R.string.meal_badge_sold_out) else stringResource(R.string.meal_badge_plates_left, platesLeft),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = if (soldOut) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
     }
 }

@@ -119,6 +119,20 @@ object FirestoreCouponRepository {
         }
     }
 
+    /** Offers a customer can use at [chefId] right now (its own + platform-wide), best first. */
+    suspend fun getUsableCoupons(chefId: String): List<CouponUi> {
+        return try {
+            val now = System.currentTimeMillis()
+            db.collection("coupons").whereEqualTo("isActive", true).get().await()
+                .documents.map { it.toCoupon() }
+                .filter { (it.chefId.isBlank() || it.chefId == chefId) && it.validFrom <= now && !it.isExpired && !it.isUsedUp }
+                .sortedByDescending { it.value }
+                .take(5)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     suspend fun getChefCoupons(chefId: String): List<CouponUi> {
         return try {
             db.collection("coupons").whereEqualTo("chefId", chefId).get().await()

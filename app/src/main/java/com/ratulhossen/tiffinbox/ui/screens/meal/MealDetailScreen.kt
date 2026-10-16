@@ -40,6 +40,9 @@ import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.DeliveryQuoteLine
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
+import com.ratulhossen.tiffinbox.domain.DeliveryQuote
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
@@ -73,10 +76,16 @@ fun MealDetailScreen(
     val meal = mealState!!
     // Who cooks it and how they're rated - the key thing to know before ordering.
     var chef by remember(meal.chefId) { mutableStateOf<ChefUi?>(null) }
-    LaunchedEffect(meal.chefId) { chef = FirestoreCatalogRepository.getChef(meal.chefId) }
+    var deliveryQuote by remember(meal.chefId) { mutableStateOf<DeliveryQuote?>(null) }
+    LaunchedEffect(meal.chefId) {
+        chef = FirestoreCatalogRepository.getChef(meal.chefId)
+        deliveryQuote = DeliveryQuoter.quote(meal.chefId)
+    }
     // The header/photo runs behind the status bar - keep its icons white.
     LightStatusBarIcons()
     var quantity by remember(mealId) { mutableIntStateOf(1) }
+    // Today's plates cap an order for now; a pre-order (when sold out) is capped at 10.
+    val maxQuantity = if (meal.availableQuantity > 0) meal.availableQuantity else PRE_ORDER_MAX_PLATES
 
     Scaffold(
         // Transparent so the app-wide AnimatedGradientBackground shows through.
@@ -92,9 +101,9 @@ fun MealDetailScreen(
                     QuantityStepper(
                         quantity = quantity,
                         onDecrease = { if (quantity > 1) quantity-- },
-                        onIncrease = { if (quantity < meal.availableQuantity) quantity++ },
+                        onIncrease = { if (quantity < maxQuantity) quantity++ },
                         canDecrease = quantity > 1,
-                        canIncrease = quantity < meal.availableQuantity
+                        canIncrease = quantity < maxQuantity
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     TiffinButton(
@@ -102,16 +111,16 @@ fun MealDetailScreen(
                             CartStore.add(meal, quantity)
                             onAddedToCart()
                         },
-                        enabled = meal.availableQuantity > 0,
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
                     ) {
+                        // Sold out today: it can still be pre-ordered for a later slot.
                         Text(
                             if (meal.availableQuantity > 0) {
                                 stringResource(R.string.meal_add_to_cart_button, meal.price * quantity)
                             } else {
-                                stringResource(R.string.meal_sold_out_today)
+                                stringResource(R.string.meal_preorder_button, meal.price * quantity)
                             }
                         )
                     }
@@ -183,7 +192,7 @@ fun MealDetailScreen(
                 Text(meal.name, style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(6.dp))
                 chef?.let { c ->
-                    ChefByline(chef = c, onClick = { onChefClick(c.id) })
+                    ChefByline(chef = c, delivery = deliveryQuote, onClick = { onChefClick(c.id) })
                     Spacer(modifier = Modifier.height(10.dp))
                 }
                 Text(
@@ -213,7 +222,8 @@ fun MealDetailScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 // Amber normally; red only when stock is really running out.
                 Text(
-                    stringResource(R.string.meal_plates_left, meal.availableQuantity),
+                    if (meal.availableQuantity > 0) stringResource(R.string.meal_plates_left, meal.availableQuantity)
+                    else stringResource(R.string.meal_sold_out_preorder_hint),
                     style = MaterialTheme.typography.labelLarge,
                     color = if (meal.availableQuantity <= 3) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.tertiary
@@ -259,9 +269,9 @@ private fun InfoPillRow(labels: List<String>) {
     }
 }
 
-/** "Cooked by" row: kitchen photo, name and rating (or "New"); opens the kitchen. */
+/** "Cooked by" row: kitchen photo, name, rating (or "New") and delivery quote; opens the kitchen. */
 @Composable
-private fun ChefByline(chef: ChefUi, onClick: () -> Unit) {
+private fun ChefByline(chef: ChefUi, delivery: DeliveryQuote? = null, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
@@ -293,6 +303,7 @@ private fun ChefByline(chef: ChefUi, onClick: () -> Unit) {
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1
                 )
+                delivery?.let { DeliveryQuoteLine(it) }
             }
             if (isNewKitchen(chef)) {
                 NewKitchenBadge()
@@ -317,3 +328,5 @@ private fun ChefByline(chef: ChefUi, onClick: () -> Unit) {
         }
     }
 }
+
+private const val PRE_ORDER_MAX_PLATES = 10

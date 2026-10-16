@@ -103,9 +103,11 @@ export default function OrderDetail({ order, chefName, onClose, onRemove }: Prop
             <div className="font-medium">{formatDateTime(order.placedAt)}</div>
           </div>
           <div className="bg-apple-bg rounded-xl px-3 py-2">
-            <div className="text-xs text-apple-secondary">Estimated delivery</div>
+            <div className="text-xs text-apple-secondary">{order.scheduledFor ? "Pre-order for" : "Estimated delivery"}</div>
             <div className="font-medium">
-              {order.estimatedDeliveryMinutes && order.placedAt
+              {order.scheduledFor
+                ? new Date(order.scheduledFor).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+                : order.estimatedDeliveryMinutes && order.placedAt
                 ? `~${order.estimatedDeliveryMinutes} min (by ${new Date(order.placedAt + order.estimatedDeliveryMinutes * 60000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })})`
                 : "–"}
             </div>
