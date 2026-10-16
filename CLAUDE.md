@@ -150,16 +150,31 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   order. **The actual delivery-partner Android app (job list,
   accept/decline, live location, navigation) does not exist yet** — that's
   the single largest remaining piece of unbuilt work in the whole project.
-  Because of this, selecting **"tiffinbox" delivery mode on
-  `ChefDashboardScreen` no longer actually switches `deliveryMode`** — it
-  shows a "Coming soon" apology dialog instead (apologizes, thanks the
-  chef for their interest, tells them to use an external delivery service
-  for now, says TiffinBox's own system is coming soon) and leaves
-  `deliveryMode` unchanged. The radio option stays visible (so the
-  feature reads as "coming soon," not missing) but can no longer be
-  silently selected while there's no real system behind it. This is the
-  explicit owner decision — don't wire it back to a real toggle until the
-  delivery-partner app (phase 7) actually exists.
+  **Delivery Option + TiffinBox Delivery subscription (2026-10-16, owner
+  decision):** every kitchen is on **Self Delivery by default**. Chef's
+  kitchen settings → **Delivery Option** (`DeliveryOptionScreen`, route
+  `delivery_option`; reached from the dashboard's Delivery summary card
+  "Change" and Edit Profile's kitchen section) shows two cards like the
+  reference design: Self Delivery and "TiffinBox Delivery Service". The
+  latter needs an application (`DeliveryApplicationScreen`, route
+  `delivery_application` → `delivery_applications/{chefUid}`: contact,
+  pickup address, ~orders/day, radius, meal slots, note). admin-web
+  **Delivery Applications** page (tabs Waiting / Active / Ended): **Accept
+  request** with an agreement length (1/3/6/12 months) → app doc
+  `status: "approved"`, `validUntil`; chef doc `deliveryMode: "tiffinbox"`,
+  `deliveryUntil` → customers see the "🛵 TiffinBox Delivery" badge.
+  **Renew** extends from the current end; **Cancel subscription** ends it
+  now; Reject / Back to waiting. While an agreement runs the chef can
+  switch Self ↔ TiffinBox in Delivery Option. **When it ends it falls back
+  to Self automatically:** `FirestoreCatalogRepository.toChefUi()` treats
+  a past `deliveryUntil` as "self" (badge gone instantly for everyone), and
+  the first client to notice (chef app `syncExpiry()` or the admin page)
+  records `status: "expired"`, writes `deliveryMode: "self"` and notifies
+  the chef - no Cloud Functions. Chef can re-apply after rejected /
+  cancelled / expired. Rules: `deliveryUntil` is admin-only
+  (`chefLockedFields`), `chefDeliveryModeAllowed()` requires an approved,
+  unexpired application. The actual delivery operation (partner app,
+  assignment) is still manual / not built - phase 7.
 - admin-web: Dashboard, Chefs, Meals, Users, Orders, Reviews,
   Subscriptions, Activity Log, Chats, Delivery Partners, Admins (with a
   super-admin tier) pages — all built and deployed.
@@ -334,17 +349,12 @@ list), all free-tier:
   ProfileScreen (customer) and a new bell icon on ChefDashboardScreen's
   header (chef). `firestore.rules` documents why writes are deliberately
   cross-user here (no Cloud Function to broker it).
-- **[x] Self Service + Hire Delivery Man (task #67) — DONE.** A
-  `self_service_requests/{id}` Firestore collection
-  (`FirestoreSelfServiceRepository.kt`), `SelfServiceRequestScreen`
-  (pickup/drop address, time, note — reached from a new ProfileScreen
-  menu item) and `HireDeliveryManScreen` (lists `delivery_partners` where
-  `isActive == true`; hiring sets `deliveryPartnerId` +
-  `status: "assigned"`). Since the actual delivery-partner Android app
-  doesn't exist yet (phase 7, still out of scope), admin-web gets a
-  **Self Service** page to see every request and manually assign/reassign
-  a partner via a dropdown, so the feature is end-to-end usable now
-  rather than a write-only stub.
+- **[~] Self Service + Hire Delivery Man (task #67) — REMOVED 2026-10-16**
+  on the owner's instruction: a customer-side point-to-point delivery
+  request made no sense ("eita to chef side e thaker kotha"). Replaced by
+  the chef-side **TiffinBox Delivery application** (see "Delivery
+  applications" below). The old `self_service_requests` collection, screens,
+  repo and admin page are gone.
 
 ### Explicit owner delegation on this task
 
@@ -581,6 +591,19 @@ admin panel a one-click way to wipe all of it later.
   this feature existed (no `isDemo` flag), those aren't matched by this
   button — remove them with ChefsPage's existing per-chef Delete button,
   which already worked before this feature and needed no changes.**
+- **Update (2026-10-16): full demo lifecycle, `admin-web/src/lib/demoData.ts`.**
+  Seed is idempotent and works again after a removal (an existing demo
+  login is signed into and only the missing chef doc + menu are recreated).
+  "Remove all demo data" is now a **permanent cascade** (not Recycle Bin):
+  demo chef docs, their meals, and every order / review / chat (+messages)
+  / coupon / subscription / notification with that `chefId`, their Recycle
+  Bin copies, `users/{uid}`, and finally the demo **Auth account itself**
+  (signed in on `secondaryAuth` → `deleteUser`, free on Spark). So revenue
+  and order stats carry no demo leftovers. Never touches admins,
+  `admin_activity_log` (append-only audit trail) or real chefs/customers.
+  Needed rule additions: admin `delete` on `orders` (also fixes the
+  Cancelled → Recycle Bin move, which had no delete permission), chat
+  `messages`, and `notifications/{uid}/items`.
 - **`admin-web/src/data/demoChefSeed.ts`** — the fixed seed data: 5 unique
   Bangladeshi home-chef personas (Rashida's Rannaghor / Karim Bhai's
   Biryani House / Ayesha's Daily Tiffin / Nasreen's Village Flavors /

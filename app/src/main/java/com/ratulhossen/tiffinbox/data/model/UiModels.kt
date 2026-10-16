@@ -25,7 +25,10 @@ data class ChefUi(
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     /** "self" = the chef delivers their own orders; "tiffinbox" = TiffinBox's own delivery system handles it. */
+    /** Effective mode: "tiffinbox" only while the delivery agreement ([deliveryUntil]) is still running. */
     val deliveryMode: String = "self",
+    /** End of the TiffinBox Delivery agreement (epoch ms), set by admin-web on approval; 0 = none. */
+    val deliveryUntil: Long = 0L,
     /** Compressed kitchen photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
     val photoBase64: String = "",
     /** Each entry: {url, caption, postedAt} - an external link (YouTube/Facebook/Drive), not an uploaded file. */
@@ -49,24 +52,6 @@ data class NotificationUi(
     val id: String,
     val title: String,
     val body: String,
-    val createdAt: Long
-)
-
-data class DeliveryPartnerUi(
-    val id: String,
-    val name: String,
-    val phone: String
-)
-
-/** [status] is "pending" (no partner hired yet) or "assigned". */
-data class SelfServiceRequestUi(
-    val id: String,
-    val pickupAddress: String,
-    val dropAddress: String,
-    val preferredTime: String,
-    val note: String,
-    val status: String,
-    val deliveryPartnerId: String,
     val createdAt: Long
 )
 

@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
-import { addDoc, collection, doc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signOut as signOutSecondary } from "firebase/auth";
-import { db, secondaryAuth } from "../firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, Order, Review } from "../types";
 import { setChefApproval } from "../lib/chefApproval";
 import { logActivity } from "../lib/activityLog";
-import { buildRecycleBinData, recycleBinEntryId, softDelete } from "../lib/recycleBin";
-import { DEMO_CHEFS } from "../data/demoChefSeed";
+import { softDelete } from "../lib/recycleBin";
+import { purgeAllDemoData, seedDemoChefs } from "../lib/demoData";
 import Badge from "./ui/Badge";
 import ChefDetail from "./ChefDetail";
 
@@ -34,89 +33,18 @@ export default function ChefsPage({ search }: Props) {
 
   const demoChefCount = useMemo(() => chefs.filter((c) => c.isDemo).length, [chefs]);
 
-  /**
-   * Creates the 5 fixed demo chefs (and their menus) from demoChefSeed.ts,
-   * each marked isDemo: true. Safe to click more than once - a chef whose
-   * demo email already has an Auth account is skipped rather than
-   * duplicated. Every write goes through secondaryAuth exactly like
-   * DeliveryPartnersPage's account creation, since firestore.rules only
-   * allows `create` on chefs/{uid} to the signed-in uid itself.
-   */
-  async function seedDemoChefs() {
+  /** Idempotent - fills in whichever of the 5 demo chefs are missing. */
+  async function handleSeedDemoChefs() {
     setSeeding(true);
     setDemoMessage(null);
-    let created = 0;
-    let skipped = 0;
     try {
-      for (const demoChef of DEMO_CHEFS) {
-        try {
-          const credential = await createUserWithEmailAndPassword(
-            secondaryAuth,
-            demoChef.email,
-            demoChef.password,
-          );
-          const uid = credential.user.uid;
-          await setDoc(doc(db, "chefs", uid), {
-            userId: uid,
-            ownerName: demoChef.ownerName,
-            kitchenName: demoChef.kitchenName,
-            kitchenType: demoChef.kitchenType,
-            yearsOfExperience: demoChef.yearsOfExperience,
-            emoji: demoChef.emoji,
-            photoBase64: demoChef.photoBase64,
-            bio: demoChef.bio,
-            specialty: demoChef.specialty,
-            whatsappNumber: demoChef.whatsappNumber,
-            bkashNumber: demoChef.bkashNumber,
-            nagadNumber: demoChef.nagadNumber,
-            latitude: demoChef.latitude,
-            longitude: demoChef.longitude,
-            distanceKm: 1.0,
-            overallRating: demoChef.overallRating,
-            taste: demoChef.taste,
-            hygiene: demoChef.hygiene,
-            packaging: demoChef.packaging,
-            onTime: demoChef.onTime,
-            totalOrders: demoChef.totalOrders,
-            // Demo chefs don't need the real approval workflow - they're
-            // clearly labeled as demo instead (see isDemo below).
-            isVerified: true,
-            isAvailableToday: true,
-            deliveryMode: "self",
-            isDemo: true,
-          });
-          for (const meal of demoChef.meals) {
-            await addDoc(collection(db, "meals"), {
-              chefId: uid,
-              name: meal.name,
-              emoji: meal.emoji,
-              description: meal.description,
-              price: meal.price,
-              category: meal.category,
-              isVeg: meal.isVeg,
-              dietaryTags: meal.dietaryTags,
-              allergens: meal.allergens,
-              availableQuantity: meal.availableQuantity,
-              portionSize: meal.portionSize,
-              isAvailable: true,
-              isDemo: true,
-            });
-          }
-          await signOutSecondary(secondaryAuth);
-          created += 1;
-        } catch (err) {
-          if (err instanceof Error && err.message.includes("auth/email-already-in-use")) {
-            skipped += 1;
-            continue;
-          }
-          throw err;
-        }
-      }
-      await logActivity("Seeded demo chefs", "chefs", "(bulk)", { created, skipped });
+      const { created, skipped, failed } = await seedDemoChefs();
+      await logActivity("Seeded demo chefs", "chefs", "(bulk)", { created, skipped, failed: failed.length });
       setDemoMessage(
-        skipped > 0
-          ? `Created ${created} demo chef(s), skipped ${skipped} already seeded.`
-          : `Created ${created} demo chef(s).`,
+        `Created ${created} demo chef(s)` +
+          (skipped > 0 ? `, ${skipped} already there` : "") +
+          (failed.length > 0 ? `. Failed: ${failed.join(", ")}` : "") +
+          ".",
       );
     } catch (err) {
       setDemoMessage(err instanceof Error ? `Failed: ${err.message}` : "Failed to seed demo chefs.");
@@ -125,16 +53,13 @@ export default function ChefsPage({ search }: Props) {
     }
   }
 
-  /** One-click removal of every chef/meal created by seedDemoChefs(). */
-  async function removeAllDemoChefs() {
-    const demoChefs = chefs.filter((c) => c.isDemo);
-    if (demoChefs.length === 0) {
-      setDemoMessage("No demo chefs to remove.");
-      return;
-    }
+  /** Full cascade removal of every demo chef and everything tied to them (see lib/demoData.ts). */
+  async function handleRemoveDemoData() {
     if (
       !confirm(
-        `Remove all ${demoChefs.length} demo chefs and their menus? They'll move to the Recycle Bin, not disappear forever.`,
+        "Permanently remove ALL demo data?\n\nDemo chefs, their menus, and every order, review, chat, coupon, " +
+          "subscription and notification linked to them (plus their login accounts) will be deleted for good - " +
+          "not moved to the Recycle Bin. Real chefs and customers aren't touched. You can seed the demo chefs again any time.",
       )
     ) {
       return;
@@ -142,30 +67,15 @@ export default function ChefsPage({ search }: Props) {
     setRemovingDemo(true);
     setDemoMessage(null);
     try {
-      const demoMeals = meals.filter((m) => m.isDemo);
-      const batch = writeBatch(db);
-      demoChefs.forEach((c) => {
-        batch.set(
-          doc(db, "recycle_bin", recycleBinEntryId("chefs", c.id)),
-          buildRecycleBinData("chefs", c.id, c, c.kitchenName ?? c.ownerName ?? c.id),
-        );
-        batch.delete(doc(db, "chefs", c.id));
-      });
-      demoMeals.forEach((m) => {
-        batch.set(
-          doc(db, "recycle_bin", recycleBinEntryId("meals", m.id)),
-          buildRecycleBinData("meals", m.id, m, m.name ?? m.id),
-        );
-        batch.delete(doc(db, "meals", m.id));
-      });
-      await batch.commit();
-      await logActivity("Removed all demo chefs", "chefs", "(bulk)", {
-        chefCount: demoChefs.length,
-        mealCount: demoMeals.length,
-      });
-      setDemoMessage(`Removed ${demoChefs.length} demo chef(s) and ${demoMeals.length} demo meal(s).`);
+      const c = await purgeAllDemoData();
+      await logActivity("Removed all demo data", "chefs", "(bulk)", { ...c });
+      setDemoMessage(
+        `Removed ${c.chefs} demo chef(s), ${c.meals} meal(s), ${c.orders} order(s), ${c.reviews} review(s), ` +
+          `${c.chats} chat(s) / ${c.messages} message(s), ${c.coupons} coupon(s), ${c.subscriptions} subscription(s), ` +
+          `${c.notifications} notification(s), ${c.recycleBin} Recycle Bin item(s) and ${c.accounts} login account(s).`,
+      );
     } catch (err) {
-      setDemoMessage(err instanceof Error ? `Failed: ${err.message}` : "Failed to remove demo chefs.");
+      setDemoMessage(err instanceof Error ? `Failed: ${err.message}` : "Failed to remove demo data.");
     } finally {
       setRemovingDemo(false);
     }
@@ -254,18 +164,18 @@ export default function ChefsPage({ search }: Props) {
         <p className="text-sm text-apple-secondary">{filtered.length} chefs</p>
         <div className="flex items-center gap-2">
           <button
-            onClick={seedDemoChefs}
+            onClick={handleSeedDemoChefs}
             disabled={seeding}
             className="text-xs bg-apple-blue hover:bg-apple-blue-dark disabled:opacity-60 text-white rounded-xl px-3 py-2 font-medium transition-colors duration-150"
           >
             {seeding ? "Seeding…" : "🌱 Seed 5 demo chefs"}
           </button>
           <button
-            onClick={removeAllDemoChefs}
-            disabled={removingDemo || demoChefCount === 0}
+            onClick={handleRemoveDemoData}
+            disabled={removingDemo}
             className="text-xs bg-apple-red hover:brightness-95 disabled:opacity-40 text-white rounded-xl px-3 py-2 font-medium transition-colors duration-150"
           >
-            {removingDemo ? "Removing…" : `🗑️ Remove all demo chefs (${demoChefCount})`}
+            {removingDemo ? "Removing…" : `🗑️ Remove all demo data (${demoChefCount} chefs)`}
           </button>
         </div>
       </div>
@@ -376,7 +286,7 @@ export default function ChefsPage({ search }: Props) {
                   >
                     {chef.isAvailableToday ? "Available today" : "Unavailable"}
                   </Badge>
-                  {chef.deliveryMode === "tiffinbox" && (
+                  {chef.deliveryMode === "tiffinbox" && (chef.deliveryUntil ?? 0) > Date.now() && (
                     <Badge tone="blue">🛵 TiffinBox Delivery</Badge>
                   )}
                 </div>

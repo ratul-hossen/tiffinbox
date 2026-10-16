@@ -310,24 +310,6 @@
     <string name="profile_menu_notifications">Notifications</string>
     <string name="notifications_title">নোটিফিকেশন</string>
     <string name="notifications_empty">এখনো কোনো নোটিফিকেশন নেই</string>
-    <string name="profile_menu_self_service">সেলফ সার্ভিস ডেলিভারি</string>
-
-    <!-- SelfServiceRequestScreen -->
-    <string name="self_service_title">সেলফ সার্ভিস</string>
-    <string name="self_service_subtitle">একটি পয়েন্ট-টু-পয়েন্ট ডেলিভারি রিকোয়েস্ট করুন (যেমন: বাসা থেকে অফিস)।</string>
-    <string name="self_service_pickup_label">পিকআপ ঠিকানা</string>
-    <string name="self_service_drop_label">ড্রপ ঠিকানা</string>
-    <string name="self_service_time_label">পছন্দের সময় (ঐচ্ছিক)</string>
-    <string name="self_service_note_label">নোট (ঐচ্ছিক)</string>
-    <string name="self_service_fields_required">পিকআপ এবং ড্রপ ঠিকানা দিন</string>
-    <string name="self_service_submit_button">রিকোয়েস্ট পাঠান</string>
-
-    <!-- HireDeliveryManScreen -->
-    <string name="hire_delivery_man_title">ডেলিভারি ম্যান বেছে নিন</string>
-    <string name="hire_delivery_man_subtitle">নিচের তালিকা থেকে একজন ডেলিভারি পার্টনার বেছে নিন</string>
-    <string name="hire_delivery_man_empty">এই মুহূর্তে কোনো ডেলিভারি পার্টনার সক্রিয় নেই</string>
-    <string name="hire_delivery_man_hire_button">নিয়োগ দিন</string>
-    <string name="hire_delivery_man_hired">নিয়োগ দেওয়া হয়েছে: %1$s</string>
     <string name="profile_menu_settings">Settings</string>
     <string name="profile_demo_user_name">Rafi Ahmed</string>
     <string name="profile_demo_phone">+880 1XXXXXXXXX</string>
@@ -431,12 +413,7 @@
     <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
     <string name="chef_dashboard_view_screenshot_button">পেমেন্ট স্ক্রিনশট দেখুন</string>
     <string name="chef_dashboard_screenshot_load_failed">স্ক্রিনশট লোড করা যায়নি</string>
-    <string name="chef_dashboard_delivery_mode_title">ডেলিভারি কে করবে?</string>
-    <string name="chef_dashboard_delivery_mode_self">আমি নিজে ডেলিভারি করব</string>
-    <string name="chef_dashboard_delivery_mode_tiffinbox">TiffinBox-এর ডেলিভারি সার্ভিস ব্যবহার করব</string>
-    <string name="chef_dashboard_delivery_coming_soon_title">শীঘ্রই আসছে</string>
-    <string name="chef_dashboard_delivery_coming_soon_message">দুঃখিত, আমরা এখনো নিজস্ব ডেলিভারি সিস্টেম চালু করিনি। আপাতত আপনি বাইরের কোনো ডেলিভারি সার্ভিস ব্যবহার করতে পারেন। আগ্রহ দেখানোর জন্য ধন্যবাদ — আমরা শীঘ্রই ডেলিভারি সিস্টেম চালু করব।</string>
-    <string name="chef_dashboard_delivery_coming_soon_ok">ঠিক আছে</string>
+    <string name="chef_dashboard_delivery_mode_title">ডেলিভারি</string>
     <string name="chef_dashboard_kitchen_photo_title">কিচেনের ছবি</string>
     <string name="chef_dashboard_kitchen_photo_button">ছবি আপলোড করুন</string>
     <string name="chef_dashboard_videos_title">ভিডিও পোস্ট করুন</string>
@@ -496,4 +473,46 @@
 
     <!-- StarRatingInput -->
     <string name="star_rating_content_description">%1$d star</string>
+
+    <!-- DeliveryApplicationScreen (chef side) -->
+    <string name="delivery_app_title">TiffinBox ডেলিভারি আবেদন</string>
+    <string name="delivery_app_banner">অর্ডার আপনার, ডেলিভারি আমাদের</string>
+    <string name="delivery_app_intro">TiffinBox-এর নিজস্ব ডেলিভারি সার্ভিস শীঘ্রই আসছে। চালু হলে অর্ডার এলে আপনি শুধু খাবার রেডি করবেন, আমাদের ডেলিভারি পার্টনার এসে নিয়ে যাবে। এখনই আবেদন করে রাখুন — চালু হওয়ার আগে আমরা WhatsApp বা ইমেইলে আপনার সাথে যোগাযোগ করব। আবেদন করতে কোনো চার্জ লাগবে না।</string>
+    <string name="delivery_app_contact_label">যোগাযোগের নম্বর (WhatsApp)</string>
+    <string name="delivery_app_pickup_label">পিকআপ ঠিকানা (কিচেনের ঠিকানা)</string>
+    <string name="delivery_app_daily_orders_label">দিনে আনুমানিক অর্ডার</string>
+    <string name="delivery_app_radius_label">ডেলিভারি দূরত্ব (কিমি)</string>
+    <string name="delivery_app_slots_label">কোন বেলায় ডেলিভারি লাগবে</string>
+    <string name="delivery_app_slot_breakfast">সকাল</string>
+    <string name="delivery_app_slot_lunch">দুপুর</string>
+    <string name="delivery_app_slot_dinner">রাত</string>
+    <string name="delivery_app_note_label">আর কিছু জানাতে চাইলে (ঐচ্ছিক)</string>
+    <string name="delivery_app_submit">আবেদন জমা দিন</string>
+    <string name="delivery_app_update">আবেদন আপডেট করুন</string>
+    <string name="delivery_app_withdraw">আবেদন তুলে নিন</string>
+    <string name="delivery_app_withdrawn">আবেদন তুলে নেওয়া হয়েছে</string>
+    <string name="delivery_app_submitted">আবেদন জমা হয়েছে! আমরা শীঘ্রই যোগাযোগ করব।</string>
+    <string name="delivery_app_failed">জমা দেওয়া যায়নি, ইন্টারনেট চেক করে আবার চেষ্টা করুন</string>
+    <string name="delivery_app_required">যোগাযোগের নম্বর আর পিকআপ ঠিকানা দিন</string>
+    <string name="delivery_app_slots_required">অন্তত একটি বেলা বেছে নিন</string>
+    <string name="delivery_app_status_label">আবেদনের অবস্থা: %1$s</string>
+    <string name="delivery_app_status_pending">রিভিউ চলছে</string>
+    <string name="delivery_app_status_approved">অনুমোদিত — চুক্তি চালু আছে</string>
+    <string name="delivery_app_status_rejected">এবার অনুমোদন হয়নি</string>
+    <string name="delivery_app_admin_note">TiffinBox-এর বার্তা: %1$s</string>
+    <string name="delivery_option_title">ডেলিভারি অপশন</string>
+    <string name="delivery_option_self_title">নিজে ডেলিভারি</string>
+    <string name="delivery_option_self_desc">আপনি নিজেই ক্রেতার কাছে খাবার পৌঁছে দেবেন।</string>
+    <string name="delivery_option_service_title">TiffinBox ডেলিভারি সার্ভিস</string>
+    <string name="delivery_option_service_desc">অর্ডার এলে আপনি শুধু খাবার রেডি করবেন, TiffinBox-এর ডেলিভারি ম্যান পৌঁছে দেবে। গ্রাহকরা আপনার কিচেনে 🛵 TiffinBox Delivery ব্যাজ দেখবে।</string>
+    <string name="delivery_option_request">ডেলিভারি সার্ভিসের জন্য আবেদন করুন</string>
+    <string name="delivery_option_select">এটি বেছে নিন</string>
+    <string name="delivery_option_view_application">আবেদন দেখুন</string>
+    <string name="delivery_option_status_pending">আবেদন রিভিউ চলছে</string>
+    <string name="delivery_option_until">চুক্তি চলবে %1$s পর্যন্ত</string>
+    <string name="delivery_option_change">পরিবর্তন</string>
+    <string name="delivery_option_footer">ডিফল্টভাবে নিজে ডেলিভারি চালু থাকে। ডেলিভারি সার্ভিসের চুক্তি শেষ হলে বা বাতিল হলে আপনার কিচেন নিজে থেকেই আবার \"নিজে ডেলিভারি\"-তে চলে যাবে আর ব্যাজটি সরে যাবে।</string>
+    <string name="delivery_app_status_cancelled">চুক্তি বাতিল করা হয়েছে</string>
+    <string name="delivery_app_status_expired">চুক্তির মেয়াদ শেষ</string>
+    <string name="delivery_app_reapply">আবার আবেদন করুন</string>
 </resources>

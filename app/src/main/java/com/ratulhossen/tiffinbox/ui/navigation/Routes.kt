@@ -36,8 +36,8 @@ object Routes {
     const val TERMS = "terms"
     const val PRIVACY_POLICY = "privacy_policy"
     const val NOTIFICATIONS = "notifications"
-    const val SELF_SERVICE_REQUEST = "self_service_request"
-    const val HIRE_DELIVERY_MAN = "hire_delivery_man/{requestId}"
+    const val DELIVERY_OPTION = "delivery_option"
+    const val DELIVERY_APPLICATION = "delivery_application"
 
     fun login(role: String) = "login/$role"
     fun completeGoogleProfile(uid: String, role: String) = "complete_google_profile/$uid/$role"
@@ -52,7 +52,6 @@ object Routes {
     fun chefChat(customerId: String, chefId: String) = "chef_chat/$customerId/$chefId"
     fun subscribe(chefId: String) = "subscribe/$chefId"
     fun chefList(sort: String) = "chef_list/$sort"
-    fun hireDeliveryMan(requestId: String) = "hire_delivery_man/$requestId"
 }
 
 object BottomTab {

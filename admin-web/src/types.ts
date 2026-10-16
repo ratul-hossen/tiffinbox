@@ -24,6 +24,8 @@ export interface Chef {
   latitude?: number;
   longitude?: number;
   deliveryMode?: "self" | "tiffinbox" | string;
+  /** End of the TiffinBox Delivery agreement (epoch ms); past it the chef counts as self-delivery. */
+  deliveryUntil?: number;
   photoBase64?: string;
   kitchenType?: string;
   yearsOfExperience?: number;
@@ -218,20 +220,31 @@ export interface DeliveryPartner {
   createdAt?: number | FirestoreTimestampLike | null;
 }
 
-// self_service_requests/{id} - a customer-initiated point-to-point delivery
-// request, independent of ordering from a chef (see
-// FirestoreSelfServiceRepository.kt). No delivery-partner app exists yet to
-// act on these, so this is visible/manageable here in the interim.
-export interface SelfServiceRequest {
+// delivery_applications/{chefUid} - a chef's application to use TiffinBox's
+// own delivery service once it launches (see
+// FirestoreDeliveryApplicationRepository.kt). Reviewed on the Delivery
+// Applications page; the delivery system itself isn't built yet.
+export type DeliveryApplicationStatus = "pending" | "approved" | "rejected" | "cancelled" | "expired";
+export interface DeliveryApplication {
   id: string;
-  customerId?: string;
+  chefId?: string;
+  kitchenName?: string;
+  ownerName?: string;
+  contactNumber?: string;
   pickupAddress?: string;
-  dropAddress?: string;
-  preferredTime?: string;
+  latitude?: number;
+  longitude?: number;
+  expectedDailyOrders?: number;
+  deliveryRadiusKm?: number;
+  mealSlots?: string[];
   note?: string;
-  status?: "pending" | "assigned" | string;
-  deliveryPartnerId?: string;
+  status?: DeliveryApplicationStatus;
+  adminNote?: string;
+  /** End of the delivery agreement (epoch ms), set on approval / renewal. */
+  validUntil?: number;
+  approvedAt?: number;
   createdAt?: number | FirestoreTimestampLike | null;
+  updatedAt?: number | null;
 }
 
 // recycle_bin/{collection}__{id} - a soft-deleted doc's full data snapshot,

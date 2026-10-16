@@ -45,7 +45,6 @@ fun MainScreen(
     onSeeAllChefsClick: (String) -> Unit,
     onPaymentMethodsClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    onSelfServiceClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
     onLogout: () -> Unit
 ) {
@@ -145,7 +144,6 @@ fun MainScreen(
                     onSettingsClick = onSettingsClick,
                     onPaymentMethodClick = onPaymentMethodsClick,
                     onNotificationsClick = onNotificationsClick,
-                    onSelfServiceClick = onSelfServiceClick,
                     onEditProfileClick = onEditProfileClick,
                     onMyOrdersClick = { selectedTab = 2 },
                     onFavoritesClick = { selectedTab = 3 }
