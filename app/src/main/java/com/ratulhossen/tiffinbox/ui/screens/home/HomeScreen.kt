@@ -223,6 +223,7 @@ fun HomeScreen(
                     painter = painterResource(R.drawable.hero_food),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    alignment = Alignment.CenterEnd,
                     modifier = Modifier.fillMaxSize()
                 )
                 Box(
@@ -230,7 +231,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .background(
                             Brush.horizontalGradient(
-                                listOf(Color.Black.copy(alpha = 0.72f), Color.Black.copy(alpha = 0.05f))
+                                listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
                             )
                         )
                 )
