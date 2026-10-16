@@ -21,6 +21,8 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
 import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
 import com.ratulhossen.tiffinbox.data.model.label
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +36,11 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.my_subscriptions_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

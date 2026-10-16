@@ -28,6 +28,8 @@ import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,8 +58,11 @@ fun MealDetailScreen(
     var quantity by remember(mealId) { mutableIntStateOf(1) }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.meal_detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

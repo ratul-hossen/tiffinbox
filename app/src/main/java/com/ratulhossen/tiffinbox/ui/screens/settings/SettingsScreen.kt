@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.ui.theme.ThemePalette
 import com.ratulhossen.tiffinbox.ui.theme.ThemePreferences
+import androidx.compose.material3.TopAppBarDefaults
 
 private data class SettingsMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit)
 
@@ -89,8 +90,11 @@ fun SettingsScreen(
     )
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

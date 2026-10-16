@@ -29,6 +29,7 @@ import com.ratulhossen.tiffinbox.ui.screens.home.HomeScreen
 import com.ratulhossen.tiffinbox.ui.screens.orders.OrdersScreen
 import com.ratulhossen.tiffinbox.ui.screens.profile.ProfileScreen
 import com.ratulhossen.tiffinbox.ui.screens.search.SearchScreen
+import androidx.compose.material3.TopAppBarDefaults
 
 private data class Tab(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
@@ -58,8 +59,11 @@ fun MainScreen(
     )
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onChatClick) {

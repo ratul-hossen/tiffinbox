@@ -32,6 +32,8 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 private enum class PaymentMethod(val available: Boolean) {
     CASH_ON_DELIVERY(available = true),
@@ -90,8 +92,11 @@ fun CheckoutScreen(
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.checkout_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

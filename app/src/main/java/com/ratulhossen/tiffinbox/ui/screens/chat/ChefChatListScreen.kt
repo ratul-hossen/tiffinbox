@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.ChatThreadUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChatRepository
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,8 +40,11 @@ fun ChefChatListScreen(
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.messages_label)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -116,8 +121,11 @@ fun CustomerChatListScreen(
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.messages_label)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

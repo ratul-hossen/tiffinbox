@@ -22,6 +22,8 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreSelfServiceRepository
 import com.ratulhossen.tiffinbox.data.model.DeliveryPartnerUi
 import com.ratulhossen.tiffinbox.data.model.SelfServiceRequestUi
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,8 +40,11 @@ fun HireDeliveryManScreen(requestId: String, onBack: () -> Unit) {
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.hire_delivery_man_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

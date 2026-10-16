@@ -18,6 +18,8 @@ import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,8 +30,11 @@ fun CartScreen(
     val items = CartStore.items
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.cart_top_bar_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

@@ -25,6 +25,8 @@ import com.ratulhossen.tiffinbox.data.model.NotificationUi
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,8 +41,11 @@ fun NotificationsScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.notifications_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

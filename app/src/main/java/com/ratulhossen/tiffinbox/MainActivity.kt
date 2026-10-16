@@ -24,6 +24,7 @@ import com.ratulhossen.tiffinbox.domain.ml.MlSearchIntentModel
 import com.ratulhossen.tiffinbox.notifications.ensureNotificationChannel
 import com.ratulhossen.tiffinbox.ui.navigation.TiffinNavGraph
 import com.ratulhossen.tiffinbox.ui.theme.ThemePreferences
+import com.ratulhossen.tiffinbox.ui.components.AnimatedGradientBackground
 import com.ratulhossen.tiffinbox.ui.theme.TiffinBoxTheme
 import com.ratulhossen.tiffinbox.util.rememberIsOnline
 
@@ -51,7 +52,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TiffinBoxApp() {
     TiffinBoxTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
+        // Drifting brand-colored gradient behind every screen that doesn't
+        // paint its own opaque background (see AnimatedGradientBackground).
+        AnimatedGradientBackground {
             Column {
                 val isOnline = rememberIsOnline()
                 AnimatedVisibility(visible = !isOnline) {

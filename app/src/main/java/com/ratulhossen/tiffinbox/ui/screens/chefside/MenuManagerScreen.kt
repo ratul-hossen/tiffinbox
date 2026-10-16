@@ -35,6 +35,8 @@ import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 private data class ManagedMeal(val meal: MealUi, val isAvailable: Boolean)
 
@@ -52,8 +54,11 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.menu_manager_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
