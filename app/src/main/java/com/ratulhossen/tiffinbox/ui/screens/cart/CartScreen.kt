@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
@@ -89,7 +90,13 @@ fun CartScreen(
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(cartItem.meal.emoji, fontSize = 28.sp)
+                            // The meal's real photo (same as on its card), emoji if it has none.
+                            Base64Thumbnail(
+                                base64 = cartItem.meal.photoBase64,
+                                emoji = cartItem.meal.emoji,
+                                modifier = Modifier.size(56.dp),
+                                emojiFontSize = 26.sp
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(cartItem.meal.name, style = MaterialTheme.typography.titleMedium)

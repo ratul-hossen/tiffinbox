@@ -22,6 +22,15 @@ without Firebase Storage, Cloud Functions, or Google Maps Platform**
 unless the owner explicitly says otherwise in a given conversation. See
 "Known billing constraint" below for the established workarounds.
 
+## How to talk to the owner (important, don't skip)
+
+- **In the Claude app / web chat:** reply in **Bengali script (বাংলা)**,
+  keeping technical English terms in English (PR, commit, build, Firestore,
+  Menu Manager, etc.).
+- **In the terminal (Claude Code CLI):** reply in **plain English only**.
+- **Never write Banglish** (Bengali words in Latin letters, e.g. "ami
+  korchi") anywhere.
+
 ## Git workflow (important, don't skip)
 
 - Develop on `claude/great-cray-r5ziwz`, push there.
@@ -503,6 +512,8 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   saved (`isAvailable`, customers no longer see switched-off meals),
   `addMeal()` now returns the real doc id (the list used a fake id before).
   Photos stay optional; meals without one get a "📷 add a photo" nudge.
+- Cart rows also show the meal photo (`Base64Thumbnail`, emoji fallback) -
+  every meal/chef image spot now goes through the same component.
 - **Chef dashboard**: kitchen photo becomes the banner; large 16:9 preview;
   "Available today" switch is now saved; a "Set up your kitchen" checklist
   (kitchen photo, menu, meal photos, today's special, video) - suggestions
@@ -620,6 +631,14 @@ empty-state illustrations). Shared helpers in
 `CirclePhoto`, `PhotoEmptyState`. To swap an image, replace the file with
 the same name. Two images show real people the owner knows (onboarding_1,
 chef_pending) - owner was reminded to get their OK before public release.
+
+## Role Selection redesign (2026-10-16)
+
+`ui/screens/roleselect/RoleSelectionScreen.kt`, design only (owner: no new
+text, no language changes): brand logo tile + "TiffinBox" fills the old empty
+top; photo cards get a ring/tick selection badge, a brand-gradient border when
+chosen, and the other card dims. Motion: one staggered entrance only. Texts
+and the `role_customer` photo unchanged.
 
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
