@@ -621,6 +621,16 @@ empty-state illustrations). Shared helpers in
 the same name. Two images show real people the owner knows (onboarding_1,
 chef_pending) - owner was reminded to get their OK before public release.
 
+## Role Selection redesign (2026-10-16)
+
+`ui/screens/roleselect/RoleSelectionScreen.kt`: brand header (🍱 tile +
+TiffinBox + tagline) fills the old empty top; photo cards get an
+"Order food"/"Sell food" chip, a ring/tick selection badge, a brand-gradient
+border when chosen and the other card dims; a perks panel below explains the
+chosen role (crossfade); the bottom button reads "Continue as Customer / Home
+Chef" ("Pick an option" while disabled). Motion: one staggered entrance only.
+`role_customer` photo unchanged.
+
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
 Owner's explicit ask (paraphrased from Bengali): real AI integration, not an
