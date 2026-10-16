@@ -89,11 +89,19 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   favorites, subscriptions (weekly/monthly plans), chef dashboard with
   real earnings/forecast charts (Vico), chef menu manager.
 - Firebase Auth (email/password + Google Sign-In via Credential Manager),
-  email verification (fire-and-forget on signup), **real SMS OTP phone
-  verification** (Firebase Phone Auth) mandatory right after signup for
-  both roles and both signup paths (email/password AND Google).
-- WhatsApp number mandatory at signup for both roles; bKash number
-  mandatory for chefs only. Collected via `CompleteGoogleProfileScreen`
+  email verification (fire-and-forget on signup). **No SMS OTP** - it was
+  built once (Firebase Phone Auth) but removed 2026-10-16 on the owner's
+  explicit instruction: Phone Auth SMS needs the paid Blaze plan (Spark
+  can only use Console "test numbers"), which violates the free-only rule.
+  Don't re-add it unless the owner explicitly opts into Blaze.
+- Signup contact rules (both signup paths, shared validator
+  `ui/screens/auth/SignupContactValidation.kt`): phone number + WhatsApp
+  number mandatory for both roles (BD-format checked, stored as
+  `phoneNumber`/`whatsappNumber` on `users/{uid}` and, for chefs,
+  `chefs/{uid}`); chefs must also give **at least one of bKash or Nagad**.
+  Numbers aren't SMS-verified - chefs are still gated by admin approval,
+  and admin-web shows these numbers on Chefs cards / Users table so the
+  admin can check them before approving. Collected via `CompleteGoogleProfileScreen`
   for Google sign-ups (mirrors the email/password signup form fields).
 - **Mandatory location setup** right after signup for both roles
   (`LocationSetupScreen`): GPS auto-detect or manual address →
@@ -238,7 +246,7 @@ literally.
    dropdown e.g. Home Kitchen/Cloud Kitchen/Restaurant, new
    `yearsOfExperience`, WhatsApp number) → **Step 3 Confirm** (bKash
    number required, Nagad number optional) → submit goes through the
-   existing phone-verification → location-setup chain unchanged (not
+   existing location-setup step (the OTP step was removed later, 2026-10-16) unchanged (not
    duplicating `LocationSetupScreen`; the reference's in-stepper map step
    is *this app's* separate mandatory LocationSetupScreen right after, not
    a 4th stepper step — same outcome, reuses existing code). New fields
@@ -641,8 +649,8 @@ either restores it or permanently deletes it.
 - `app/src/main/java/com/ratulhossen/tiffinbox/data/location/LocationRepository.kt`
   — GPS + Geocoder.
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/screens/auth/LoginScreen.kt`,
-  `CompleteGoogleProfileScreen.kt`, `PhoneVerificationScreen.kt`,
-  `LocationSetupScreen.kt` — the full signup chain, both paths.
+  `CompleteGoogleProfileScreen.kt`, `LocationSetupScreen.kt` — the full
+  signup chain, both paths (signup → location setup, no OTP step).
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/screens/chefside/ChefDashboardScreen.kt`
   — approval gate, delivery-mode toggle, bKash screenshot viewer.
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/screens/profile/ProfileScreen.kt`

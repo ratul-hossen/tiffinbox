@@ -30,12 +30,17 @@
     <string name="login_email_password_required">ইমেইল ও পাসওয়ার্ড দিন</string>
     <string name="login_kitchen_name_label">কিচেনের নাম</string>
     <string name="login_kitchen_name_required">আপনার কিচেনের একটা নাম দিন</string>
+    <string name="login_phone_number_label">ফোন নম্বর</string>
+    <string name="login_phone_number_required">ফোন নম্বর দিন</string>
+    <string name="login_phone_number_invalid">সঠিক বাংলাদেশি ফোন নম্বর দিন (যেমন: 01XXXXXXXXX)</string>
     <string name="login_whatsapp_number_label">WhatsApp নম্বর</string>
     <string name="login_whatsapp_number_required">WhatsApp নম্বর দিন</string>
     <string name="login_whatsapp_number_invalid">সঠিক বাংলাদেশি নম্বর দিন (যেমন: 01XXXXXXXXX)</string>
     <string name="login_bkash_number_label">bKash নম্বর</string>
-    <string name="login_bkash_number_required">bKash নম্বর দিন (পেমেন্ট গ্রহণের জন্য)</string>
-    <string name="login_nagad_number_label">Nagad নম্বর (ঐচ্ছিক)</string>
+    <string name="login_bkash_number_required">bKash অথবা Nagad নম্বর দিন (পেমেন্ট গ্রহণের জন্য, অন্তত একটা আবশ্যক)</string>
+    <string name="login_payment_number_invalid">সঠিক bKash/Nagad নম্বর দিন (যেমন: 01XXXXXXXXX)</string>
+    <string name="login_payment_number_hint">bKash অথবা Nagad — অন্তত একটা নম্বর দিন</string>
+    <string name="login_nagad_number_label">Nagad নম্বর</string>
     <string name="login_kitchen_type_label">কিচেনের ধরন</string>
     <string name="login_years_experience_label">অভিজ্ঞতা (বছর)</string>
     <string name="kitchen_type_home">Home Kitchen</string>
@@ -56,14 +61,6 @@
     <string name="login_google_signin_cancelled">Google সাইন-ইন বাতিল করা হয়েছে</string>
     <string name="login_toggle_to_signup">নতুন? Sign Up করুন</string>
 
-    <!-- PhoneVerificationScreen -->
-    <string name="phone_verification_title">ফোন নম্বর ভেরিফাই করুন</string>
-    <string name="phone_verification_subtitle">%1$s নম্বরে একটা OTP কোড পাঠানো হয়েছে</string>
-    <string name="phone_verification_code_label">৬ সংখ্যার কোড</string>
-    <string name="phone_verification_code_required">৬ সংখ্যার পুরো কোড দিন</string>
-    <string name="phone_verification_verify_button">ভেরিফাই করুন</string>
-    <string name="phone_verification_resend_button">আবার কোড পাঠান</string>
-    <string name="phone_verification_send_failed">কোড পাঠানো যায়নি, আবার চেষ্টা করুন</string>
     <string name="login_toggle_to_login">আগে থেকে Account আছে? Login করুন</string>
 
     <!-- LocationSetupScreen -->

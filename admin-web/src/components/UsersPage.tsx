@@ -64,6 +64,8 @@ export default function UsersPage({ search }: Props) {
             <tr className="text-left text-xs text-apple-secondary border-b border-apple-border">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Phone</th>
+              <th className="px-4 py-3">WhatsApp</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3">UID</th>
@@ -75,6 +77,8 @@ export default function UsersPage({ search }: Props) {
               <tr key={u.id} className="border-b border-apple-border last:border-0">
                 <td className="px-4 py-3">{u.name ?? "–"}</td>
                 <td className="px-4 py-3 text-apple-secondary">{u.email ?? "–"}</td>
+                <td className="px-4 py-3 text-apple-secondary">{u.phoneNumber || "–"}</td>
+                <td className="px-4 py-3 text-apple-secondary">{u.whatsappNumber || "–"}</td>
                 <td className="px-4 py-3">
                   <span className="text-xs bg-apple-hover rounded-full px-2 py-0.5">
                     {u.role ?? "unknown"}
