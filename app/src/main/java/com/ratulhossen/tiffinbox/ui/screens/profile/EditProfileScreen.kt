@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeliveryDining
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -48,7 +49,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditProfileScreen(
     onBack: () -> Unit,
-    onChangeLocation: (role: String) -> Unit
+    onChangeLocation: (role: String) -> Unit,
+    onOpenDeliveryOption: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -222,6 +224,12 @@ fun EditProfileScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(onClick = onOpenDeliveryOption, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.DeliveryDining, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.delivery_option_title))
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))

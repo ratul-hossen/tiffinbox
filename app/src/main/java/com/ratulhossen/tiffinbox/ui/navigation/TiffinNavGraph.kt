@@ -28,6 +28,7 @@ import com.ratulhossen.tiffinbox.ui.screens.chef.ChefDetailScreen
 import com.ratulhossen.tiffinbox.ui.screens.checkout.CheckoutScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefDashboardScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.DeliveryApplicationScreen
+import com.ratulhossen.tiffinbox.ui.screens.chefside.DeliveryOptionScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
 import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefListScreen
 import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
@@ -298,7 +299,14 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                 onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
                 onOpenCoupons = { navController.navigate(Routes.CHEF_COUPONS) },
-                onApplyForDelivery = { navController.navigate(Routes.DELIVERY_APPLICATION) }
+                onOpenDeliveryOption = { navController.navigate(Routes.DELIVERY_OPTION) }
+            )
+        }
+
+        composable(Routes.DELIVERY_OPTION) {
+            DeliveryOptionScreen(
+                onBack = { navController.popBackStack() },
+                onOpenApplication = { navController.navigate(Routes.DELIVERY_APPLICATION) }
             )
         }
 
@@ -319,7 +327,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onChangeLocation = { role ->
                     val uid = FirebaseAuthRepository.currentUser?.uid.orEmpty()
                     navController.navigate(Routes.locationEdit(uid, role))
-                }
+                },
+                onOpenDeliveryOption = { navController.navigate(Routes.DELIVERY_OPTION) }
             )
         }
 

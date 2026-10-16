@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { addDoc, collection, doc, setDoc, updateDoc } from "firebase/firestore";
-import { CheckCircle2, Mail, MapPin, MessageCircle, RotateCcw, XCircle } from "lucide-react";
+import { Ban, CalendarPlus, CheckCircle2, Mail, MapPin, MessageCircle, RotateCcw, XCircle } from "lucide-react";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import { logActivity } from "../lib/activityLog";
-import { formatDateTime } from "../lib/format";
+import { formatDate, formatDateTime } from "../lib/format";
 import type { AppUser, Chef, DeliveryApplication, DeliveryApplicationStatus } from "../types";
 import Badge from "./ui/Badge";
 
@@ -12,13 +12,15 @@ interface Props {
   search: string;
 }
 
-const FILTERS: { key: DeliveryApplicationStatus; label: string }[] = [
+type Filter = "pending" | "active" | "ended";
+
+const FILTERS: { key: Filter; label: string }[] = [
   { key: "pending", label: "Waiting for review" },
-  { key: "approved", label: "Approved" },
-  { key: "rejected", label: "Rejected" },
+  { key: "active", label: "Active subscriptions" },
+  { key: "ended", label: "Ended / rejected" },
 ];
 
-const SLOT_LABELS: Record<string, string> = { Breakfast: "Breakfast", Lunch: "Lunch", Dinner: "Dinner" };
+const DURATIONS = [1, 3, 6, 12];
 
 function whatsappLink(number?: string) {
   const digits = (number ?? "").replace(/\D/g, "");
@@ -32,34 +34,93 @@ function gmailLink(email: string, kitchenName?: string) {
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${subject}`;
 }
 
+function addMonths(from: number, months: number): number {
+  const d = new Date(from);
+  d.setMonth(d.getMonth() + months);
+  return d.getTime();
+}
+
+/** Stored status, with an approved-but-past-validUntil agreement read as "expired". */
+function effectiveStatus(a: DeliveryApplication): DeliveryApplicationStatus {
+  const status = a.status ?? "pending";
+  return status === "approved" && (a.validUntil ?? 0) < Date.now() ? "expired" : status;
+}
+
+function filterOf(status: DeliveryApplicationStatus): Filter {
+  if (status === "pending") return "pending";
+  return status === "approved" ? "active" : "ended";
+}
+
+const STATUS_BADGE: Record<DeliveryApplicationStatus, { tone: "green" | "red" | "blue" | "amber" | "neutral"; label: string }> = {
+  pending: { tone: "blue", label: "New" },
+  approved: { tone: "green", label: "Active" },
+  rejected: { tone: "red", label: "Rejected" },
+  cancelled: { tone: "red", label: "Cancelled" },
+  expired: { tone: "neutral", label: "Expired" },
+};
+
 /**
- * Chefs who applied (from the app's chef dashboard) to use TiffinBox's own
- * delivery service. Approving switches that chef's deliveryMode to
- * "tiffinbox", which shows customers the "TiffinBox Delivery" badge on the
- * chef's card/profile; rejecting or moving back to waiting switches it back
- * to "self". The actual delivery operation is handled manually for now
- * (contact the chef over WhatsApp / Gmail) until the delivery-partner app
- * is built.
+ * TiffinBox Delivery subscriptions. A chef applies from the app (Delivery
+ * Option); approving starts an agreement for N months - the chef's
+ * deliveryMode becomes "tiffinbox" and customers see the TiffinBox Delivery
+ * badge. Renew extends it; Cancel subscription ends it now. When the period
+ * runs out the kitchen goes back to self-delivery automatically (the app
+ * already treats a past `deliveryUntil` as self; this page / the chef's app
+ * also record it as "expired" the first time they see it - no Cloud
+ * Functions needed). The delivery operation itself is still manual for now.
  */
 export default function DeliveryApplicationsPage({ search }: Props) {
   const { data: applications, loading, error } = useCollection<DeliveryApplication>("delivery_applications");
   const { data: chefs } = useCollection<Chef>("chefs");
   const { data: users } = useCollection<AppUser>("users");
-  const [filter, setFilter] = useState<DeliveryApplicationStatus>("pending");
+  const [filter, setFilter] = useState<Filter>("pending");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [months, setMonths] = useState<Record<string, number>>({});
+  const expiring = useRef(new Set<string>());
 
-  const statusOf = (a: DeliveryApplication): DeliveryApplicationStatus => a.status ?? "pending";
+  const chefIdOf = (a: DeliveryApplication) => a.chefId ?? a.id;
+  const monthsOf = (id: string) => months[id] ?? 1;
+
+  async function notifyChef(chefId: string, title: string, body: string) {
+    await addDoc(collection(db, "notifications", chefId, "items"), { title, body, createdAt: Date.now() });
+  }
+
+  async function setChefDelivery(chefId: string, mode: "self" | "tiffinbox", until: number) {
+    if (!chefs.some((c) => c.id === chefId)) return; // chef deleted - nothing to switch
+    await setDoc(doc(db, "chefs", chefId), { deliveryMode: mode, deliveryUntil: until }, { merge: true });
+  }
+
+  // Record agreements whose time ran out (once per page session per doc).
+  useEffect(() => {
+    applications
+      .filter((a) => a.status === "approved" && (a.validUntil ?? 0) < Date.now() && !expiring.current.has(a.id))
+      .forEach(async (a) => {
+        expiring.current.add(a.id);
+        try {
+          await updateDoc(doc(db, "delivery_applications", a.id), { status: "expired", expiredAt: Date.now() });
+          await setChefDelivery(chefIdOf(a), "self", 0);
+          await notifyChef(
+            chefIdOf(a),
+            "TiffinBox Delivery agreement ended",
+            "Your kitchen is back on self-delivery. Apply again any time from Delivery Option.",
+          );
+        } catch {
+          expiring.current.delete(a.id);
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applications, chefs]);
 
   const counts = useMemo(() => {
-    const c: Record<DeliveryApplicationStatus, number> = { pending: 0, approved: 0, rejected: 0 };
-    applications.forEach((a) => (c[statusOf(a)] += 1));
+    const c: Record<Filter, number> = { pending: 0, active: 0, ended: 0 };
+    applications.forEach((a) => (c[filterOf(effectiveStatus(a))] += 1));
     return c;
   }, [applications]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return applications
-      .filter((a) => statusOf(a) === filter)
+      .filter((a) => filterOf(effectiveStatus(a)) === filter)
       .filter((a) =>
         !q
           ? true
@@ -70,42 +131,79 @@ export default function DeliveryApplicationsPage({ search }: Props) {
       .sort((x, y) => Number(y.updatedAt ?? 0) - Number(x.updatedAt ?? 0));
   }, [applications, filter, search]);
 
-  async function decide(app: DeliveryApplication, status: DeliveryApplicationStatus) {
-    const chefId = app.chefId ?? app.id;
-    let adminNote = app.adminNote ?? "";
-    if (status !== "pending") {
-      const answer = prompt(
-        status === "approved"
-          ? "Optional message for the chef (shown in their app):"
-          : "Reason / message for the chef (optional, shown in their app):",
-        adminNote,
-      );
-      if (answer === null) return; // cancelled
-      adminNote = answer.trim();
-    }
+  async function run(app: DeliveryApplication, action: () => Promise<void>) {
     setBusyId(app.id);
     try {
-      await updateDoc(doc(db, "delivery_applications", app.id), { status, adminNote, reviewedAt: Date.now() });
-      // Only an approved application may use TiffinBox delivery (and show the badge).
-      if (chefs.some((c) => c.id === chefId)) {
-        await setDoc(doc(db, "chefs", chefId), { deliveryMode: status === "approved" ? "tiffinbox" : "self" }, { merge: true });
-      }
-      if (status !== "pending") {
-        await addDoc(collection(db, "notifications", chefId, "items"), {
-          title: status === "approved" ? "TiffinBox Delivery approved 🛵" : "TiffinBox Delivery application update",
-          body:
-            (status === "approved"
-              ? "Your kitchen now shows the TiffinBox Delivery badge to customers."
-              : "Your TiffinBox Delivery application was not approved this time.") + (adminNote ? ` ${adminNote}` : ""),
-          createdAt: Date.now(),
-        });
-      }
-      await logActivity(`Delivery application ${status}`, "delivery_applications", app.id, { adminNote });
+      await action();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update application.");
+      alert(err instanceof Error ? err.message : "Failed to update.");
     } finally {
       setBusyId(null);
     }
+  }
+
+  /** Approve a new request, or renew an active one (extends from its current end date). */
+  function approveOrRenew(app: DeliveryApplication) {
+    const m = monthsOf(app.id);
+    const renewing = effectiveStatus(app) === "approved";
+    const from = renewing ? Math.max(Date.now(), app.validUntil ?? 0) : Date.now();
+    const validUntil = addMonths(from, m);
+    const message = prompt(
+      `${renewing ? "Renew" : "Approve"} for ${m} month(s), until ${formatDate(validUntil)}.\n\nOptional message for the chef:`,
+      "",
+    );
+    if (message === null) return;
+    return run(app, async () => {
+      await updateDoc(doc(db, "delivery_applications", app.id), {
+        status: "approved",
+        validUntil,
+        approvedAt: Date.now(),
+        adminNote: message.trim(),
+      });
+      await setChefDelivery(chefIdOf(app), "tiffinbox", validUntil);
+      await notifyChef(
+        chefIdOf(app),
+        renewing ? "TiffinBox Delivery renewed 🛵" : "TiffinBox Delivery approved 🛵",
+        `Your agreement runs until ${formatDate(validUntil)}. Customers now see the TiffinBox Delivery badge.` +
+          (message.trim() ? ` ${message.trim()}` : ""),
+      );
+      await logActivity(renewing ? "Renewed delivery subscription" : "Approved delivery application", "delivery_applications", app.id, {
+        months: m,
+        validUntil,
+      });
+    });
+  }
+
+  function endWith(app: DeliveryApplication, status: "rejected" | "cancelled" | "pending") {
+    let note = app.adminNote ?? "";
+    if (status !== "pending") {
+      const answer = prompt(
+        status === "cancelled"
+          ? `Cancel ${app.kitchenName ?? "this kitchen"}'s delivery subscription now? It switches back to self-delivery and the badge disappears.\n\nReason / message for the chef (optional):`
+          : "Reason / message for the chef (optional):",
+        "",
+      );
+      if (answer === null) return;
+      note = answer.trim();
+    }
+    return run(app, async () => {
+      await updateDoc(doc(db, "delivery_applications", app.id), {
+        status,
+        adminNote: note,
+        ...(status === "cancelled" ? { cancelledAt: Date.now(), validUntil: Date.now() } : {}),
+      });
+      await setChefDelivery(chefIdOf(app), "self", 0);
+      if (status !== "pending") {
+        await notifyChef(
+          chefIdOf(app),
+          status === "cancelled" ? "TiffinBox Delivery subscription cancelled" : "TiffinBox Delivery application update",
+          (status === "cancelled"
+            ? "Your kitchen is back on self-delivery."
+            : "Your TiffinBox Delivery application was not approved this time.") + (note ? ` ${note}` : ""),
+        );
+      }
+      await logActivity(`Delivery application ${status}`, "delivery_applications", app.id, { adminNote: note });
+    });
   }
 
   if (loading) return <p className="text-sm text-apple-secondary">Loading applications…</p>;
@@ -137,12 +235,14 @@ export default function DeliveryApplicationsPage({ search }: Props) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {visible.map((app) => {
-          const chefId = app.chefId ?? app.id;
+          const chefId = chefIdOf(app);
           const chef = chefs.find((c) => c.id === chefId);
           const email = users.find((u) => u.id === chefId)?.email;
           const busy = busyId === app.id;
-          const status = statusOf(app);
+          const status = effectiveStatus(app);
+          const badge = STATUS_BADGE[status];
           const hasLocation = !!app.latitude && !!app.longitude;
+          const daysLeft = status === "approved" ? Math.ceil(((app.validUntil ?? 0) - Date.now()) / 86_400_000) : 0;
           return (
             <div key={app.id} className="bg-apple-surface rounded-2xl border border-apple-border shadow-card overflow-hidden">
               <div className="flex gap-4 p-5">
@@ -156,19 +256,19 @@ export default function DeliveryApplicationsPage({ search }: Props) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="font-semibold text-apple-text truncate">{app.kitchenName || chef?.kitchenName || "(no kitchen name)"}</div>
+                      <div className="font-semibold text-apple-text truncate">
+                        {app.kitchenName || chef?.kitchenName || "(no kitchen name)"}
+                      </div>
                       <div className="text-sm text-apple-secondary truncate">{app.ownerName || chef?.ownerName || "—"}</div>
                     </div>
-                    <Badge tone={status === "approved" ? "green" : status === "rejected" ? "red" : "blue"}>
-                      {status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "New"}
-                    </Badge>
+                    <Badge tone={badge.tone}>{badge.label}</Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <Badge tone="neutral">~{app.expectedDailyOrders ?? 0} orders/day</Badge>
                     <Badge tone="neutral">{app.deliveryRadiusKm ?? 0} km radius</Badge>
                     {(app.mealSlots ?? []).map((s) => (
                       <Badge key={s} tone="neutral">
-                        {SLOT_LABELS[s] ?? s}
+                        {s}
                       </Badge>
                     ))}
                     {chef?.isDemo && <Badge tone="amber">Demo chef</Badge>}
@@ -177,6 +277,12 @@ export default function DeliveryApplicationsPage({ search }: Props) {
               </div>
 
               <div className="px-5 pb-4 space-y-1.5 text-xs text-apple-secondary">
+                {status === "approved" && (
+                  <div className="text-apple-green font-medium">
+                    Agreement until {formatDate(app.validUntil)} · {daysLeft} day(s) left · chef is{" "}
+                    {chef?.deliveryMode === "tiffinbox" ? "using TiffinBox delivery" : "currently on self-delivery"}
+                  </div>
+                )}
                 <div>
                   Contact: <span className="text-apple-text">{app.contactNumber || "—"}</span>
                 </div>
@@ -207,7 +313,7 @@ export default function DeliveryApplicationsPage({ search }: Props) {
                 <div>Applied: {formatDateTime(app.createdAt)}</div>
               </div>
 
-              <div className="px-5 pb-4 flex flex-wrap gap-2">
+              <div className="px-5 pb-4 flex flex-wrap items-center gap-2">
                 {whatsappLink(app.contactNumber) && (
                   <a
                     href={whatsappLink(app.contactNumber)}
@@ -229,35 +335,71 @@ export default function DeliveryApplicationsPage({ search }: Props) {
                     <Mail size={13} /> Gmail · {email}
                   </a>
                 )}
+                {status !== "rejected" && (
+                  <label className="ml-auto inline-flex items-center gap-1.5 text-xs text-apple-secondary">
+                    Agreement
+                    <select
+                      value={monthsOf(app.id)}
+                      onChange={(e) => setMonths((prev) => ({ ...prev, [app.id]: Number(e.target.value) }))}
+                      className="bg-apple-subtle border border-apple-border rounded-lg px-2 py-1 text-apple-text"
+                    >
+                      {DURATIONS.map((m) => (
+                        <option key={m} value={m}>
+                          {m} month{m > 1 ? "s" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
 
-              <div className="flex border-t border-apple-border text-sm font-medium">
-                {status !== "approved" && (
-                  <button
-                    disabled={busy}
-                    onClick={() => decide(app, "approved")}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-green hover:bg-apple-green/10 disabled:opacity-40"
-                  >
-                    <CheckCircle2 size={16} /> Approve
-                  </button>
-                )}
-                {status !== "pending" && (
-                  <button
-                    disabled={busy}
-                    onClick={() => decide(app, "pending")}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-secondary hover:bg-apple-hover border-l border-apple-border first:border-l-0 disabled:opacity-40"
-                  >
-                    <RotateCcw size={16} /> Back to waiting
-                  </button>
-                )}
-                {status !== "rejected" && (
-                  <button
-                    disabled={busy}
-                    onClick={() => decide(app, "rejected")}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-red hover:bg-apple-red/10 border-l border-apple-border first:border-l-0 disabled:opacity-40"
-                  >
-                    <XCircle size={16} /> Reject
-                  </button>
+              <div className="flex border-t border-apple-border text-sm font-medium [&>button+button]:border-l [&>button+button]:border-apple-border">
+                {status === "approved" ? (
+                  <>
+                    <button
+                      disabled={busy}
+                      onClick={() => approveOrRenew(app)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-green hover:bg-apple-green/10 disabled:opacity-40"
+                    >
+                      <CalendarPlus size={16} /> Renew
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => endWith(app, "cancelled")}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-red hover:bg-apple-red/10 disabled:opacity-40"
+                    >
+                      <Ban size={16} /> Cancel subscription
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {status !== "rejected" && (
+                      <button
+                        disabled={busy}
+                        onClick={() => approveOrRenew(app)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-green hover:bg-apple-green/10 disabled:opacity-40"
+                      >
+                        <CheckCircle2 size={16} /> {status === "pending" ? "Accept request" : "Re-activate"}
+                      </button>
+                    )}
+                    {status === "pending" ? (
+                      <button
+                        disabled={busy}
+                        onClick={() => endWith(app, "rejected")}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-red hover:bg-apple-red/10 disabled:opacity-40"
+                      >
+                        <XCircle size={16} /> Reject
+                      </button>
+                    ) : (
+                      <button
+                        disabled={busy}
+                        onClick={() => endWith(app, "pending")}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 text-apple-secondary hover:bg-apple-hover disabled:opacity-40"
+                      >
+                        <RotateCcw size={16} /> Back to waiting
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

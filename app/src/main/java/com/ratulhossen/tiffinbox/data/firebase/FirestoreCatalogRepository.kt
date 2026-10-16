@@ -106,7 +106,13 @@ object FirestoreCatalogRepository {
             nagadNumber = getString("nagadNumber") ?: "",
             latitude = getDouble("latitude") ?: 0.0,
             longitude = getDouble("longitude") ?: 0.0,
-            deliveryMode = getString("deliveryMode") ?: "self",
+            // An ended agreement counts as self-delivery right away (badge
+            // gone) even before any client has written the switch back.
+            deliveryMode = (getString("deliveryMode") ?: "self").let { mode ->
+                val until = getLong("deliveryUntil") ?: 0L
+                if (mode == "tiffinbox" && until < System.currentTimeMillis()) "self" else mode
+            },
+            deliveryUntil = getLong("deliveryUntil") ?: 0L,
             photoBase64 = getString("photoBase64") ?: "",
             videos = videos,
             kitchenType = getString("kitchenType") ?: "",

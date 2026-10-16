@@ -77,7 +77,7 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
         longitude = chef?.longitude ?: 0.0
         contactNumber = profile?.whatsappNumber?.ifBlank { null } ?: profile?.phoneNumber.orEmpty()
         pickupAddress = profile?.address.orEmpty()
-        FirestoreDeliveryApplicationRepository.getMyApplication(uid)?.let { app ->
+        FirestoreDeliveryApplicationRepository.syncExpiry(uid)?.let { app ->
             existing = app
             contactNumber = app.contactNumber
             pickupAddress = app.pickupAddress
@@ -89,7 +89,9 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
         loading = false
     }
 
-    val canEdit = existing == null || existing?.status == "pending"
+    // Editable unless an agreement is currently running; after a rejection /
+    // cancellation / expiry the chef can re-apply with the same form.
+    val canEdit = existing?.isActive != true
 
     fun submit() {
         message = null
@@ -183,6 +185,8 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
                 val (statusRes, tone) = when (app.status) {
                     "approved" -> R.string.delivery_app_status_approved to MaterialTheme.colorScheme.primaryContainer
                     "rejected" -> R.string.delivery_app_status_rejected to MaterialTheme.colorScheme.errorContainer
+                    "cancelled" -> R.string.delivery_app_status_cancelled to MaterialTheme.colorScheme.errorContainer
+                    "expired" -> R.string.delivery_app_status_expired to MaterialTheme.colorScheme.surfaceVariant
                     else -> R.string.delivery_app_status_pending to MaterialTheme.colorScheme.secondaryContainer
                 }
                 Surface(shape = MaterialTheme.shapes.large, color = tone, modifier = Modifier.fillMaxWidth()) {
@@ -191,6 +195,12 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
                             stringResource(R.string.delivery_app_status_label, stringResource(statusRes)),
                             fontWeight = FontWeight.SemiBold
                         )
+                        if (app.isActive && app.validUntil > 0) {
+                            Text(
+                                stringResource(R.string.delivery_option_until, formatDeliveryDate(app.validUntil)),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                         if (app.adminNote.isNotBlank()) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -301,12 +311,16 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
                     } else {
                         Text(
                             stringResource(
-                                if (existing == null) R.string.delivery_app_submit else R.string.delivery_app_update
+                                when (existing?.status) {
+                                    null -> R.string.delivery_app_submit
+                                    "pending" -> R.string.delivery_app_update
+                                    else -> R.string.delivery_app_reapply
+                                }
                             )
                         )
                     }
                 }
-                if (existing != null) {
+                if (existing?.status == "pending") {
                     TextButton(
                         onClick = {
                             busy = true
@@ -329,3 +343,7 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
         }
     }
 }
+
+/** e.g. "16 Nov 2026" - shared by the delivery screens. */
+internal fun formatDeliveryDate(millis: Long): String =
+    java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(millis))

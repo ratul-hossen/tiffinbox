@@ -36,6 +36,7 @@ object Routes {
     const val TERMS = "terms"
     const val PRIVACY_POLICY = "privacy_policy"
     const val NOTIFICATIONS = "notifications"
+    const val DELIVERY_OPTION = "delivery_option"
     const val DELIVERY_APPLICATION = "delivery_application"
 
     fun login(role: String) = "login/$role"

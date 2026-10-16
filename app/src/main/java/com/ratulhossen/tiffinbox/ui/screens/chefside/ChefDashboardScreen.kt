@@ -65,7 +65,7 @@ fun ChefDashboardScreen(
     onOpenNotifications: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onOpenCoupons: () -> Unit = {},
-    onApplyForDelivery: () -> Unit = {}
+    onOpenDeliveryOption: () -> Unit = {}
 ) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
@@ -75,14 +75,12 @@ fun ChefDashboardScreen(
     var isApproved by remember { mutableStateOf<Boolean?>(null) }
     var isRejected by remember { mutableStateOf(false) }
     var deliveryMode by remember { mutableStateOf("self") }
-    // Status of this chef's TiffinBox Delivery application (null = never applied).
-    var deliveryApplicationStatus by remember { mutableStateOf<String?>(null) }
+    var deliveryUntil by remember { mutableStateOf(0L) }
     var kitchenPhotoBase64 by remember { mutableStateOf("") }
     var isUploadingPhoto by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf<List<ChefVideoUi>>(emptyList()) }
     var videoUrl by remember { mutableStateOf("") }
     var videoCaption by remember { mutableStateOf("") }
-    var showDeliveryComingSoonDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -105,8 +103,11 @@ fun ChefDashboardScreen(
     LaunchedEffect(chefId) {
         val chef = FirestoreCatalogRepository.getChef(chefId)
         kitchenName = chef?.kitchenName
-        deliveryMode = chef?.deliveryMode ?: "self"
-        deliveryApplicationStatus = FirestoreDeliveryApplicationRepository.getMyApplication(chefId)?.status
+        // Ends an expired delivery agreement first, so the summary below is current.
+        FirestoreDeliveryApplicationRepository.syncExpiry(chefId)
+        val freshChef = FirestoreCatalogRepository.getChef(chefId)
+        deliveryMode = freshChef?.deliveryMode ?: "self"
+        deliveryUntil = freshChef?.deliveryUntil ?: 0L
         kitchenPhotoBase64 = chef?.photoBase64 ?: ""
         videos = chef?.videos ?: emptyList()
         isApproved = chef?.isVerified ?: false
@@ -294,52 +295,23 @@ fun ChefDashboardScreen(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.chef_dashboard_delivery_mode_title), style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = deliveryMode == "self",
-                        onClick = {
-                            deliveryMode = "self"
-                            FirestoreChefRepository.updateDeliveryMode(chefId, "self")
-                        }
-                    )
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.chef_dashboard_delivery_mode_title), style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        stringResource(R.string.chef_dashboard_delivery_mode_self),
-                        style = MaterialTheme.typography.bodyMedium
+                        if (deliveryMode == "tiffinbox") {
+                            stringResource(R.string.delivery_option_service_title) + " · " +
+                                stringResource(R.string.delivery_option_until, formatDeliveryDate(deliveryUntil))
+                        } else {
+                            stringResource(R.string.delivery_option_self_title)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = deliveryMode == "tiffinbox",
-                        // Only a chef whose TiffinBox Delivery application the
-                        // admin approved can switch to it (firestore.rules
-                        // enforces the same); everyone else gets the
-                        // coming-soon dialog with an "Apply now" button.
-                        onClick = {
-                            if (deliveryApplicationStatus == "approved") {
-                                deliveryMode = "tiffinbox"
-                                FirestoreChefRepository.updateDeliveryMode(chefId, "tiffinbox")
-                            } else {
-                                showDeliveryComingSoonDialog = true
-                            }
-                        }
-                    )
-                    Text(
-                        stringResource(R.string.chef_dashboard_delivery_mode_tiffinbox),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                if (deliveryApplicationStatus != "approved") {
-                    TextButton(onClick = onApplyForDelivery) {
-                        Text(
-                            stringResource(
-                                if (deliveryApplicationStatus == null) R.string.chef_dashboard_delivery_apply_link
-                                else R.string.chef_dashboard_delivery_view_application
-                            )
-                        )
-                    }
+                TextButton(onClick = onOpenDeliveryOption) {
+                    Text(stringResource(R.string.delivery_option_change))
                 }
             }
         }
@@ -569,27 +541,6 @@ fun ChefDashboardScreen(
                 }
             }
         }
-    }
-
-    if (showDeliveryComingSoonDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeliveryComingSoonDialog = false },
-            title = { Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_title)) },
-            text = { Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeliveryComingSoonDialog = false
-                    onApplyForDelivery()
-                }) {
-                    Text(stringResource(R.string.chef_dashboard_delivery_apply_now))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeliveryComingSoonDialog = false }) {
-                    Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_ok))
-                }
-            }
-        )
     }
 }
 

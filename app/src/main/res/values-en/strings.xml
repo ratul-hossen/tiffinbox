@@ -411,12 +411,7 @@
     <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
     <string name="chef_dashboard_view_screenshot_button">View payment screenshot</string>
     <string name="chef_dashboard_screenshot_load_failed">Couldn\'t load screenshot</string>
-    <string name="chef_dashboard_delivery_mode_title">Who handles delivery?</string>
-    <string name="chef_dashboard_delivery_mode_self">I\'ll deliver it myself</string>
-    <string name="chef_dashboard_delivery_mode_tiffinbox">Use TiffinBox\'s delivery service</string>
-    <string name="chef_dashboard_delivery_coming_soon_title">Coming soon</string>
-    <string name="chef_dashboard_delivery_coming_soon_message">Sorry, we don\'t have our own delivery system yet. For now, please use an external delivery service. You can apply now and we\'ll contact you when it launches.</string>
-    <string name="chef_dashboard_delivery_coming_soon_ok">OK</string>
+    <string name="chef_dashboard_delivery_mode_title">Delivery</string>
     <string name="chef_dashboard_kitchen_photo_title">Kitchen photo</string>
     <string name="chef_dashboard_kitchen_photo_button">Upload photo</string>
     <string name="chef_dashboard_videos_title">Post a video</string>
@@ -478,9 +473,6 @@
     <string name="star_rating_content_description">%1$d star</string>
 
     <!-- DeliveryApplicationScreen (chef side) -->
-    <string name="chef_dashboard_delivery_apply_link">Apply for TiffinBox Delivery →</string>
-    <string name="chef_dashboard_delivery_view_application">View your delivery application →</string>
-    <string name="chef_dashboard_delivery_apply_now">Apply now</string>
     <string name="delivery_app_title">TiffinBox Delivery Application</string>
     <string name="delivery_app_banner">You cook, we deliver</string>
     <string name="delivery_app_intro">TiffinBox\'s own delivery service is coming soon. Once it launches, you just prepare the food when an order comes in and our delivery partner picks it up. Apply now — we\'ll contact you on WhatsApp or email before launch. Applying is free.</string>
@@ -503,7 +495,22 @@
     <string name="delivery_app_slots_required">Pick at least one meal time</string>
     <string name="delivery_app_status_label">Application status: %1$s</string>
     <string name="delivery_app_status_pending">Under review</string>
-    <string name="delivery_app_status_approved">Approved — we\'ll let you know when the service launches</string>
+    <string name="delivery_app_status_approved">Approved — agreement active</string>
     <string name="delivery_app_status_rejected">Not approved this time</string>
     <string name="delivery_app_admin_note">Message from TiffinBox: %1$s</string>
+    <string name="delivery_option_title">Delivery Option</string>
+    <string name="delivery_option_self_title">Self Delivery</string>
+    <string name="delivery_option_self_desc">You will deliver the food yourself to the buyer.</string>
+    <string name="delivery_option_service_title">TiffinBox Delivery Service</string>
+    <string name="delivery_option_service_desc">You just prepare the food; a TiffinBox delivery man delivers it. Customers see a 🛵 TiffinBox Delivery badge on your kitchen.</string>
+    <string name="delivery_option_request">Apply for Delivery Service</string>
+    <string name="delivery_option_select">Select</string>
+    <string name="delivery_option_view_application">View application</string>
+    <string name="delivery_option_status_pending">Application under review</string>
+    <string name="delivery_option_until">Agreement valid until %1$s</string>
+    <string name="delivery_option_change">Change</string>
+    <string name="delivery_option_footer">Self Delivery is on by default. When a delivery agreement ends or is cancelled, your kitchen switches back to Self Delivery automatically and the badge is removed.</string>
+    <string name="delivery_app_status_cancelled">Agreement cancelled</string>
+    <string name="delivery_app_status_expired">Agreement ended</string>
+    <string name="delivery_app_reapply">Apply again</string>
 </resources>

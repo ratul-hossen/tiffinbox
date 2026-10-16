@@ -24,6 +24,8 @@ export interface Chef {
   latitude?: number;
   longitude?: number;
   deliveryMode?: "self" | "tiffinbox" | string;
+  /** End of the TiffinBox Delivery agreement (epoch ms); past it the chef counts as self-delivery. */
+  deliveryUntil?: number;
   photoBase64?: string;
   kitchenType?: string;
   yearsOfExperience?: number;
@@ -222,7 +224,7 @@ export interface DeliveryPartner {
 // own delivery service once it launches (see
 // FirestoreDeliveryApplicationRepository.kt). Reviewed on the Delivery
 // Applications page; the delivery system itself isn't built yet.
-export type DeliveryApplicationStatus = "pending" | "approved" | "rejected";
+export type DeliveryApplicationStatus = "pending" | "approved" | "rejected" | "cancelled" | "expired";
 export interface DeliveryApplication {
   id: string;
   chefId?: string;
@@ -238,6 +240,9 @@ export interface DeliveryApplication {
   note?: string;
   status?: DeliveryApplicationStatus;
   adminNote?: string;
+  /** End of the delivery agreement (epoch ms), set on approval / renewal. */
+  validUntil?: number;
+  approvedAt?: number;
   createdAt?: number | FirestoreTimestampLike | null;
   updatedAt?: number | null;
 }

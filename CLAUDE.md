@@ -150,25 +150,31 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   order. **The actual delivery-partner Android app (job list,
   accept/decline, live location, navigation) does not exist yet** — that's
   the single largest remaining piece of unbuilt work in the whole project.
-  **Delivery applications (2026-10-16, owner decision):** a chef keeps
-  doing their own delivery ("self") OR applies for TiffinBox's delivery
-  subscription. Chef dashboard → "Apply for TiffinBox Delivery" (also the
-  "Apply now" button in the coming-soon dialog shown when tapping the
-  TiffinBox radio) → `DeliveryApplicationScreen` (route
-  `delivery_application`; contact number, pickup address, ~orders/day,
-  radius km, Breakfast/Lunch/Dinner slots, note) →
-  `delivery_applications/{chefUid}` (status pending/approved/rejected,
-  `adminNote`; chef may edit/withdraw only while pending). admin-web
-  **Delivery Applications** page (Operations group) approves/rejects, with
-  WhatsApp/Gmail contact buttons and an optional message to the chef.
-  **Approve sets the chef's `deliveryMode` to "tiffinbox"**, which shows
-  customers the existing "🛵 TiffinBox Delivery" badge (ChefCard /
-  ChefDetail); reject / back-to-waiting resets it to "self". After
-  approval the chef can switch between self and TiffinBox themselves;
-  `firestore.rules` `chefDeliveryModeAllowed()` blocks switching to
-  "tiffinbox" without an approved application. The actual delivery
-  operation (partner app, assignment) is still not built - handled
-  manually for now; build it as phase 7.
+  **Delivery Option + TiffinBox Delivery subscription (2026-10-16, owner
+  decision):** every kitchen is on **Self Delivery by default**. Chef's
+  kitchen settings → **Delivery Option** (`DeliveryOptionScreen`, route
+  `delivery_option`; reached from the dashboard's Delivery summary card
+  "Change" and Edit Profile's kitchen section) shows two cards like the
+  reference design: Self Delivery and "TiffinBox Delivery Service". The
+  latter needs an application (`DeliveryApplicationScreen`, route
+  `delivery_application` → `delivery_applications/{chefUid}`: contact,
+  pickup address, ~orders/day, radius, meal slots, note). admin-web
+  **Delivery Applications** page (tabs Waiting / Active / Ended): **Accept
+  request** with an agreement length (1/3/6/12 months) → app doc
+  `status: "approved"`, `validUntil`; chef doc `deliveryMode: "tiffinbox"`,
+  `deliveryUntil` → customers see the "🛵 TiffinBox Delivery" badge.
+  **Renew** extends from the current end; **Cancel subscription** ends it
+  now; Reject / Back to waiting. While an agreement runs the chef can
+  switch Self ↔ TiffinBox in Delivery Option. **When it ends it falls back
+  to Self automatically:** `FirestoreCatalogRepository.toChefUi()` treats
+  a past `deliveryUntil` as "self" (badge gone instantly for everyone), and
+  the first client to notice (chef app `syncExpiry()` or the admin page)
+  records `status: "expired"`, writes `deliveryMode: "self"` and notifies
+  the chef - no Cloud Functions. Chef can re-apply after rejected /
+  cancelled / expired. Rules: `deliveryUntil` is admin-only
+  (`chefLockedFields`), `chefDeliveryModeAllowed()` requires an approved,
+  unexpired application. The actual delivery operation (partner app,
+  assignment) is still manual / not built - phase 7.
 - admin-web: Dashboard, Chefs, Meals, Users, Orders, Reviews,
   Subscriptions, Activity Log, Chats, Delivery Partners, Admins (with a
   super-admin tier) pages — all built and deployed.

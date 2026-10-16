@@ -286,7 +286,7 @@ export default function ChefsPage({ search }: Props) {
                   >
                     {chef.isAvailableToday ? "Available today" : "Unavailable"}
                   </Badge>
-                  {chef.deliveryMode === "tiffinbox" && (
+                  {chef.deliveryMode === "tiffinbox" && (chef.deliveryUntil ?? 0) > Date.now() && (
                     <Badge tone="blue">🛵 TiffinBox Delivery</Badge>
                   )}
                 </div>
