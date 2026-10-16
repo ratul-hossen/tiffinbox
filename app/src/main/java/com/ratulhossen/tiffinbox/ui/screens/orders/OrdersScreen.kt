@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.orders
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.background
@@ -49,6 +50,15 @@ fun OrdersScreen() {
         val firestoreOrders = FirestoreOrderRepository.getMyOrders()
         orders = firestoreOrders
         isLoading = false
+    }
+    // Ticks once a second while any order is still inside its 5-minute
+    // cancel window, so the countdown (and the button disappearing) is live.
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(orders) {
+        while (orders.any { it.cancelMillisLeft() > 0 }) {
+            delay(1000)
+            now = System.currentTimeMillis()
+        }
     }
 
     confirmCancel?.let { order ->
@@ -110,13 +120,13 @@ fun OrdersScreen() {
             Spacer(modifier = Modifier.height(4.dp))
         }
         items(orders, key = { it.id }) { order ->
-            OrderRow(order, onCancel = { confirmCancel = order })
+            OrderRow(order, now = now, onCancel = { confirmCancel = order })
         }
     }
 }
 
 @Composable
-private fun OrderRow(order: PastOrderUi, onCancel: () -> Unit) {
+private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -163,22 +173,55 @@ private fun OrderRow(order: PastOrderUi, onCancel: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                if (order.pointsEarned > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.orders_points_earned, order.pointsEarned),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
             } else {
                 MiniProgressTimeline(order.status)
+                if (order.estimatedDeliveryAt > 0) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        stringResource(
+                            R.string.orders_eta,
+                            java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                                .format(java.util.Date(order.estimatedDeliveryAt))
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
-            if (order.canCancel) {
+            val cancelLeft = order.cancelMillisLeft(now)
+            if (cancelLeft > 0) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        stringResource(R.string.orders_waiting_hint),
+                        stringResource(R.string.orders_cancel_window_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
                     TextButton(onClick = onCancel) {
-                        Text(stringResource(R.string.orders_cancel_button), color = MaterialTheme.colorScheme.error)
+                        val secs = (cancelLeft / 1000).toInt()
+                        Text(
+                            stringResource(R.string.orders_cancel_with_timer, secs / 60, secs % 60),
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
+            } else if (order.status == OrderStage.PLACED) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.orders_waiting_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

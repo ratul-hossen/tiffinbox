@@ -44,7 +44,8 @@ object FirestoreCatalogRepository {
 
     suspend fun getAllMeals(): List<MealUi> {
         return try {
-            db.collection("meals").get().await().documents.mapNotNull { it.toMealUi() }
+            // Customer-facing: meals the chef switched off in Menu Manager are hidden.
+            db.collection("meals").get().await().documents.mapNotNull { it.toMealUi() }.filter { it.isAvailable }
         } catch (e: Exception) {
             emptyList()
         }
@@ -58,7 +59,8 @@ object FirestoreCatalogRepository {
         }
     }
 
-    suspend fun getMealsForChef(chefId: String): List<MealUi> {
+    /** [includeUnavailable] is for the chef's own Menu Manager; customers only see available meals. */
+    suspend fun getMealsForChef(chefId: String, includeUnavailable: Boolean = false): List<MealUi> {
         return try {
             db.collection("meals")
                 .whereEqualTo("chefId", chefId)
@@ -66,6 +68,7 @@ object FirestoreCatalogRepository {
                 .await()
                 .documents
                 .mapNotNull { it.toMealUi() }
+                .filter { includeUnavailable || it.isAvailable }
         } catch (e: Exception) {
             emptyList()
         }
@@ -140,7 +143,9 @@ object FirestoreCatalogRepository {
             dietaryTags = dietaryTags,
             availableQuantity = (getLong("availableQuantity") ?: 0L).toInt(),
             portionSize = getString("portionSize") ?: "1 plate",
-            photoBase64 = getString("photoBase64") ?: ""
+            photoBase64 = getString("photoBase64") ?: "",
+            isAvailable = getBoolean("isAvailable") ?: true,
+            specialDate = getString("specialDate") ?: ""
         )
     }
 }

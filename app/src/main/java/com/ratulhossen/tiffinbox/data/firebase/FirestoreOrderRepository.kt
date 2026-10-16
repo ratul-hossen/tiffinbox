@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
+import com.ratulhossen.tiffinbox.domain.RewardsStatus
+import com.ratulhossen.tiffinbox.domain.Rewards
+import com.ratulhossen.tiffinbox.data.model.CUSTOMER_CANCEL_WINDOW_MS
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -69,7 +72,10 @@ object FirestoreOrderRepository {
             val ref = db.collection("orders").document(orderId)
             val chefId = db.runTransaction { tx ->
                 val snap = tx.get(ref)
-                if (snap.getString("status") != "Placed") {
+                val placedAt = snap.getLong("placedAt") ?: 0L
+                if (snap.getString("status") != "Placed" ||
+                    System.currentTimeMillis() - placedAt > CUSTOMER_CANCEL_WINDOW_MS
+                ) {
                     null
                 } else {
                     tx.update(
@@ -108,7 +114,10 @@ object FirestoreOrderRepository {
         paymentTransactionId: String? = null,
         paymentScreenshotBase64: String? = null,
         couponCode: String = "",
-        discount: Int = 0
+        discount: Int = 0,
+        pointsRedeemed: Int = 0,
+        rankDiscount: Int = 0,
+        estimatedDeliveryMinutes: Int = 0
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -132,6 +141,10 @@ object FirestoreOrderRepository {
                 // total already has the coupon discount taken off.
                 "couponCode" to couponCode,
                 "discount" to discount,
+                // TiffinBox Points spent + rank discount (both already off totalPrice).
+                "pointsRedeemed" to pointsRedeemed,
+                "rankDiscount" to rankDiscount,
+                "estimatedDeliveryMinutes" to estimatedDeliveryMinutes,
                 "totalPrice" to total,
                 "deliveryAddress" to deliveryAddress,
                 "paymentMethod" to paymentMethod,
@@ -307,21 +320,51 @@ object FirestoreOrderRepository {
                         ?.mapNotNull { (it as? Map<*, *>)?.get("mealName") as? String }
                         .orEmpty()
                     val placedAt = doc.getLong("placedAt") ?: 0L
+                    val stage = effectiveStatus(doc).toOrderStage() ?: OrderStage.PLACED
+                    val total = (doc.getLong("totalPrice") ?: 0L).toInt()
                     PastOrderUi(
                         id = doc.id,
                         chefName = chefName,
                         chefEmoji = chefEmoji,
                         itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
-                        total = (doc.getLong("totalPrice") ?: 0L).toInt(),
-                        status = effectiveStatus(doc).toOrderStage() ?: OrderStage.PLACED,
+                        total = total,
+                        status = stage,
                         placedOn = if (placedAt > 0) dateFormat.format(Date(placedAt)) else "",
                         chefId = chefId,
                         cancelReason = doc.getString("cancelReason")
-                            ?: if (doc.getString("status") == "Placed") "auto_expired" else ""
+                            ?: if (doc.getString("status") == "Placed") "auto_expired" else "",
+                        placedAtMillis = placedAt,
+                        estimatedDeliveryMinutes = (doc.getLong("estimatedDeliveryMinutes") ?: 0L).toInt(),
+                        pointsEarned = if (stage == OrderStage.DELIVERED) Rewards.pointsFor(total) else 0
                     )
                 }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    /**
+     * TiffinBox Points, recomputed from the customer's own orders every
+     * time (see domain/Rewards.kt) - earned on Delivered orders, minus points
+     * redeemed on orders that weren't cancelled.
+     */
+    suspend fun getMyRewards(): RewardsStatus {
+        return try {
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return Rewards.status(0, 0, 0)
+            val docs = FirebaseFirestore.getInstance()
+                .collection("orders")
+                .whereEqualTo("customerId", customerId)
+                .get()
+                .await()
+                .documents
+            val delivered = docs.filter { it.getString("status") == "Delivered" }
+            val earned = delivered.sumOf { Rewards.pointsFor((it.getLong("totalPrice") ?: 0L).toInt()) }
+            val redeemed = docs
+                .filter { it.getString("status") != "Cancelled" }
+                .sumOf { (it.getLong("pointsRedeemed") ?: 0L).toInt() }
+            Rewards.status(earned, redeemed, delivered.size)
+        } catch (e: Exception) {
+            Rewards.status(0, 0, 0)
         }
     }
 

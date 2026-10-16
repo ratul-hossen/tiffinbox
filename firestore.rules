@@ -156,9 +156,9 @@ service cloud.firestore {
     // its status - see OrdersPage.tsx's changeStatus()).
     //
     // Hardening (2026-10-16): updates are now field-scoped per role -
-    //  - customer: may only cancel, and only while still "Placed" (this is
-    //    both the in-app Cancel button and the 12h auto-expiry, which runs
-    //    client-side on read since there are no Cloud Functions);
+    //  - customer: may only cancel, while still "Placed" - their own Cancel
+    //    button only within 5 minutes of placing, or the 12h auto-expiry
+    //    (runs client-side on read since there are no Cloud Functions);
     //  - chef: may only change status / cancel fields;
     //  - delivery partner: may only change status.
     function orderStatusKeysOnly() {
@@ -179,7 +179,14 @@ service cloud.firestore {
       ));
       allow update: if isAdmin() || (isSignedIn() && orderStatusKeysOnly() && (
         (resource.data.customerId == request.auth.uid &&
-          resource.data.status == "Placed" && request.resource.data.status == "Cancelled") ||
+          resource.data.status == "Placed" && request.resource.data.status == "Cancelled" && (
+            // Customer's own cancel: only within 5 minutes of placing (+30s clock slack).
+            (request.resource.data.cancelReason == "customer" &&
+              request.time.toMillis() - resource.data.get("placedAt", 0) < 330000) ||
+            // The 12h "chef never accepted" auto-cancel, applied by whichever client reads it.
+            (request.resource.data.cancelReason == "auto_expired" &&
+              request.time.toMillis() - resource.data.get("placedAt", 0) > 43200000)
+          )) ||
         isOrderChef() ||
         (resource.data.get("deliveryPartnerId", "") == request.auth.uid &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]))

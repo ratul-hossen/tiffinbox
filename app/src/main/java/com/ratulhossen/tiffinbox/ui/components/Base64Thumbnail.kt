@@ -9,7 +9,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.ImageBitmap
+import android.util.LruCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,20 +42,16 @@ fun Base64Thumbnail(
     shape: Shape = RoundedCornerShape(12.dp),
     emojiFontSize: TextUnit = 28.sp
 ) {
-    val bitmap = remember(base64) {
-        if (base64.isBlank()) {
-            null
-        } else {
-            runCatching {
-                val bytes = Base64.decode(base64, Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
-            }.getOrNull()
-        }
+    // Decoded off the main thread (a full photo decode in composition made
+    // lists stutter) and cached, so scrolling back to a card is instant.
+    val bitmap by produceState<ImageBitmap?>(initialValue = Base64ImageCache.get(base64), base64) {
+        value = if (base64.isBlank()) null else Base64ImageCache.get(base64) ?: Base64ImageCache.decode(base64)
     }
 
-    if (bitmap != null) {
+    val image = bitmap
+    if (image != null) {
         Image(
-            bitmap = bitmap,
+            bitmap = image,
             contentDescription = null,
             modifier = modifier.clip(shape),
             contentScale = ContentScale.Crop
@@ -71,5 +72,23 @@ fun Base64Thumbnail(
         ) {
             Text(emoji, style = TextStyle(fontSize = emojiFontSize))
         }
+    }
+}
+
+/** Small in-memory cache of decoded photos, keyed by the base64 string's hash + length. */
+internal object Base64ImageCache {
+    private val cache = object : LruCache<String, ImageBitmap>(24 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: ImageBitmap): Int = value.width * value.height * 4
+    }
+
+    private fun key(base64: String) = "${base64.length}:${base64.hashCode()}"
+
+    fun get(base64: String): ImageBitmap? = if (base64.isBlank()) null else cache.get(key(base64))
+
+    suspend fun decode(base64: String): ImageBitmap? = withContext(Dispatchers.Default) {
+        runCatching {
+            val bytes = Base64.decode(base64, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+        }.getOrNull()?.also { cache.put(key(base64), it) }
     }
 }

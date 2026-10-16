@@ -1,5 +1,10 @@
 package com.ratulhossen.tiffinbox.ui.screens.home
 
+import com.ratulhossen.tiffinbox.domain.RewardsStatus
+import com.ratulhossen.tiffinbox.ui.components.shiftingBrandBackground
+import com.ratulhossen.tiffinbox.ui.components.FoodOrbit
+import androidx.compose.ui.graphics.RectangleShape
+import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
 import androidx.compose.foundation.background
@@ -47,6 +52,9 @@ import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.data.location.LocationRepository
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
@@ -63,8 +71,11 @@ fun HomeScreen(
     onMealClick: (String) -> Unit,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onSeeAllClick: (String) -> Unit
+    onSeeAllClick: (String) -> Unit,
+    onLocationClick: () -> Unit = {},
+    onRewardsClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
@@ -73,6 +84,13 @@ fun HomeScreen(
     // haversine distance from the customer's own saved location - until
     // then the 2-3km "nearby" radius filter below would be meaningless.
     var hasRealDistances by remember { mutableStateOf(false) }
+    // The customer's own saved (default) address - the same point used for
+    // the distance math below, so the header and "nearby" always agree.
+    var myAddress by remember { mutableStateOf<String?>(null) }
+    var rewards by remember { mutableStateOf<RewardsStatus?>(null) }
+    LaunchedEffect(Unit) {
+        if (FirebaseAuthRepository.currentUser != null) rewards = FirestoreOrderRepository.getMyRewards()
+    }
 
     LaunchedEffect(Unit) {
         // "AI Recommended For You" - ranked by MlRecommendModel.kt, a logistic
@@ -109,6 +127,9 @@ fun HomeScreen(
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
         val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        myAddress = uid?.let { FirestoreUserRepository.getProfile(it)?.address }?.ifBlank { null }
+            ?: myLocation?.let { LocationRepository.reverseGeocode(context, it) }
+            ?: ""
         if (myLocation != null) {
             chefs = firestoreChefs.withRealDistances(myLocation)
             hasRealDistances = true
@@ -127,6 +148,25 @@ fun HomeScreen(
         else categoryMeals.map { it.chefId }.toSet().let { ids -> chefs.filter { it.id in ids } }
     }
     val recommendedChefs = remember(visibleChefs) { RecommendationEngine.recommend(visibleChefs) }
+    // Chefs marked these as Today's Special in Menu Manager (it lapses at
+    // midnight by itself). Only from chefs listed to this customer, nearest
+    // first. If nobody marked one today, fall back to the top AI picks with
+    // a real photo so the banner is never an empty promise.
+    val todaySpecials = remember(catalogMeals, chefs) {
+        val chefDistance = chefs.associate { it.id to it.distanceKm }
+        catalogMeals
+            .filter { it.isTodaySpecial && it.chefId in chefDistance && it.availableQuantity > 0 }
+            .sortedBy { chefDistance[it.chefId] ?: Double.MAX_VALUE }
+            .take(8)
+    }
+    val heroIsSpecial = todaySpecials.isNotEmpty()
+    val heroMeals = remember(todaySpecials, aiRecommendedMeals, chefs) {
+        val listedChefIds = chefs.map { it.id }.toSet()
+        todaySpecials.ifEmpty {
+            aiRecommendedMeals.filter { it.photoBase64.isNotBlank() && it.chefId in listedChefIds }.take(5)
+        }
+    }
+
     val nearbyChefs = remember(visibleChefs, hasRealDistances) {
         val sorted = visibleChefs.sortedBy { it.distanceKm }
         if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
@@ -143,12 +183,13 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp)
     ) {
-        // Gradient header: location, greeting, profile, search.
+        // Header: location, points, profile, greeting + orbiting food
+        // plates, search - on a slowly colour-shifting theme gradient.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                .background(brandGradient())
+                .shiftingBrandBackground()
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 22.dp)
         ) {
             Column {
@@ -156,7 +197,8 @@ fun HomeScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Surface(
                             shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.18f)
+                            color = Color.White.copy(alpha = 0.18f),
+                            modifier = Modifier.clickable(onClick = onLocationClick)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -170,21 +212,37 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    stringResource(R.string.home_location),
+                                    when (val a = myAddress) {
+                                        null -> "…"
+                                        "" -> stringResource(R.string.home_location_not_set)
+                                        else -> a
+                                    },
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            stringResource(R.string.home_greeting),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    rewards?.let { r ->
+                        // Points chip -> Rewards screen.
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.22f),
+                            modifier = Modifier.clickable(onClick = onRewardsClick)
+                        ) {
+                            Text(
+                                "${r.rank.emoji} ⚡${r.balance}",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
                     Box(
                         modifier = Modifier
                             .size(46.dp)
@@ -202,7 +260,37 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.home_greeting),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            lineHeight = 28.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            stringResource(R.string.home_header_tagline),
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    FoodOrbit(
+                        center = R.drawable.hero_food,
+                        satellites = listOf(
+                            R.drawable.cat_breakfast,
+                            R.drawable.cat_lunch,
+                            R.drawable.cat_snack,
+                            R.drawable.cat_dinner,
+                            R.drawable.cat_dessert
+                        ),
+                        size = 128.dp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     onClick = onSearchClick,
                     shape = CircleShape,
@@ -237,59 +325,78 @@ fun HomeScreen(
             visible = revealed,
             enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 3 }
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth()
-                    .height(170.dp)
-                    .shadow(12.dp, MaterialTheme.shapes.large)
-                    .clip(MaterialTheme.shapes.large)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.hero_food),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alignment = Alignment.CenterEnd,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
-                            )
-                        )
-                )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(20.dp)
-                        .fillMaxWidth(0.7f)
+            if (heroMeals.isNotEmpty()) {
+                // Today's Special: meals chefs marked in Menu Manager today
+                // (nearest first); otherwise the top AI picks that have a photo.
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                        Text(
-                            stringResource(R.string.home_hero_badge),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    items(heroMeals, key = { it.id }) { meal ->
+                        TodaySpecialCard(
+                            meal = meal,
+                            chefName = chefs.find { it.id == meal.chefId }?.kitchenName.orEmpty(),
+                            badge = stringResource(if (heroIsSpecial) R.string.home_hero_badge else R.string.home_hero_badge_pick),
+                            modifier = Modifier.fillParentMaxWidth(if (heroMeals.size == 1) 1f else 0.86f),
+                            onClick = { onMealClick(meal.id) }
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        stringResource(R.string.home_hero_title),
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 26.sp
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .shadow(12.dp, MaterialTheme.shapes.large)
+                        .clip(MaterialTheme.shapes.large)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.hero_food),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.CenterEnd,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.home_hero_subtitle),
-                        color = Color.White.copy(alpha = 0.85f),
-                        style = MaterialTheme.typography.bodySmall
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
+                                )
+                            )
                     )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(20.dp)
+                            .fillMaxWidth(0.7f)
+                    ) {
+                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+                            Text(
+                                stringResource(R.string.home_hero_badge_generic),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.home_hero_title),
+                            color = Color.White,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 26.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            stringResource(R.string.home_hero_subtitle),
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }
@@ -473,4 +580,72 @@ private fun categoryPhoto(category: String): Int = when (category) {
     "Snack" -> R.drawable.cat_snack
     "Dessert" -> R.drawable.cat_dessert
     else -> R.drawable.cat_lunch
+}
+
+/** One Today's Special banner card: the chef's food photo (or the stock hero photo), name, kitchen, price. */
+@Composable
+private fun TodaySpecialCard(
+    meal: MealUi,
+    chefName: String,
+    badge: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .height(180.dp)
+            .shadow(12.dp, MaterialTheme.shapes.large)
+            .clip(MaterialTheme.shapes.large)
+            .clickable(onClick = onClick)
+    ) {
+        if (meal.photoBase64.isNotBlank()) {
+            Base64Thumbnail(
+                base64 = meal.photoBase64,
+                emoji = meal.emoji,
+                modifier = Modifier.fillMaxSize(),
+                shape = RectangleShape
+            )
+        } else {
+            Image(
+                painter = painterResource(R.drawable.hero_food),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.CenterEnd,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))))
+        )
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.align(Alignment.TopStart).padding(14.dp)
+        ) {
+            Text(
+                badge,
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+        }
+        Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+            Text(
+                meal.name,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                listOf(chefName, "৳${meal.price}").filter { it.isNotBlank() }.joinToString(" · "),
+                color = Color.White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useCollection } from "../hooks/useCollection";
-import type { AppUser, Order } from "../types";
+import type { AppUser, Chef, Meal, Order } from "../types";
 import { formatDate } from "../lib/format";
 import { logActivity } from "../lib/activityLog";
 import { softDelete } from "../lib/recycleBin";
@@ -14,6 +14,8 @@ interface Props {
 export default function UsersPage({ search }: Props) {
   const { data: users, loading, error } = useCollection<AppUser>("users");
   const { data: orders } = useCollection<Order>("orders");
+  const { data: chefs } = useCollection<Chef>("chefs");
+  const { data: meals } = useCollection<Meal>("meals");
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -115,7 +117,13 @@ export default function UsersPage({ search }: Props) {
         )}
       </div>
 
-      <UserDetail user={detailUser} orders={orders} onClose={() => setDetailUserId(null)} />
+      <UserDetail
+        user={detailUser}
+        orders={orders}
+        chefs={chefs}
+        meals={meals}
+        onClose={() => setDetailUserId(null)}
+      />
     </div>
   );
 }

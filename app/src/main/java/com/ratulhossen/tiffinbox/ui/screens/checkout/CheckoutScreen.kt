@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.checkout
 
+import com.ratulhossen.tiffinbox.util.haversineKm
+import com.ratulhossen.tiffinbox.domain.RewardsStatus
+import com.ratulhossen.tiffinbox.domain.Rewards
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
 import com.ratulhossen.tiffinbox.data.firebase.CouponCheck
 import com.ratulhossen.tiffinbox.data.firebase.CouponUi
@@ -74,7 +77,22 @@ fun CheckoutScreen(
     var couponChecking by remember { mutableStateOf(false) }
     // Re-computed from the live subtotal so changing the cart can't keep a stale discount.
     val discount = appliedCoupon?.takeIf { CartStore.subtotal >= it.minOrder }?.discountFor(CartStore.subtotal) ?: 0
-    val payableTotal = (CartStore.total - discount).coerceAtLeast(0)
+    // TiffinBox Points: rank discount (+ free delivery at the top rank) and
+    // optional points redemption - see domain/Rewards.kt.
+    var rewards by remember { mutableStateOf<RewardsStatus?>(null) }
+    var usePoints by remember { mutableStateOf(false) }
+    var chefDistanceKm by remember { mutableStateOf<Double?>(null) }
+    LaunchedEffect(Unit) { rewards = FirestoreOrderRepository.getMyRewards() }
+    val rank = rewards?.rank
+    val rankDiscount = rank?.let { Rewards.rankDiscount(it, CartStore.subtotal) } ?: 0
+    val deliveryFee = if (rank?.freeDelivery == true) 0 else CartStore.DELIVERY_FEE
+    val pointsUsed = if (usePoints) {
+        Rewards.maxRedeemablePoints(rewards?.balance ?: 0, (CartStore.subtotal - discount - rankDiscount).coerceAtLeast(0))
+    } else 0
+    val pointsTaka = Rewards.takaForPoints(pointsUsed)
+    val payableTotal = (CartStore.subtotal + deliveryFee + CartStore.PLATFORM_FEE - discount - rankDiscount - pointsTaka)
+        .coerceAtLeast(0)
+    val etaMinutes = Rewards.estimatedDeliveryMinutes(chefDistanceKm)
     var savedAddresses by remember { mutableStateOf<List<SavedAddress>>(emptyList()) }
     LaunchedEffect(Unit) {
         val uid = FirebaseAuthRepository.currentUser?.uid ?: return@LaunchedEffect
@@ -107,6 +125,11 @@ fun CheckoutScreen(
             val chef = FirestoreCatalogRepository.getChef(chefId)
             chefBkashNumber = chef?.bkashNumber.orEmpty()
             chefNagadNumber = chef?.nagadNumber.orEmpty()
+            // Kitchen -> customer distance for the delivery-time estimate.
+            val me = FirebaseAuthRepository.currentUser?.uid?.let { FirestoreUserRepository.getLocation(it) }
+            if (me != null && chef != null && chef.latitude != 0.0) {
+                chefDistanceKm = haversineKm(me.latitude, me.longitude, chef.latitude, chef.longitude)
+            }
         }
     }
 
@@ -164,7 +187,7 @@ fun CheckoutScreen(
                                 val orderId = FirestoreOrderRepository.placeOrder(
                                     items = items.toList(),
                                     subtotal = CartStore.subtotal,
-                                    deliveryFee = CartStore.DELIVERY_FEE,
+                                    deliveryFee = deliveryFee,
                                     platformFee = CartStore.PLATFORM_FEE,
                                     total = payableTotal,
                                     deliveryAddress = address,
@@ -172,7 +195,10 @@ fun CheckoutScreen(
                                     paymentTransactionId = if (selectedPayment.isMobileBanking) transactionId.trim() else null,
                                     paymentScreenshotBase64 = screenshotBase64,
                                     couponCode = if (discount > 0) appliedCoupon?.code.orEmpty() else "",
-                                    discount = discount
+                                    discount = discount,
+                                    pointsRedeemed = pointsUsed,
+                                    rankDiscount = rankDiscount,
+                                    estimatedDeliveryMinutes = etaMinutes
                                 )
                                 if (orderId != null && discount > 0) {
                                     appliedCoupon?.let { FirestoreCouponRepository.recordUse(it.code) }
@@ -375,14 +401,72 @@ fun CheckoutScreen(
                 )
             }
 
+            rewards?.let { status ->
+                Spacer(modifier = Modifier.height(20.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(
+                            stringResource(R.string.checkout_rank_line, status.rank.emoji, status.rank.title, status.balance),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        val redeemable = Rewards.maxRedeemablePoints(
+                            status.balance,
+                            (CartStore.subtotal - discount - rankDiscount).coerceAtLeast(0)
+                        )
+                        val canRedeem = redeemable > 0
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (canRedeem) stringResource(R.string.checkout_use_points, redeemable, Rewards.takaForPoints(redeemable))
+                                else stringResource(R.string.checkout_points_not_enough, Rewards.POINTS_PER_TAKA_OFF),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(checked = usePoints && canRedeem, enabled = canRedeem, onCheckedChange = { usePoints = it })
+                        }
+                        Text(
+                            stringResource(R.string.checkout_points_will_earn, Rewards.pointsFor(payableTotal)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                stringResource(
+                    R.string.checkout_eta,
+                    etaMinutes,
+                    java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+                        .format(java.util.Date(System.currentTimeMillis() + etaMinutes * 60_000L))
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
             Text(stringResource(R.string.checkout_order_summary_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
             SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.DELIVERY_FEE)
+            if (deliveryFee == 0) {
+                SummaryRow(stringResource(R.string.checkout_free_delivery_row), -CartStore.DELIVERY_FEE)
+            }
             SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
             if (discount > 0) {
                 SummaryRow(stringResource(R.string.coupon_discount_row, appliedCoupon?.code.orEmpty()), -discount)
+            }
+            if (rankDiscount > 0 && rank != null) {
+                SummaryRow(stringResource(R.string.checkout_rank_discount_row, rank.emoji, rank.discountPercent), -rankDiscount)
+            }
+            if (pointsTaka > 0) {
+                SummaryRow(stringResource(R.string.checkout_points_row, pointsUsed), -pointsTaka)
             }
             Divider(modifier = Modifier.padding(vertical = 6.dp))
             SummaryRow(stringResource(R.string.cart_summary_total), payableTotal, bold = true)

@@ -471,6 +471,100 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   a pencil icon on ChefDashboard's header. Profile's dead "My Orders" /
   "Favorites" items now switch to those tabs.
 
+## Home location header + admin User Details (2026-10-16)
+
+- Home's gradient-header location pill used to be a **hardcoded string**
+  ("Ashulia, Dhaka", resource `home_location`, now removed). It now shows the
+  customer's real saved address (`users/{uid}.address`, falling back to an
+  on-device reverse geocode of the saved lat/lng, else "Set your location"),
+  i.e. the exact point the nearby-chef distances use; tapping it opens Edit
+  Profile (saved addresses). Deleting the last saved address now also clears
+  the top-level address/lat/lng mirror so Home doesn't keep a stale point.
+- admin-web `UserDetail.tsx` (Users → View details) shows everything:
+  phone / WhatsApp / email with WhatsApp, Call and Gmail buttons, FCM status,
+  order count + spend; customers: current location (the Home one) + every
+  saved address with coordinates and a Google Maps link, plus a check that
+  the default saved address matches it; chefs: kitchen location (chefs/{uid}),
+  approval, delivery mode/until, bKash/Nagad, type, experience, menu size;
+  full order list (orders received for chefs).
+
+## Chef photos, Menu Manager, Today's Special (2026-10-16)
+
+- **Photo pipeline** (`util/ImageCompressor.kt`): applies the EXIF rotation
+  (camera photos used to show sideways), decodes with `inSampleSize` (no OOM
+  on 12MP photos), and centre-crops to a fixed frame - `compressMealPhoto()`
+  4:3 / 800px / ~160KB, `compressKitchenPhoto()` 16:9 / 1280px / ~240KB.
+  Display uses the same frames (`MEAL_ASPECT` / `KITCHEN_ASPECT`) in
+  MealCard, MealDetail (now actually shows the photo - it only showed the
+  emoji before), ChefDetail cover and the dashboard. `Base64Thumbnail`
+  decodes off the main thread with an LRU cache.
+- **Menu Manager rewrite**: add / edit / delete meals, add or change a photo
+  on any existing meal straight from the list, availability switch actually
+  saved (`isAvailable`, customers no longer see switched-off meals),
+  `addMeal()` now returns the real doc id (the list used a fake id before).
+  Photos stay optional; meals without one get a "📷 add a photo" nudge.
+- **Chef dashboard**: kitchen photo becomes the banner; large 16:9 preview;
+  "Available today" switch is now saved; a "Set up your kitchen" checklist
+  (kitchen photo, menu, meal photos, today's special, video) - suggestions
+  only, hidden once complete.
+- **Today's Special**: chef stars up to 2 meals in Menu Manager
+  (`meals.specialDate` = today, "yyyy-MM-dd" - lapses at midnight with no
+  job). Home's banner is now a swipeable row of today's specials from listed
+  chefs (nearest first, real photos, tap opens the meal); with none marked
+  it shows the top AI picks with photos as "Today's pick", else the stock
+  banner. Specials are badged on MealCard / MealDetail and listed first on
+  ChefDetail.
+
+## Points & ranks, delivery ETA, 5-min cancel, animated header (2026-10-16)
+
+From the owner's (and a friend's) feedback + a reference food-app video.
+- **TiffinBox Points** (`domain/Rewards.kt`): 1 point per ৳10 of a
+  *Delivered* order; 10 points = ৳1 off at checkout (max 20% of the food
+  subtotal). The balance is **derived from the customer's own orders**
+  (`FirestoreOrderRepository.getMyRewards()`: earned on Delivered minus
+  `pointsRedeemed` on non-cancelled orders), never stored as an editable
+  number, so it can't be inflated without Cloud Functions; cancelled orders
+  refund automatically. Ranks by lifetime points (original anime-flavoured
+  titles, no third-party IP): Rookie Eater 0 → Food Ninja 100 (2% off) →
+  Snack Pirate 300 (4%) → Flavor Samurai 700 (6%) → Legendary Glutton 1500
+  (8% + free delivery), rank discount capped ৳60. Checkout shows rank, the
+  "use points" switch and the points this order will earn; orders store
+  `pointsRedeemed` / `rankDiscount` (deliveryFee 0 when free). Game-style
+  `RewardsScreen` (route `rewards`; Profile menu + the ⚡ points chip in the
+  Home header): bouncing rank badge, XP bar, rank ladder, how it works.
+- **Delivery ETA**: `Rewards.estimatedDeliveryMinutes(distanceKm)` = 20 min
+  prep + 4 min/km + 5, rounded to 5 (haversine kitchen→customer, no Maps).
+  Shown at checkout, stored as `estimatedDeliveryMinutes`, shown as "by
+  h:mm" on in-progress orders and in admin-web's order drawer.
+- **5-minute cancel window**: `CUSTOMER_CANCEL_WINDOW_MS`; Orders shows a
+  live countdown on the Cancel button; `cancelOrderByCustomer()` re-checks in
+  its transaction and `firestore.rules` enforces it (`cancelReason ==
+  "customer"` only < 5.5 min after `placedAt`; `"auto_expired"` only > 12h).
+- **Animated Home header** (`ui/components/AnimatedHeader.kt`):
+  `shiftingBrandBackground()` drifts through the theme colours (draw-phase
+  only) and `FoodOrbit` spins food photos around a central plate, like the
+  reference video.
+- **Planned art direction (owner, 2026-10-16):** replace the realistic
+  "AI-looking" photos with **anime / cartoon** art with a One Piece +
+  Naruto *vibe* (pirate-adventure + ninja energy) for a university-student
+  audience - but **original characters only**; never use those series'
+  characters, logos or names (copyright/trademark; Play Store takedown
+  risk). Owner generates the images; keep the same `drawable-nodpi`
+  filenames so they drop in.
+- **2026-10-16 follow-up:** the owner kept `splash_bg`, `onboarding_1`,
+  `role_customer` (realistic) as-is and shared 9 anime images in Drive.
+  8 of them depict actual One Piece / Naruto characters or symbols (Luffy,
+  Naruto, Hinata, Sakura, Tsunade, Konoha leaf, Straw Hat flag) and were
+  **deliberately not added** to the app (IP risk, explained to the owner);
+  only the character-free "Steaming Chicken Biryani Feast" replaced
+  `hero_food.jpg` (720px, also the FoodOrbit centre). Regenerate the rest
+  with original characters before swapping them in.
+- **"Dynamic like the video":** `FullBleedPhoto` now does a slow Ken Burns
+  zoom/drift by default (`animated = true`, draw-phase only) everywhere it
+  is used (splash, onboarding, role select, login, location, chef banner),
+  and `FloatingFoodParticles` (AnimatedHeader.kt) drifts spices / leaves /
+  sparkles up over Splash and Onboarding.
+
 ## Animated gradient backdrop everywhere (2026-10-16)
 
 Owner felt plain white screens looked dull and asked for an animated,
