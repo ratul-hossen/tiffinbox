@@ -581,6 +581,19 @@ admin panel a one-click way to wipe all of it later.
   this feature existed (no `isDemo` flag), those aren't matched by this
   button — remove them with ChefsPage's existing per-chef Delete button,
   which already worked before this feature and needed no changes.**
+- **Update (2026-10-16): full demo lifecycle, `admin-web/src/lib/demoData.ts`.**
+  Seed is idempotent and works again after a removal (an existing demo
+  login is signed into and only the missing chef doc + menu are recreated).
+  "Remove all demo data" is now a **permanent cascade** (not Recycle Bin):
+  demo chef docs, their meals, and every order / review / chat (+messages)
+  / coupon / subscription / notification with that `chefId`, their Recycle
+  Bin copies, `users/{uid}`, and finally the demo **Auth account itself**
+  (signed in on `secondaryAuth` → `deleteUser`, free on Spark). So revenue
+  and order stats carry no demo leftovers. Never touches admins,
+  `admin_activity_log` (append-only audit trail) or real chefs/customers.
+  Needed rule additions: admin `delete` on `orders` (also fixes the
+  Cancelled → Recycle Bin move, which had no delete permission), chat
+  `messages`, and `notifications/{uid}/items`.
 - **`admin-web/src/data/demoChefSeed.ts`** — the fixed seed data: 5 unique
   Bangladeshi home-chef personas (Rashida's Rannaghor / Karim Bhai's
   Biryani House / Ayesha's Daily Tiffin / Nasreen's Village Flavors /
