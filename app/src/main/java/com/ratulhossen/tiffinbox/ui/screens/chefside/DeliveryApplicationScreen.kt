@@ -157,7 +157,8 @@ fun DeliveryApplicationScreen(onBack: () -> Unit) {
                 FullBleedPhoto(
                     resId = R.drawable.delivery_rider,
                     modifier = Modifier.fillMaxSize(),
-                    scrim = bottomScrim()
+                    scrim = bottomScrim(),
+                    animated = false
                 )
                 Text(
                     stringResource(R.string.delivery_app_banner),

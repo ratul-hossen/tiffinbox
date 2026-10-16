@@ -1,11 +1,5 @@
 package com.ratulhossen.tiffinbox.ui.components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -13,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -25,8 +18,8 @@ import kotlin.math.sin
 
 /**
  * App-wide backdrop: the theme's background color with three large, soft
- * "light blobs" in the current palette's brand colors slowly drifting
- * around (an Apple-wallpaper-style mesh gradient). Each blob is a radial
+ * "light blobs" in the current palette's brand colors (an Apple-wallpaper-
+ * style mesh gradient, now static). Each blob is a radial
  * gradient fading to transparent, so it reads as blurred without needing
  * Modifier.blur (API 31+ only).
  *
@@ -47,13 +40,10 @@ fun AnimatedGradientBackground(
     val colorB = gradient.end.copy(alpha = blobAlpha)
     val colorC = MaterialTheme.colorScheme.tertiary.copy(alpha = blobAlpha * 0.8f)
 
-    val transition = rememberInfiniteTransition(label = "backgroundBlobs")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(durationMillis = 18000, easing = LinearEasing), RepeatMode.Restart),
-        label = "blobPhase"
-    )
+    // Static on purpose (2026-10-16): a moving backdrop behind every screen
+    // competed with the real, purposeful motion (Home header, Lottie), so the
+    // blobs now sit still - same look, no constant movement.
+    val t = 0.6f
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         // propagateMinConstraints so the content fills the screen exactly like

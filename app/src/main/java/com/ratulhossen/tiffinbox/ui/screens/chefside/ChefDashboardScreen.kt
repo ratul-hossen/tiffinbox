@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -156,14 +157,20 @@ fun ChefDashboardScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .shadow(10.dp, MaterialTheme.shapes.large)
-                    .clip(MaterialTheme.shapes.large)
-            ) {
-                FullBleedPhoto(resId = R.drawable.chef_pending, modifier = Modifier.fillMaxSize())
+            if (isRejected) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .shadow(10.dp, MaterialTheme.shapes.large)
+                        .clip(MaterialTheme.shapes.large)
+                ) {
+                    FullBleedPhoto(resId = R.drawable.chef_pending, modifier = Modifier.fillMaxSize(), animated = false)
+                }
+            } else {
+                // Waiting for approval: the hourglass keeps turning - something
+                // really is in progress here.
+                TiffinLottie(res = R.raw.lottie_hourglass, modifier = Modifier.size(180.dp))
             }
             Spacer(modifier = Modifier.height(20.dp))
             Text(

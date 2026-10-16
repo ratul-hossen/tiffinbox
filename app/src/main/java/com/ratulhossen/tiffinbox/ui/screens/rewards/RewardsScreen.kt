@@ -1,11 +1,11 @@
 package com.ratulhossen.tiffinbox.ui.screens.rewards
 
+import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -135,13 +135,12 @@ fun RewardsScreen(onBack: () -> Unit) {
 
 @Composable
 private fun RankHero(s: RewardsStatus) {
-    val bounce = rememberInfiniteTransition(label = "rankBounce")
-    val scale by bounce.animateFloat(
-        initialValue = 0.94f,
-        targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "rankScale"
-    )
+    // One springy pop when the screen opens (with the star burst behind it),
+    // then the badge rests - no endless bouncing.
+    val pop = remember { Animatable(0.6f) }
+    LaunchedEffect(Unit) {
+        pop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow))
+    }
     val progress by animateFloatAsState(s.progressToNext, tween(1200, easing = FastOutSlowInEasing), label = "xp")
 
     Box(
@@ -159,15 +158,18 @@ private fun RankHero(s: RewardsStatus) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(108.dp)
-                    .scale(scale)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.18f))
-                    .border(3.dp, Color.White.copy(alpha = 0.6f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) { Text(s.rank.emoji, fontSize = 58.sp) }
+            Box(contentAlignment = Alignment.Center) {
+                TiffinLottie(res = R.raw.lottie_star_burst, loop = false, modifier = Modifier.size(190.dp))
+                Box(
+                    modifier = Modifier
+                        .size(108.dp)
+                        .scale(pop.value)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.18f))
+                        .border(3.dp, Color.White.copy(alpha = 0.6f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) { Text(s.rank.emoji, fontSize = 58.sp) }
+            }
             Spacer(modifier = Modifier.height(10.dp))
             Text(s.rank.title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
             Text(

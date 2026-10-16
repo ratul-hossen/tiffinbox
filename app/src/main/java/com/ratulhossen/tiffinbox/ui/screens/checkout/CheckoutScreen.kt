@@ -1,5 +1,10 @@
 package com.ratulhossen.tiffinbox.ui.screens.checkout
 
+import kotlinx.coroutines.delay
+import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Dialog
 import com.ratulhossen.tiffinbox.util.haversineKm
 import com.ratulhossen.tiffinbox.domain.RewardsStatus
 import com.ratulhossen.tiffinbox.domain.Rewards
@@ -102,6 +107,7 @@ fun CheckoutScreen(
     }
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH_ON_DELIVERY) }
     var placing by remember { mutableStateOf(false) }
+    var placedOrderId by remember { mutableStateOf<String?>(null) }
     var transactionId by remember { mutableStateOf("") }
     var paymentScreenshotUri by remember { mutableStateOf<Uri?>(null) }
     var chefBkashNumber by remember { mutableStateOf("") }
@@ -204,10 +210,8 @@ fun CheckoutScreen(
                                     appliedCoupon?.let { FirestoreCouponRepository.recordUse(it.code) }
                                 }
                                 placing = false
-                                if (orderId != null) {
-                                    CartStore.clear()
-                                    onOrderPlaced(orderId)
-                                }
+                                // Celebrate first; the success dialog navigates on when its animation ends.
+                                if (orderId != null) placedOrderId = orderId
                             }
                         },
                         enabled = !placing && address.isNotBlank() && items.isNotEmpty(),
@@ -470,6 +474,48 @@ fun CheckoutScreen(
             }
             Divider(modifier = Modifier.padding(vertical = 6.dp))
             SummaryRow(stringResource(R.string.cart_summary_total), payableTotal, bold = true)
+        }
+    }
+
+    placedOrderId?.let { orderId ->
+        var navigated by remember { mutableStateOf(false) }
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
+            Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    TiffinLottie(
+                        res = R.raw.lottie_success_check,
+                        loop = false,
+                        modifier = Modifier.size(150.dp),
+                        onFinished = {
+                            if (!navigated) {
+                                navigated = true
+                                scope.launch {
+                                    delay(450)
+                                    CartStore.clear()
+                                    onOrderPlaced(orderId)
+                                }
+                            }
+                        }
+                    )
+                    Text(
+                        stringResource(R.string.checkout_success_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.checkout_success_eta, etaMinutes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }

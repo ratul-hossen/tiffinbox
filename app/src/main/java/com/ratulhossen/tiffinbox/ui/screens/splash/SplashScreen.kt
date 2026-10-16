@@ -1,6 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.splash
 
-import com.ratulhossen.tiffinbox.ui.components.FloatingFoodParticles
+import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -48,24 +48,34 @@ fun SplashScreen(onFinished: suspend () -> Unit) {
             modifier = Modifier.fillMaxSize(),
             scrim = Brush.radialGradient(
                 listOf(Color.Black.copy(alpha = 0.55f), Color.Black.copy(alpha = 0.15f))
-            )
+            ),
+            // Splash is on screen ~1.5s - too short for a zoom to read; the
+            // logo's ripple below is the one motion here.
+            animated = false
         )
-        FloatingFoodParticles(modifier = Modifier.fillMaxSize(), durationMillis = 9_000)
         Column(
             modifier = Modifier.fillMaxSize().alpha(contentAlpha.value),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .scale(logoScale.value)
-                    .size(96.dp)
-                    .shadow(20.dp, RoundedCornerShape(28.dp))
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(brandGradient()),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("🍱", fontSize = 48.sp)
+            Box(contentAlignment = Alignment.Center) {
+                // Brand-coloured rings + sparkles burst once behind the logo.
+                TiffinLottie(
+                    res = R.raw.lottie_splash_ripple,
+                    loop = false,
+                    modifier = Modifier.size(260.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .scale(logoScale.value)
+                        .size(96.dp)
+                        .shadow(20.dp, RoundedCornerShape(28.dp))
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(brandGradient()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🍱", fontSize = 48.sp)
+                }
             }
             Spacer(modifier = Modifier.height(18.dp))
             Text(
