@@ -13,7 +13,8 @@ rules_version = '2';
 // collection, and broadened admin read/write on chefs, meals, orders,
 // reviews, users and subscriptions, below.
 //
-// Delivery-system groundwork: a delivery_partners/{partnerId} collection
+// Delivery-system groundwork: delivery_applications/{chefUid} (chefs apply
+// for TiffinBox delivery; admin approval unlocks deliveryMode "tiffinbox"), a delivery_partners/{partnerId} collection
 // (admin-provisioned accounts only, no self-signup), and orders/{orderId}
 // read/update access for the delivery partner assigned to that order
 // (deliveryPartnerId) — for the separate delivery-partner app, not yet built.
@@ -110,15 +111,26 @@ service cloud.firestore {
     function chefLockedFields() {
       return ["isVerified", "approvalStatus", "approvalUpdatedAt", "isDemo", "userId"];
     }
+    // A chef may only switch to TiffinBox's delivery (which shows customers
+    // the "TiffinBox Delivery" badge) once an admin approved their
+    // delivery_applications/{chefId} doc. Switching back to "self" is always
+    // allowed.
+    function chefDeliveryModeAllowed(chefId) {
+      return request.resource.data.get("deliveryMode", "self") != "tiffinbox" ||
+        (resource != null && resource.data.get("deliveryMode", "self") == "tiffinbox") ||
+        (exists(/databases/$(database)/documents/delivery_applications/$(chefId)) &&
+          get(/databases/$(database)/documents/delivery_applications/$(chefId)).data.status == "approved");
+    }
     match /chefs/{chefId} {
       allow read: if true;
-      allow create: if isAdmin() || (isOwner(chefId) && (
+      allow create: if isAdmin() || (isOwner(chefId) && chefDeliveryModeAllowed(chefId) && (
         request.resource.data.get("isVerified", false) == false ||
         (request.resource.data.get("isDemo", false) == true &&
           request.auth.token.email.matches("^demo[.].*@tiffinbox[.]app$"))
       ));
       allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(chefLockedFields()));
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(chefLockedFields()) &&
+        chefDeliveryModeAllowed(chefId));
       allow delete: if isAdmin() ||
         (isSignedIn() && resource.data.userId == request.auth.uid);
     }
@@ -285,19 +297,18 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // self_service_requests/{requestId} — a customer-initiated point-to-point
-    // delivery request (see FirestoreSelfServiceRepository.kt), independent
-    // of ordering from a chef. Same visibility shape as orders/{orderId}:
-    // the requesting customer, the assigned delivery partner (once hired),
-    // or an admin. No separate delivery-partner app exists yet to act on
-    // this (see delivery_partners/{partnerId} above) — admin-web gets a page
-    // to view/manage these in the interim.
-    match /self_service_requests/{requestId} {
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow read, update: if isAdmin() || (isSignedIn() && (
-        resource.data.customerId == request.auth.uid ||
-        resource.data.get("deliveryPartnerId", "") == request.auth.uid
-      ));
+    // delivery_applications/{chefUid} - a chef's application to use
+    // TiffinBox's own delivery service (FirestoreDeliveryApplicationRepository.kt).
+    // The chef can create / edit / withdraw their own while it's "pending";
+    // only an admin (admin-web's Delivery Applications page) can approve or
+    // reject it. Approval is what lets the chef switch deliveryMode to
+    // "tiffinbox" (see chefDeliveryModeAllowed() above).
+    match /delivery_applications/{chefId} {
+      allow read: if isAdmin() || isOwner(chefId);
+      allow create: if isOwner(chefId) && request.resource.data.status == "pending";
+      allow update: if isAdmin() || (isOwner(chefId) &&
+        resource.data.status == "pending" && request.resource.data.status == "pending");
+      allow delete: if isAdmin() || (isOwner(chefId) && resource.data.status == "pending");
     }
 
     // recycle_bin/{collection}__{id} — admin-web's soft-delete trash (see

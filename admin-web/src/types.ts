@@ -218,20 +218,28 @@ export interface DeliveryPartner {
   createdAt?: number | FirestoreTimestampLike | null;
 }
 
-// self_service_requests/{id} - a customer-initiated point-to-point delivery
-// request, independent of ordering from a chef (see
-// FirestoreSelfServiceRepository.kt). No delivery-partner app exists yet to
-// act on these, so this is visible/manageable here in the interim.
-export interface SelfServiceRequest {
+// delivery_applications/{chefUid} - a chef's application to use TiffinBox's
+// own delivery service once it launches (see
+// FirestoreDeliveryApplicationRepository.kt). Reviewed on the Delivery
+// Applications page; the delivery system itself isn't built yet.
+export type DeliveryApplicationStatus = "pending" | "approved" | "rejected";
+export interface DeliveryApplication {
   id: string;
-  customerId?: string;
+  chefId?: string;
+  kitchenName?: string;
+  ownerName?: string;
+  contactNumber?: string;
   pickupAddress?: string;
-  dropAddress?: string;
-  preferredTime?: string;
+  latitude?: number;
+  longitude?: number;
+  expectedDailyOrders?: number;
+  deliveryRadiusKm?: number;
+  mealSlots?: string[];
   note?: string;
-  status?: "pending" | "assigned" | string;
-  deliveryPartnerId?: string;
+  status?: DeliveryApplicationStatus;
+  adminNote?: string;
   createdAt?: number | FirestoreTimestampLike | null;
+  updatedAt?: number | null;
 }
 
 // recycle_bin/{collection}__{id} - a soft-deleted doc's full data snapshot,

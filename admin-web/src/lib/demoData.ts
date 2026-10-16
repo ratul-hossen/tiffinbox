@@ -24,7 +24,7 @@ import { DEMO_CHEFS, type DemoChefSeed } from "../data/demoChefSeed";
  * data" switch works: seeding is idempotent (click it any time, it only
  * fills what's missing), and removal is a full cascade - the demo chef and
  * everything hanging off it (menu, orders, reviews, chats + messages,
- * coupons, subscriptions, the chef's notifications, Recycle Bin copies) and
+ * coupons, subscriptions, delivery application, the chef's notifications, Recycle Bin copies) and
  * finally the demo login account itself, so revenue/order stats contain no
  * demo leftovers and the next seed starts from a clean slate.
  *
@@ -114,6 +114,8 @@ async function purgeChefData(chefId: string, counts: PurgeCounts): Promise<void>
     }
   }
 
+  const applicationRef = doc(db, "delivery_applications", chefId);
+  const hasApplication = (await getDoc(applicationRef)).exists();
   const chefRef = doc(db, "chefs", chefId);
   const chefExists = (await getDoc(chefRef)).exists();
 
@@ -127,6 +129,7 @@ async function purgeChefData(chefId: string, counts: PurgeCounts): Promise<void>
     ...subscriptions,
     ...notifications,
     ...binRefs,
+    ...(hasApplication ? [applicationRef] : []),
     doc(db, "users", chefId),
     chefRef,
   ]);

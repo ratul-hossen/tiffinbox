@@ -52,24 +52,6 @@ data class NotificationUi(
     val createdAt: Long
 )
 
-data class DeliveryPartnerUi(
-    val id: String,
-    val name: String,
-    val phone: String
-)
-
-/** [status] is "pending" (no partner hired yet) or "assigned". */
-data class SelfServiceRequestUi(
-    val id: String,
-    val pickupAddress: String,
-    val dropAddress: String,
-    val preferredTime: String,
-    val note: String,
-    val status: String,
-    val deliveryPartnerId: String,
-    val createdAt: Long
-)
-
 data class MealUi(
     val id: String,
     val chefId: String,

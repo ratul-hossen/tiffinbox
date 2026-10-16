@@ -150,16 +150,25 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   order. **The actual delivery-partner Android app (job list,
   accept/decline, live location, navigation) does not exist yet** — that's
   the single largest remaining piece of unbuilt work in the whole project.
-  Because of this, selecting **"tiffinbox" delivery mode on
-  `ChefDashboardScreen` no longer actually switches `deliveryMode`** — it
-  shows a "Coming soon" apology dialog instead (apologizes, thanks the
-  chef for their interest, tells them to use an external delivery service
-  for now, says TiffinBox's own system is coming soon) and leaves
-  `deliveryMode` unchanged. The radio option stays visible (so the
-  feature reads as "coming soon," not missing) but can no longer be
-  silently selected while there's no real system behind it. This is the
-  explicit owner decision — don't wire it back to a real toggle until the
-  delivery-partner app (phase 7) actually exists.
+  **Delivery applications (2026-10-16, owner decision):** a chef keeps
+  doing their own delivery ("self") OR applies for TiffinBox's delivery
+  subscription. Chef dashboard → "Apply for TiffinBox Delivery" (also the
+  "Apply now" button in the coming-soon dialog shown when tapping the
+  TiffinBox radio) → `DeliveryApplicationScreen` (route
+  `delivery_application`; contact number, pickup address, ~orders/day,
+  radius km, Breakfast/Lunch/Dinner slots, note) →
+  `delivery_applications/{chefUid}` (status pending/approved/rejected,
+  `adminNote`; chef may edit/withdraw only while pending). admin-web
+  **Delivery Applications** page (Operations group) approves/rejects, with
+  WhatsApp/Gmail contact buttons and an optional message to the chef.
+  **Approve sets the chef's `deliveryMode` to "tiffinbox"**, which shows
+  customers the existing "🛵 TiffinBox Delivery" badge (ChefCard /
+  ChefDetail); reject / back-to-waiting resets it to "self". After
+  approval the chef can switch between self and TiffinBox themselves;
+  `firestore.rules` `chefDeliveryModeAllowed()` blocks switching to
+  "tiffinbox" without an approved application. The actual delivery
+  operation (partner app, assignment) is still not built - handled
+  manually for now; build it as phase 7.
 - admin-web: Dashboard, Chefs, Meals, Users, Orders, Reviews,
   Subscriptions, Activity Log, Chats, Delivery Partners, Admins (with a
   super-admin tier) pages — all built and deployed.
@@ -334,17 +343,12 @@ list), all free-tier:
   ProfileScreen (customer) and a new bell icon on ChefDashboardScreen's
   header (chef). `firestore.rules` documents why writes are deliberately
   cross-user here (no Cloud Function to broker it).
-- **[x] Self Service + Hire Delivery Man (task #67) — DONE.** A
-  `self_service_requests/{id}` Firestore collection
-  (`FirestoreSelfServiceRepository.kt`), `SelfServiceRequestScreen`
-  (pickup/drop address, time, note — reached from a new ProfileScreen
-  menu item) and `HireDeliveryManScreen` (lists `delivery_partners` where
-  `isActive == true`; hiring sets `deliveryPartnerId` +
-  `status: "assigned"`). Since the actual delivery-partner Android app
-  doesn't exist yet (phase 7, still out of scope), admin-web gets a
-  **Self Service** page to see every request and manually assign/reassign
-  a partner via a dropdown, so the feature is end-to-end usable now
-  rather than a write-only stub.
+- **[~] Self Service + Hire Delivery Man (task #67) — REMOVED 2026-10-16**
+  on the owner's instruction: a customer-side point-to-point delivery
+  request made no sense ("eita to chef side e thaker kotha"). Replaced by
+  the chef-side **TiffinBox Delivery application** (see "Delivery
+  applications" below). The old `self_service_requests` collection, screens,
+  repo and admin page are gone.
 
 ### Explicit owner delegation on this task
 

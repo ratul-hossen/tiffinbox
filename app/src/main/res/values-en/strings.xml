@@ -308,24 +308,6 @@
     <string name="profile_menu_notifications">Notifications</string>
     <string name="notifications_title">Notifications</string>
     <string name="notifications_empty">No notifications yet</string>
-    <string name="profile_menu_self_service">Self Service Delivery</string>
-
-    <!-- SelfServiceRequestScreen -->
-    <string name="self_service_title">Self Service</string>
-    <string name="self_service_subtitle">Request a point-to-point delivery (e.g. Home to Office).</string>
-    <string name="self_service_pickup_label">Pickup address</string>
-    <string name="self_service_drop_label">Drop address</string>
-    <string name="self_service_time_label">Preferred time (optional)</string>
-    <string name="self_service_note_label">Note (optional)</string>
-    <string name="self_service_fields_required">Enter both pickup and drop addresses</string>
-    <string name="self_service_submit_button">Send Request</string>
-
-    <!-- HireDeliveryManScreen -->
-    <string name="hire_delivery_man_title">Hire a Delivery Man</string>
-    <string name="hire_delivery_man_subtitle">Choose a delivery partner from the list below</string>
-    <string name="hire_delivery_man_empty">No delivery partners are active right now</string>
-    <string name="hire_delivery_man_hire_button">Hire</string>
-    <string name="hire_delivery_man_hired">Hired: %1$s</string>
     <string name="profile_menu_settings">Settings</string>
     <string name="profile_demo_user_name">Rafi Ahmed</string>
     <string name="profile_demo_phone">+880 1XXXXXXXXX</string>
@@ -433,7 +415,7 @@
     <string name="chef_dashboard_delivery_mode_self">I\'ll deliver it myself</string>
     <string name="chef_dashboard_delivery_mode_tiffinbox">Use TiffinBox\'s delivery service</string>
     <string name="chef_dashboard_delivery_coming_soon_title">Coming soon</string>
-    <string name="chef_dashboard_delivery_coming_soon_message">Sorry, we don\'t have our own delivery system yet. For now, please use an external delivery service. Thanks for your interest — we\'ll be launching our delivery system soon.</string>
+    <string name="chef_dashboard_delivery_coming_soon_message">Sorry, we don\'t have our own delivery system yet. For now, please use an external delivery service. You can apply now and we\'ll contact you when it launches.</string>
     <string name="chef_dashboard_delivery_coming_soon_ok">OK</string>
     <string name="chef_dashboard_kitchen_photo_title">Kitchen photo</string>
     <string name="chef_dashboard_kitchen_photo_button">Upload photo</string>
@@ -494,4 +476,34 @@
 
     <!-- StarRatingInput -->
     <string name="star_rating_content_description">%1$d star</string>
+
+    <!-- DeliveryApplicationScreen (chef side) -->
+    <string name="chef_dashboard_delivery_apply_link">Apply for TiffinBox Delivery →</string>
+    <string name="chef_dashboard_delivery_view_application">View your delivery application →</string>
+    <string name="chef_dashboard_delivery_apply_now">Apply now</string>
+    <string name="delivery_app_title">TiffinBox Delivery Application</string>
+    <string name="delivery_app_banner">You cook, we deliver</string>
+    <string name="delivery_app_intro">TiffinBox\'s own delivery service is coming soon. Once it launches, you just prepare the food when an order comes in and our delivery partner picks it up. Apply now — we\'ll contact you on WhatsApp or email before launch. Applying is free.</string>
+    <string name="delivery_app_contact_label">Contact number (WhatsApp)</string>
+    <string name="delivery_app_pickup_label">Pickup address (your kitchen)</string>
+    <string name="delivery_app_daily_orders_label">Approx. orders per day</string>
+    <string name="delivery_app_radius_label">Delivery distance (km)</string>
+    <string name="delivery_app_slots_label">Which meals need delivery</string>
+    <string name="delivery_app_slot_breakfast">Breakfast</string>
+    <string name="delivery_app_slot_lunch">Lunch</string>
+    <string name="delivery_app_slot_dinner">Dinner</string>
+    <string name="delivery_app_note_label">Anything else (optional)</string>
+    <string name="delivery_app_submit">Submit application</string>
+    <string name="delivery_app_update">Update application</string>
+    <string name="delivery_app_withdraw">Withdraw application</string>
+    <string name="delivery_app_withdrawn">Application withdrawn</string>
+    <string name="delivery_app_submitted">Application submitted! We\'ll be in touch soon.</string>
+    <string name="delivery_app_failed">Couldn\'t submit — check your internet and try again</string>
+    <string name="delivery_app_required">Enter a contact number and pickup address</string>
+    <string name="delivery_app_slots_required">Pick at least one meal time</string>
+    <string name="delivery_app_status_label">Application status: %1$s</string>
+    <string name="delivery_app_status_pending">Under review</string>
+    <string name="delivery_app_status_approved">Approved — we\'ll let you know when the service launches</string>
+    <string name="delivery_app_status_rejected">Not approved this time</string>
+    <string name="delivery_app_admin_note">Message from TiffinBox: %1$s</string>
 </resources>

@@ -44,7 +44,7 @@ import ActivityLogPage from "./components/ActivityLogPage";
 import AdminsPage from "./components/AdminsPage";
 import ChatsPage from "./components/ChatsPage";
 import DeliveryPartnersPage from "./components/DeliveryPartnersPage";
-import SelfServiceRequestsPage from "./components/SelfServiceRequestsPage";
+import DeliveryApplicationsPage from "./components/DeliveryApplicationsPage";
 import RecycleBinPage from "./components/RecycleBinPage";
 import SearchInput from "./components/ui/SearchInput";
 
@@ -63,7 +63,7 @@ type Tab =
   | "admins"
   | "chats"
   | "deliveryPartners"
-  | "selfServiceRequests"
+  | "deliveryApplications"
   | "recycleBin";
 
 interface TabMeta {
@@ -150,11 +150,12 @@ const TABS: TabMeta[] = [
     description: "Customer feedback on taste, hygiene, and delivery.",
   },
   {
-    key: "selfServiceRequests",
-    label: "Self Service",
+    key: "deliveryApplications",
+    label: "Delivery Applications",
     icon: Navigation,
     group: "Operations",
-    description: "Point-to-point delivery requests awaiting a partner.",
+    searchPlaceholder: "Search applications…",
+    description: "Chefs who applied to use TiffinBox's own delivery service (launching later).",
   },
   {
     key: "users",
@@ -383,7 +384,7 @@ export default function App() {
           {tab === "activity" && <ActivityLogPage search={search} />}
           {tab === "chats" && <ChatsPage search={search} />}
           {tab === "deliveryPartners" && <DeliveryPartnersPage />}
-          {tab === "selfServiceRequests" && <SelfServiceRequestsPage />}
+          {tab === "deliveryApplications" && <DeliveryApplicationsPage search={search} />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
           {tab === "recycleBin" && <RecycleBinPage search={search} isSuperAdmin={isSuperAdmin} />}
         </main>

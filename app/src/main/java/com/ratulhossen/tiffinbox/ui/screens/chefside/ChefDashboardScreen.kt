@@ -38,6 +38,7 @@ import androidx.compose.ui.window.Dialog
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreDeliveryApplicationRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.ChefVideoUi
@@ -63,7 +64,8 @@ fun ChefDashboardScreen(
     onOpenMessages: () -> Unit,
     onOpenNotifications: () -> Unit = {},
     onEditProfile: () -> Unit = {},
-    onOpenCoupons: () -> Unit = {}
+    onOpenCoupons: () -> Unit = {},
+    onApplyForDelivery: () -> Unit = {}
 ) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
@@ -73,6 +75,8 @@ fun ChefDashboardScreen(
     var isApproved by remember { mutableStateOf<Boolean?>(null) }
     var isRejected by remember { mutableStateOf(false) }
     var deliveryMode by remember { mutableStateOf("self") }
+    // Status of this chef's TiffinBox Delivery application (null = never applied).
+    var deliveryApplicationStatus by remember { mutableStateOf<String?>(null) }
     var kitchenPhotoBase64 by remember { mutableStateOf("") }
     var isUploadingPhoto by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf<List<ChefVideoUi>>(emptyList()) }
@@ -102,6 +106,7 @@ fun ChefDashboardScreen(
         val chef = FirestoreCatalogRepository.getChef(chefId)
         kitchenName = chef?.kitchenName
         deliveryMode = chef?.deliveryMode ?: "self"
+        deliveryApplicationStatus = FirestoreDeliveryApplicationRepository.getMyApplication(chefId)?.status
         kitchenPhotoBase64 = chef?.photoBase64 ?: ""
         videos = chef?.videos ?: emptyList()
         isApproved = chef?.isVerified ?: false
@@ -308,17 +313,33 @@ fun ChefDashboardScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
                         selected = deliveryMode == "tiffinbox",
-                        // TiffinBox's own delivery system doesn't exist yet (see
-                        // CLAUDE.md phase 7) - selecting this shows an apology
-                        // dialog instead of actually switching deliveryMode, so
-                        // a chef can't silently end up relying on a service that
-                        // isn't really there.
-                        onClick = { showDeliveryComingSoonDialog = true }
+                        // Only a chef whose TiffinBox Delivery application the
+                        // admin approved can switch to it (firestore.rules
+                        // enforces the same); everyone else gets the
+                        // coming-soon dialog with an "Apply now" button.
+                        onClick = {
+                            if (deliveryApplicationStatus == "approved") {
+                                deliveryMode = "tiffinbox"
+                                FirestoreChefRepository.updateDeliveryMode(chefId, "tiffinbox")
+                            } else {
+                                showDeliveryComingSoonDialog = true
+                            }
+                        }
                     )
                     Text(
                         stringResource(R.string.chef_dashboard_delivery_mode_tiffinbox),
                         style = MaterialTheme.typography.bodyMedium
                     )
+                }
+                if (deliveryApplicationStatus != "approved") {
+                    TextButton(onClick = onApplyForDelivery) {
+                        Text(
+                            stringResource(
+                                if (deliveryApplicationStatus == null) R.string.chef_dashboard_delivery_apply_link
+                                else R.string.chef_dashboard_delivery_view_application
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -556,6 +577,14 @@ fun ChefDashboardScreen(
             title = { Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_title)) },
             text = { Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_message)) },
             confirmButton = {
+                TextButton(onClick = {
+                    showDeliveryComingSoonDialog = false
+                    onApplyForDelivery()
+                }) {
+                    Text(stringResource(R.string.chef_dashboard_delivery_apply_now))
+                }
+            },
+            dismissButton = {
                 TextButton(onClick = { showDeliveryComingSoonDialog = false }) {
                     Text(stringResource(R.string.chef_dashboard_delivery_coming_soon_ok))
                 }
