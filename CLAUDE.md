@@ -666,6 +666,12 @@ formatted (`formatDistanceKm`, "2,636 km"), Meal Details read-only info pills,
 allergen section hidden when empty, plates-left amber (red at <= 3). Work the
 🕓 items in the order listed there; ❓ items need the owner's answer (they
 change copy/behaviour). Update the file whenever an item lands.
+- **Orbit reuse:** `FoodOrbit`'s ring is now `OrbitRing` (AnimatedHeader.kt,
+  angle read only in layout/draw) + `orbitFrontAngle()`. Used once more, in
+  RewardsScreen's RankHero: the 5 ranks step from Rookie to the user's rank
+  on open, land in front, then pop + star burst, then rest. Rule (owner loves
+  the orbit, said don't overdo it): never two orbits on one screen, only where
+  the motion means something; rejected spots are listed in the review doc.
 
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 

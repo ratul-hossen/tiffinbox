@@ -1,6 +1,9 @@
 package com.ratulhossen.tiffinbox.ui.screens.rewards
 
 import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
+import com.ratulhossen.tiffinbox.ui.components.OrbitRing
+import com.ratulhossen.tiffinbox.ui.components.orbitFrontAngle
+import kotlinx.coroutines.delay
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.Animatable
@@ -40,7 +43,7 @@ import com.ratulhossen.tiffinbox.domain.RewardsStatus
 import com.ratulhossen.tiffinbox.ui.theme.brandGradient
 
 /**
- * TiffinBox Points as a little game: current rank badge (bouncing), level,
+ * TiffinBox Points as a little game: the rank ladder as a stepping ring, level,
  * an XP bar to the next rank, the rank ladder with what each unlocks, and
  * how to earn / spend. All numbers come from FirestoreOrderRepository.getMyRewards().
  */
@@ -135,10 +138,22 @@ fun RewardsScreen(onBack: () -> Unit) {
 
 @Composable
 private fun RankHero(s: RewardsStatus) {
-    // One springy pop when the screen opens (with the star burst behind it),
-    // then the badge rests - no endless bouncing.
+    // The rank ladder as the same stepping ring as Home's food orbit: on open
+    // it turns one rank at a time from Rookie up to yours, lands with your
+    // rank in front, then the badge pops and the star burst plays once.
+    // After that everything rests - no endless motion.
+    val ranks = Rewards.RANKS
+    val currentIndex = ranks.indexOfFirst { it.level == s.rank.level }.coerceAtLeast(0)
+    val angle = remember { Animatable(orbitFrontAngle(0, ranks.size)) }
     val pop = remember { Animatable(0.6f) }
-    LaunchedEffect(Unit) {
+    var landed by remember { mutableStateOf(false) }
+    LaunchedEffect(currentIndex) {
+        delay(350)
+        for (i in 1..currentIndex) {
+            angle.animateTo(orbitFrontAngle(i, ranks.size), tween(650, easing = FastOutSlowInEasing))
+            delay(180)
+        }
+        landed = true
         pop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow))
     }
     val progress by animateFloatAsState(s.progressToNext, tween(1200, easing = FastOutSlowInEasing), label = "xp")
@@ -159,16 +174,41 @@ private fun RankHero(s: RewardsStatus) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Box(contentAlignment = Alignment.Center) {
-                TiffinLottie(res = R.raw.lottie_star_burst, loop = false, modifier = Modifier.size(190.dp))
-                Box(
-                    modifier = Modifier
-                        .size(108.dp)
-                        .scale(pop.value)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.18f))
-                        .border(3.dp, Color.White.copy(alpha = 0.6f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) { Text(s.rank.emoji, fontSize = 58.sp) }
+                if (landed) {
+                    TiffinLottie(res = R.raw.lottie_star_burst, loop = false, modifier = Modifier.size(230.dp))
+                }
+                OrbitRing(
+                    count = ranks.size,
+                    angle = { angle.value },
+                    size = 210.dp,
+                    center = { centerSize ->
+                        Box(
+                            modifier = Modifier
+                                .size(centerSize)
+                                .scale(pop.value)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.18f))
+                                .border(3.dp, Color.White.copy(alpha = 0.6f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) { Text(s.rank.emoji, fontSize = 52.sp) }
+                    }
+                ) { index, itemSize ->
+                    val rank = ranks[index]
+                    val unlocked = s.lifetimePoints >= rank.minPoints
+                    Box(
+                        modifier = Modifier
+                            .size(itemSize)
+                            .alpha(if (unlocked) 1f else 0.45f)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = if (index == currentIndex) 0.35f else 0.16f))
+                            .border(
+                                if (index == currentIndex) 2.5.dp else 1.dp,
+                                Color.White.copy(alpha = if (index == currentIndex) 0.95f else 0.5f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) { Text(if (unlocked) rank.emoji else "🔒", fontSize = 22.sp) }
+                }
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(s.rank.title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)

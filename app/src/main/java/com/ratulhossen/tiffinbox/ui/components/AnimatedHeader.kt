@@ -90,45 +90,78 @@ fun FoodOrbit(
             angle.animateTo(angle.value + step, tween(900, easing = FastOutSlowInEasing))
         }
     }
+    OrbitRing(
+        count = satellites.size,
+        angle = { angle.value },
+        size = size,
+        modifier = modifier,
+        center = { centerSize ->
+            // Central plate turns a little the other way with each step.
+            Image(
+                painter = painterResource(center),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(centerSize)
+                    .graphicsLayer { rotationZ = -angle.value / 3 }
+                    .shadow(12.dp, CircleShape)
+                    .clip(CircleShape)
+                    .border(3.dp, Color.White.copy(alpha = 0.85f), CircleShape)
+            )
+        }
+    ) { index, satelliteSize ->
+        Image(
+            painter = painterResource(satellites[index]),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(satelliteSize)
+                .shadow(6.dp, CircleShape)
+                .clip(CircleShape)
+                .border(2.dp, Color.White, CircleShape)
+        )
+    }
+}
+
+/** Angle (in the ring's [angle] units) at which item [index] sits in the front (bottom) slot. */
+fun orbitFrontAngle(index: Int, count: Int): Float = 90f - index * (360f / count.coerceAtLeast(1))
+
+/**
+ * The ring behind [FoodOrbit], reusable for other items: [count] circles
+ * placed around [center]; the one in the bottom-front slot grows. [angle] is
+ * read only in the layout/draw phase, so animating it never recomposes.
+ */
+@Composable
+fun OrbitRing(
+    count: Int,
+    angle: () -> Float,
+    size: Dp,
+    modifier: Modifier = Modifier,
+    center: @Composable (centerSize: Dp) -> Unit,
+    satellite: @Composable (index: Int, satelliteSize: Dp) -> Unit
+) {
+    val step = 360f / count.coerceAtLeast(1)
     val satelliteSize = size * 0.28f
     val radiusPx = with(LocalDensity.current) { ((size - satelliteSize) / 2).toPx() }
 
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
-        // Central plate turns a little the other way with each step.
-        Image(
-            painter = painterResource(center),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(size * 0.5f)
-                .graphicsLayer { rotationZ = -angle.value / 3 }
-                .shadow(12.dp, CircleShape)
-                .clip(CircleShape)
-                .border(3.dp, Color.White.copy(alpha = 0.85f), CircleShape)
-        )
-        satellites.forEachIndexed { index, res ->
-            Image(
-                painter = painterResource(res),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+        center(size * 0.5f)
+        repeat(count) { index ->
+            Box(
                 modifier = Modifier
                     .offset {
-                        val rad = Math.toRadians((angle.value + index * step).toDouble())
+                        val rad = Math.toRadians((angle() + index * step).toDouble())
                         IntOffset((cos(rad) * radiusPx).roundToInt(), (sin(rad) * radiusPx).roundToInt())
                     }
-                    .size(satelliteSize)
                     .graphicsLayer {
                         // The slot at the bottom-front is the "featured" one.
-                        val rad = Math.toRadians((angle.value + index * step - 90.0))
+                        val rad = Math.toRadians((angle() + index * step - 90.0))
                         val front = cos(rad).coerceAtLeast(0.0)
                         val grow = 1f + 0.28f * (front * front * front * front).toFloat()
                         scaleX = grow
                         scaleY = grow
                     }
-                    .shadow(6.dp, CircleShape)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.White, CircleShape)
-            )
+            ) { satellite(index, satelliteSize) }
         }
     }
 }

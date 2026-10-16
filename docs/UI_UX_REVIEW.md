@@ -73,6 +73,27 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | G2 | পুরো app গাঢ় লাল/বাদামি background-এ গাঢ় card | Card আর background-এর পার্থক্য কম, সব একরকম লাগে। | Card-এ একটু হালকা surface বা সূক্ষ্ম border। Light mode-ও যাচাই করা দরকার। | 🕓 Later |
 | G3 | Emoji লেখার ভেতরে ("🍙 ⚡0", "✨ Today's pick") | TalkBack emoji-র নাম পড়ে শোনায়। | Emoji-গুলোকে আলাদা, screen reader থেকে লুকানো element করা। | 🕓 Later |
 
+## Motion: Home-এর plate orbit অন্য কোথাও (owner-এর অনুরোধ)
+
+Orbit-টা কেন ভালো লাগে: এটা "ঘুরে, থামে, আবার ঘুরে" (step-রে চলে) আর সামনের item-টা বড় হয়।
+তাই চোখ একবারে একটা জিনিসে যায়। এটা app-এর signature motion, তাই এখানে নিয়ম হলো:
+**একই screen-এ দুটো orbit না, আর অর্থ না থাকলে orbit না।** প্রতিটা সম্ভাব্য জায়গা যাচাই:
+
+| জায়গা | সিদ্ধান্ত | কেন |
+|---|---|---|
+| Rewards-এর rank badge | ✅ যোগ করা হয়েছে | ৫টা rank একটা ring-এ। Screen খুললে Rookie থেকে আপনার rank পর্যন্ত এক ধাপ এক ধাপ করে ঘুরে, আপনার rank সামনে এসে থামে, তারপর badge pop আর star burst একবার। Motion-টা progress বোঝায়, তারপর থেমে থাকে। |
+| Splash | ❌ বাদ | Screen মাত্র ~১.৫ সেকেন্ড থাকে, এক ধাপও পুরো দেখা যাবে না। Ripple-ই যথেষ্ট। |
+| Login / Signup | ❌ বাদ | Form পূরণের সময় নড়াচড়া মনোযোগ কাড়ে। Home-এর আগে orbit দেখালে Home-এর প্রথম impression-ও কমে যায়। |
+| Home-এর "No chefs nearby" empty state | ❌ বাদ | একই screen-এর উপরেই orbit আছে, দুটো হলে বেশি হয়ে যায়। |
+| Chef Detail (রান্নার ছবির ring) | ❌ এখন না | Cover photo আর menu list-ই এখানে আসল content। Orbit-এ ছোট ছবি meal list-এর সাথে duplicate হয়। |
+| Order tracking | ❌ বাদ | প্রতিটা stage-এর নিজস্ব Lottie আছে, যা stage-এর মানে বোঝায়। Orbit সেখানে কোনো তথ্য দেয় না। |
+
+**নিজের যাচাই (Rewards orbit):** দরকার আছে, কারণ আগে badge একা একটা emoji ছিল আর ladder নিচে
+আলাদা list-এ। এখন screen-এর শুরুতেই চোখে পড়ে, পরের rank কোনটা আর কত দূরে। সময় সীমিত:
+সর্বোচ্চ rank-এর জন্য ৪ ধাপ × ~০.৮ সেকেন্ড ≈ ৩.৫ সেকেন্ড, তারপর সব থেমে যায়। ঝুঁকি হলো,
+বারবার Rewards খুললে প্রতিবার পুরো ঘোরা দেখতে হয়। ব্যবহারে বিরক্ত লাগলে পরের ধাপে শুধু প্রথমবার
+বা rank বাড়ার পর পুরো animation দেখানো হবে (🕓 Later, M-R1)।
+
 ## পরের ধাপ
 
 1. 🕓 Later-এর কাজগুলো এই ক্রমে: H5 → M4 → H4 → G2 → H6 → C3 → G3।
