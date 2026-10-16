@@ -31,6 +31,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Search
@@ -262,7 +263,7 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.weight(1f)) {
                         Surface(
@@ -340,7 +341,7 @@ fun HomeScreen(
                             R.drawable.cat_dinner,
                             R.drawable.cat_dessert
                         ),
-                        size = 128.dp
+                        size = 112.dp
                     )
                 }
 
@@ -613,16 +614,20 @@ private fun SectionHeader(title: String, onSeeAllClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Surface(
-            onClick = onSeeAllClick,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer
-        ) {
+        // A light text link, not a filled pill: "See all" is secondary to the content.
+        TextButton(onClick = onSeeAllClick, contentPadding = PaddingValues(horizontal = 8.dp)) {
             Text(
                 stringResource(R.string.home_see_all),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(2.dp))
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -709,7 +714,7 @@ private fun TodaySpecialCard(
 private fun HeaderCircleButton(onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(48.dp)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.22f))
             .clickable(onClick = onClick),

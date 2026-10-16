@@ -182,26 +182,24 @@ fun MealDetailScreen(
                 Text(stringResource(R.string.meal_dietary_tags_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 val generalTag = stringResource(R.string.meal_general_tag)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(meal.dietaryTags.ifEmpty { listOf(generalTag) }) { tag ->
-                        AssistChip(onClick = {}, label = { Text(tag) })
-                    }
+                InfoPillRow(meal.dietaryTags.ifEmpty { listOf(generalTag) })
+
+                // Only shown when the meal actually lists allergens.
+                val allergens = meal.allergens.filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
+                if (allergens.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(stringResource(R.string.meal_allergens_title), style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    InfoPillRow(allergens)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(stringResource(R.string.meal_allergens_title), style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(meal.allergens) { allergen ->
-                        AssistChip(onClick = {}, label = { Text(allergen) })
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                // Amber normally; red only when stock is really running out.
                 Text(
                     stringResource(R.string.meal_plates_left, meal.availableQuantity),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (meal.availableQuantity <= 3) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.tertiary
                 )
             }
         }
@@ -220,6 +218,26 @@ private fun MealDetailShimmer() {
             ShimmerBox(modifier = Modifier.fillMaxWidth().height(14.dp))
             Spacer(modifier = Modifier.height(8.dp))
             ShimmerBox(modifier = Modifier.fillMaxWidth(0.8f).height(14.dp))
+        }
+    }
+}
+
+/** Read-only info pills (not chips - nothing happens on tap, so they don't look tappable). */
+@Composable
+private fun InfoPillRow(labels: List<String>) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(labels) { label ->
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                )
+            }
         }
     }
 }

@@ -168,7 +168,7 @@ fun ChefCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        stringResource(R.string.chef_card_distance_km, chef.distanceKm.toString()),
+                        stringResource(R.string.chef_card_distance_km, formatDistanceKm(chef.distanceKm)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -199,3 +199,8 @@ fun ChefCard(
         }
     }
 }
+
+/** "1.4" under 10 km; whole numbers with thousands separators beyond ("2,636"). */
+internal fun formatDistanceKm(km: Double): String =
+    if (km < 10) String.format(java.util.Locale.US, "%.1f", km)
+    else String.format(java.util.Locale.US, "%,d", kotlin.math.round(km).toLong())

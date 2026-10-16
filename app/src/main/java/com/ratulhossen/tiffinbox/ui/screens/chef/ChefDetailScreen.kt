@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.chef
 
+import com.ratulhossen.tiffinbox.ui.components.formatDistanceKm
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import com.ratulhossen.tiffinbox.data.firebase.ReviewUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
@@ -172,7 +173,7 @@ fun ChefDetailScreen(
                                 R.string.chef_rating_summary,
                                 chef.overallRating.toString(),
                                 chef.totalOrders.toString(),
-                                chef.distanceKm.toString()
+                                formatDistanceKm(chef.distanceKm)
                             )
                         )
                     }

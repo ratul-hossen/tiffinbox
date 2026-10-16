@@ -656,6 +656,17 @@ and the `role_customer` photo unchanged.
   to load and stayed "…" if there were no chefs). A failed/offline read
   keeps the cached copy.
 
+## UI/UX self-review (2026-10-16)
+
+Owner asked for a professional UI/UX critique of this session's changes and
+to keep improving from it: **`docs/UI_UX_REVIEW.md`** is the tracker (issue
+ids H/C/M/R/G, status ✅ Fixed / 🕓 Later / ❓ Owner). Fixed so far: Home
+header buttons 48dp + orbit 112dp, "See all" as a text link, distances
+formatted (`formatDistanceKm`, "2,636 km"), Meal Details read-only info pills,
+allergen section hidden when empty, plates-left amber (red at <= 3). Work the
+🕓 items in the order listed there; ❓ items need the owner's answer (they
+change copy/behaviour). Update the file whenever an item lands.
+
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
 Owner's explicit ask (paraphrased from Bengali): real AI integration, not an
