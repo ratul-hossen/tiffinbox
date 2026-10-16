@@ -22,6 +22,15 @@ without Firebase Storage, Cloud Functions, or Google Maps Platform**
 unless the owner explicitly says otherwise in a given conversation. See
 "Known billing constraint" below for the established workarounds.
 
+## How to talk to the owner (important, don't skip)
+
+- **In the Claude app / web chat:** reply in **Bengali script (বাংলা)**,
+  keeping technical English terms in English (PR, commit, build, Firestore,
+  Menu Manager, etc.).
+- **In the terminal (Claude Code CLI):** reply in **plain English only**.
+- **Never write Banglish** (Bengali words in Latin letters, e.g. "ami
+  korchi") anywhere.
+
 ## Git workflow (important, don't skip)
 
 - Develop on `claude/great-cray-r5ziwz`, push there.
