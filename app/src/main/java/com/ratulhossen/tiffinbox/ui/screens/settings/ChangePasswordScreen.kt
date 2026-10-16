@@ -100,11 +100,11 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                     successMessage = null
                     if (newPassword.length < 6) {
                         errorMessage = tooShortMessage
-                        return@Button
+                        return@TiffinButton
                     }
                     if (newPassword != confirmPassword) {
                         errorMessage = mismatchMessage
-                        return@Button
+                        return@TiffinButton
                     }
                     isLoading = true
                     scope.launch {

@@ -113,7 +113,7 @@ fun SelfServiceRequestScreen(onBack: () -> Unit, onRequestCreated: (requestId: S
                     errorMessage = null
                     if (pickupAddress.isBlank() || dropAddress.isBlank()) {
                         errorMessage = requiredMessage
-                        return@Button
+                        return@TiffinButton
                     }
                     isLoading = true
                     scope.launch {
