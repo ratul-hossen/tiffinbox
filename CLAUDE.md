@@ -357,6 +357,23 @@ multiple times already — always use the free-tier equivalents above) or
 to silently dropping the admin-provisioned-only delivery-partner design
 in favor of the reference screenshots' public self-signup role.
 
+## admin-web Chef Approvals page (2026-10-16)
+
+Sidebar "Chef Approvals" (Catalog group, red pending-count pill) →
+`ChefApprovalsPage.tsx`: tabs "Waiting for review" / "Rejected"; each card
+shows kitchen photo, name/owner, kitchen type, experience, menu-item count,
+photo/location checks, bio, phone/WhatsApp/bKash/Nagad, a Google Maps link
+to the saved lat/lng, and **WhatsApp + Gmail buttons for contacting the
+chef manually** (owner explicitly said: no in-app messaging to chefs -
+follow-ups happen by hand over WhatsApp/email). Actions: Approve, Reject
+(confirm), and "Back to waiting" on rejected ones. All writes go through
+`lib/chefApproval.ts` `setChefApproval()` (also used by ChefsPage's
+Approved toggle): sets `isVerified` + `approvalStatus`
+("pending"/"approved"/"rejected") + `approvalUpdatedAt`; approval also
+drops an in-app notification. Android reads `approvalStatus`
+(`ChefUi.approvalStatus`) to show a "not approved" message instead of the
+waiting message on `ChefDashboardScreen`.
+
 ## Visual refresh: 5 themes, gradient buttons, Apple-style polish (2026-10-16)
 
 Owner (frustrated the app still looked "basic/boring", wanted Apple-smooth,

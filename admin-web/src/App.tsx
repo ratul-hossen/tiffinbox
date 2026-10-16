@@ -18,6 +18,7 @@ import {
   Repeat,
   Sun,
   Trash2,
+  UserCheck,
   Users as UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -28,6 +29,8 @@ import Login from "./components/Login";
 import AccessDenied from "./components/AccessDenied";
 import Dashboard from "./components/Dashboard";
 import ChefsPage from "./components/ChefsPage";
+import ChefApprovalsPage from "./components/ChefApprovalsPage";
+import PendingApprovalsCount from "./components/PendingApprovalsCount";
 import MealsPage from "./components/MealsPage";
 import UsersPage from "./components/UsersPage";
 import OrdersPage from "./components/OrdersPage";
@@ -43,6 +46,7 @@ import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
   | "dashboard"
+  | "chefApprovals"
   | "chefs"
   | "meals"
   | "users"
@@ -75,6 +79,14 @@ const TABS: TabMeta[] = [
     icon: LayoutDashboard,
     group: "Overview",
     description: "Everything on TiffinBox, in one place.",
+  },
+  {
+    key: "chefApprovals",
+    label: "Chef Approvals",
+    icon: UserCheck,
+    group: "Catalog",
+    searchPlaceholder: "Search pending chefs…",
+    description: "New chefs waiting for review - approve, ask for changes, or reject with a message.",
   },
   {
     key: "chefs",
@@ -274,6 +286,7 @@ export default function App() {
                     >
                       <Icon size={16} strokeWidth={2} className={active ? "text-apple-blue" : undefined} />
                       {t.label}
+                      {t.key === "chefApprovals" && <PendingApprovalsCount />}
                     </button>
                   );
                 })}
@@ -337,6 +350,7 @@ export default function App() {
           </div>
 
           {tab === "dashboard" && <Dashboard />}
+          {tab === "chefApprovals" && <ChefApprovalsPage search={search} />}
           {tab === "chefs" && <ChefsPage search={search} />}
           {tab === "meals" && <MealsPage search={search} />}
           {tab === "users" && <UsersPage search={search} />}

@@ -360,6 +360,8 @@
     <string name="chef_dashboard_post_video_button">Post</string>
     <string name="chef_dashboard_video_untitled">Video</string>
     <string name="chef_dashboard_pending_title">Waiting for account verification</string>
+    <string name="chef_dashboard_rejected_title">Application not approved</string>
+    <string name="chef_dashboard_rejected_message">Sorry, your kitchen application could not be approved right now. The TiffinBox team will contact you on WhatsApp or email with details.</string>
     <string name="chef_dashboard_pending_message">Once an admin verifies your kitchen profile, you\'ll be able to manage your menu and receive orders. Please check back soon.</string>
 
     <!-- MenuManagerScreen -->

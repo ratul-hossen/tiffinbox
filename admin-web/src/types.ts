@@ -3,6 +3,8 @@
 // missing fields (especially `users`, which only started being populated
 // via the new signup flow) — code should not assume completeness.
 
+export type ChefApprovalStatus = "pending" | "approved" | "rejected";
+
 export interface Chef {
   id: string;
   kitchenName?: string;
@@ -29,6 +31,10 @@ export interface Chef {
   nagadNumber?: string;
   whatsappNumber?: string;
   phoneNumber?: string;
+  // Set by admin-web's Chef Approvals page (lib/chefApproval.ts). Older docs
+  // have none - treat a missing status as "pending" when !isVerified.
+  approvalStatus?: ChefApprovalStatus;
+  approvalUpdatedAt?: number;
   // true only for chefs created via the "Seed demo chefs" button on
   // ChefsPage - lets "Remove all demo chefs" find exactly this data and
   // nothing else, and lets the app show a "Demo" badge to real users.

@@ -60,6 +60,7 @@ fun ChefDashboardScreen(
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
     var kitchenName by remember { mutableStateOf<String?>(null) }
     var isApproved by remember { mutableStateOf<Boolean?>(null) }
+    var isRejected by remember { mutableStateOf(false) }
     var deliveryMode by remember { mutableStateOf("self") }
     var kitchenPhotoBase64 by remember { mutableStateOf("") }
     var isUploadingPhoto by remember { mutableStateOf(false) }
@@ -93,6 +94,7 @@ fun ChefDashboardScreen(
         kitchenPhotoBase64 = chef?.photoBase64 ?: ""
         videos = chef?.videos ?: emptyList()
         isApproved = chef?.isVerified ?: false
+        isRejected = chef?.approvalStatus == "rejected"
         if (isApproved == true) {
             val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
             forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
@@ -125,13 +127,13 @@ fun ChefDashboardScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                stringResource(R.string.chef_dashboard_pending_title),
+                stringResource(if (isRejected) R.string.chef_dashboard_rejected_title else R.string.chef_dashboard_pending_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                stringResource(R.string.chef_dashboard_pending_message),
+                stringResource(if (isRejected) R.string.chef_dashboard_rejected_message else R.string.chef_dashboard_pending_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

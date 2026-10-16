@@ -111,7 +111,8 @@ object FirestoreCatalogRepository {
             videos = videos,
             kitchenType = getString("kitchenType") ?: "",
             yearsOfExperience = (getLong("yearsOfExperience") ?: 0L).toInt(),
-            isDemo = getBoolean("isDemo") ?: false
+            isDemo = getBoolean("isDemo") ?: false,
+            approvalStatus = getString("approvalStatus") ?: ""
         )
     }
 

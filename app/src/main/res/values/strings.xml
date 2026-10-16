@@ -362,6 +362,8 @@
     <string name="chef_dashboard_post_video_button">পোস্ট করুন</string>
     <string name="chef_dashboard_video_untitled">ভিডিও</string>
     <string name="chef_dashboard_pending_title">অ্যাকাউন্ট যাচাইয়ের অপেক্ষায়</string>
+    <string name="chef_dashboard_rejected_title">আবেদন গ্রহণ করা হয়নি</string>
+    <string name="chef_dashboard_rejected_message">দুঃখিত, আপনার কিচেনের আবেদনটি এই মুহূর্তে গ্রহণ করা যায়নি। বিস্তারিত জানতে TiffinBox টিম আপনার WhatsApp বা ইমেইলে যোগাযোগ করবে।</string>
     <string name="chef_dashboard_pending_message">অ্যাডমিন আপনার কিচেন প্রোফাইল যাচাই করার পর আপনি মেনু ম্যানেজ করতে এবং অর্ডার নিতে পারবেন। অনুগ্রহ করে অপেক্ষা করুন।</string>
 
     <!-- MenuManagerScreen -->
