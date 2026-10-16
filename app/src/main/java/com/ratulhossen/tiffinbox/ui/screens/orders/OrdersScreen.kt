@@ -24,6 +24,7 @@ import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.PastOrderUi
 import com.ratulhossen.tiffinbox.data.model.label
 import com.ratulhossen.tiffinbox.ui.components.StatTile
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 private val MINI_TRACKED_STAGES = listOf(
     OrderStage.PLACED,
@@ -46,7 +47,7 @@ fun OrdersScreen() {
 
     if (!isLoading && orders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.orders_empty_message), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            PhotoEmptyState(resId = R.drawable.empty_orders, title = stringResource(R.string.orders_empty_message))
         }
         return
     }

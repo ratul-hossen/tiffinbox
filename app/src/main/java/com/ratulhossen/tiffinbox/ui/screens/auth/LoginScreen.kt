@@ -42,6 +42,8 @@ import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.FullBleedPhoto
+import com.ratulhossen.tiffinbox.ui.components.bottomScrim
 
 /**
  * Looks up the OAuth web client id that the Google Services Gradle plugin
@@ -287,15 +289,32 @@ fun LoginScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        // Food photo header (res/drawable-nodpi/login_header.jpg) with the
+        // gradient app logo tucked into its bottom-left corner.
         Box(
             modifier = Modifier
-                .size(76.dp)
-                .shadow(14.dp, RoundedCornerShape(24.dp))
-                .clip(RoundedCornerShape(24.dp))
-                .background(brandGradient()),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .height(180.dp)
+                .shadow(12.dp, MaterialTheme.shapes.large)
+                .clip(MaterialTheme.shapes.large)
         ) {
-            Text("🍱", fontSize = 38.sp)
+            FullBleedPhoto(
+                resId = R.drawable.login_header,
+                modifier = Modifier.fillMaxSize(),
+                scrim = bottomScrim(0.6f)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(14.dp)
+                    .size(56.dp)
+                    .shadow(10.dp, RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(brandGradient()),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🍱", fontSize = 28.sp)
+            }
         }
         Spacer(modifier = Modifier.height(20.dp))
         Text(

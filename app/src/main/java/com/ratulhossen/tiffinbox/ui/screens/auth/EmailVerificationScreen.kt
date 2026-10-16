@@ -24,6 +24,7 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.CirclePhoto
 
 /**
  * Blocks an email/password account until its address is confirmed via the
@@ -50,13 +51,8 @@ fun EmailVerificationScreen(onVerified: () -> Unit, onLogout: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            Icons.Filled.Email,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(64.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+        CirclePhoto(resId = R.drawable.email_verify, size = 150.dp)
+        Spacer(modifier = Modifier.height(20.dp))
         Text(stringResource(R.string.email_verification_title), fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Text(

@@ -396,6 +396,22 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   surface with tinted active pill. Cards: bigger images, softer shadows,
   larger radii (Shape.kt).
 
+## Real photos across the app (2026-10-16)
+
+Owner generated ~21 images with Nano Banana from prompts written in chat
+(shared via a Google Drive folder) and asked for as many images as possible.
+All live in `app/src/main/res/drawable-nodpi/` as compressed JPEGs (~1.6MB
+total): `splash_bg`, `onboarding_1..3` (full-screen 9:16, dark bottom third
+for text), `role_customer`/`role_chef` (3:4 photo cards; role_chef is a crop
+of the meal-prep shot), `login_header`, `hero_food` (Home banner),
+`chef_dashboard_banner`, `chef_pending`, `location_setup`, `delivery_rider`,
+`cat_*` (Home category circles), `empty_*` + `email_verify` (round
+empty-state illustrations). Shared helpers in
+`ui/components/PhotoComponents.kt`: `FullBleedPhoto` (+ `bottomScrim()`),
+`CirclePhoto`, `PhotoEmptyState`. To swap an image, replace the file with
+the same name. Two images show real people the owner knows (onboarding_1,
+chef_pending) - owner was reminded to get their OK before public release.
+
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
 Owner's explicit ask (paraphrased from Bengali): real AI integration, not an

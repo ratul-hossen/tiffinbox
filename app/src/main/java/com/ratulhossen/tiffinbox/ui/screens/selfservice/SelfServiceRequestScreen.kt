@@ -19,6 +19,9 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSelfServiceRepository
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.FullBleedPhoto
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +53,16 @@ fun SelfServiceRequestScreen(onBack: () -> Unit, onRequestCreated: (requestId: S
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .shadow(10.dp, MaterialTheme.shapes.large)
+                    .clip(MaterialTheme.shapes.large)
+            ) {
+                FullBleedPhoto(resId = R.drawable.delivery_rider, modifier = Modifier.fillMaxSize())
+            }
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 stringResource(R.string.self_service_subtitle),
                 style = MaterialTheme.typography.bodyMedium,

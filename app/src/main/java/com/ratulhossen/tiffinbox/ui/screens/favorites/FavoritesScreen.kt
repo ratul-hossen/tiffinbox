@@ -22,6 +22,7 @@ import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 @Composable
 fun FavoritesScreen(onChefClick: (String) -> Unit) {
@@ -39,20 +40,11 @@ fun FavoritesScreen(onChefClick: (String) -> Unit) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("❤️", fontSize = 40.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.favorites_empty_title),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.favorites_empty_subtitle),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            PhotoEmptyState(
+                resId = R.drawable.empty_favorites,
+                title = stringResource(R.string.favorites_empty_title),
+                subtitle = stringResource(R.string.favorites_empty_subtitle)
+            )
         }
     } else {
         LazyVerticalGrid(

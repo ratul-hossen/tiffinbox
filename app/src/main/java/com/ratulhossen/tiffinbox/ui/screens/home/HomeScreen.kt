@@ -52,6 +52,8 @@ import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
 import com.ratulhossen.tiffinbox.util.withRealDistances
+import com.ratulhossen.tiffinbox.ui.components.CirclePhoto
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 @Composable
 fun HomeScreen(
@@ -284,18 +286,23 @@ fun HomeScreen(
                         .clickable { selectedCategory = if (isSelected) null else category }
                         .padding(4.dp)
                 ) {
+                    // Real food photo in a circle; the selected one gets a
+                    // brand-gradient ring.
                     Box(
                         modifier = Modifier
-                            .size(62.dp)
-                            .shadow(if (isSelected) 8.dp else 2.dp, CircleShape)
+                            .size(66.dp)
                             .clip(CircleShape)
                             .then(
                                 if (isSelected) Modifier.background(brandGradient())
-                                else Modifier.background(MaterialTheme.colorScheme.surface)
+                                else Modifier.background(Color.Transparent)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(categoryEmoji(category), fontSize = 28.sp)
+                        CirclePhoto(
+                            resId = categoryPhoto(category),
+                            size = if (isSelected) 58.dp else 64.dp,
+                            elevation = if (isSelected) 0.dp else 4.dp
+                        )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
@@ -310,25 +317,11 @@ fun HomeScreen(
 
         if (chefs.isEmpty()) {
             Spacer(modifier = Modifier.height(28.dp))
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("🍱", fontSize = 44.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.home_empty_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.home_empty_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
+            PhotoEmptyState(
+                resId = R.drawable.empty_orders,
+                title = stringResource(R.string.home_empty_title),
+                subtitle = stringResource(R.string.home_empty_subtitle)
+            )
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -418,11 +411,10 @@ private fun SectionHeader(title: String, onSeeAllClick: () -> Unit) {
     }
 }
 
-private fun categoryEmoji(category: String): String = when (category) {
-    "Breakfast" -> "🍳"
-    "Lunch" -> "🍛"
-    "Dinner" -> "🍲"
-    "Snack" -> "🥟"
-    "Dessert" -> "🍮"
-    else -> "🍽️"
+private fun categoryPhoto(category: String): Int = when (category) {
+    "Breakfast" -> R.drawable.cat_breakfast
+    "Dinner" -> R.drawable.cat_dinner
+    "Snack" -> R.drawable.cat_snack
+    "Dessert" -> R.drawable.cat_dessert
+    else -> R.drawable.cat_lunch
 }

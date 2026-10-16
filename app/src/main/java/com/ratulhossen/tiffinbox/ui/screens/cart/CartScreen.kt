@@ -17,6 +17,7 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,10 +68,7 @@ fun CartScreen(
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    stringResource(R.string.cart_empty_message),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                PhotoEmptyState(resId = R.drawable.empty_cart, title = stringResource(R.string.cart_empty_message))
             }
         } else {
             LazyColumn(
