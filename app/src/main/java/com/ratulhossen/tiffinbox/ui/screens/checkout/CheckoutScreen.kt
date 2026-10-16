@@ -29,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,8 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import androidx.compose.foundation.horizontalScroll
-import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
-import com.ratulhossen.tiffinbox.domain.DeliveryQuotes
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
@@ -121,6 +121,10 @@ fun CheckoutScreen(
     var paymentScreenshotUri by remember { mutableStateOf<Uri?>(null) }
     var chefBkashNumber by remember { mutableStateOf("") }
     var chefNagadNumber by remember { mutableStateOf("") }
+    // The part of the delivery fee that came from an admin area surcharge, so
+    // it gets its own summary line instead of silently inflating the total.
+    var deliverySurcharge by remember { mutableIntStateOf(0) }
+    var deliverySurchargeArea by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val items = CartStore.items
     val scope = rememberCoroutineScope()
@@ -146,7 +150,15 @@ fun CheckoutScreen(
             if (me != null && chef != null && chef.latitude != 0.0) {
                 chefDistanceKm = haversineKm(me.latitude, me.longitude, chef.latitude, chef.longitude)
             }
-            CartStore.deliveryFee = DeliveryQuotes.quote(chefDistanceKm, FirestoreAppConfigRepository.deliveryPricing()).fee
+            // Through DeliveryQuoter, not DeliveryQuotes directly, so the
+            // kitchen's own rates, the admin's per-chef cap and any area
+            // surcharge all apply - see DeliveryQuoter's docs.
+            chef?.let { c ->
+                val quote = DeliveryQuoter.quote(c)
+                CartStore.deliveryFee = quote.fee
+                deliverySurcharge = quote.surcharge
+                deliverySurchargeArea = quote.surchargeArea
+            }
             usableCoupons = FirestoreCouponRepository.getUsableCoupons(chefId)
         }
     }
@@ -537,7 +549,20 @@ fun CheckoutScreen(
             Text(stringResource(R.string.checkout_order_summary_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
-            SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.deliveryFee)
+            // The surcharge is already inside CartStore.deliveryFee; show the
+            // kitchen's own fee here and break the extra out below, so the
+            // customer can see why a festival-day bill is higher.
+            SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.deliveryFee - deliverySurcharge)
+            if (deliverySurcharge > 0) {
+                SummaryRow(
+                    if (deliverySurchargeArea.isNotBlank()) {
+                        stringResource(R.string.checkout_delivery_surcharge_row, deliverySurchargeArea)
+                    } else {
+                        stringResource(R.string.checkout_delivery_surcharge_generic)
+                    },
+                    deliverySurcharge
+                )
+            }
             if (deliveryFee == 0) {
                 SummaryRow(stringResource(R.string.checkout_free_delivery_row), -CartStore.deliveryFee)
             }

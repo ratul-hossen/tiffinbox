@@ -1,46 +1,84 @@
 <!--
   Legacy round launcher icon for API 24-25 (minSdk is 24), which has no adaptive
   icons - those live in mipmap-anydpi-v26/. Nothing masks this one, so it
-  draws its own circle and the mark can sit a little larger than the
-  adaptive foreground's safe circle allows.
+  draws its own circle with the colourful tiffin box inside.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <path android:pathData="M54,4 A50,50 0 1,1 53.9,4 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="linear"
-                android:startX="4"
-                android:startY="4"
-                android:endX="104"
-                android:endY="104">
-                <item android:offset="0" android:color="#FFFF3B4E" />
-                <item android:offset="1" android:color="#FF8E0E1C" />
-            </gradient>
-        </aapt:attr>
-    </path>
-
+    <!-- Circular background (warm cream) -->
     <path
-        android:pathData="M45,43 C45,28 63,28 63,43"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="5"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000" />
+        android:fillColor="#FFF8F0"
+        android:pathData="M54,4 A50,50 0 1,1 53.9,4 Z" />
 
+    <!-- Outer box (wooden brown) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M42,43 L66,43 Q69,43 69,46 L69,51 Q69,54 66,54 L42,54 Q39,54 39,51 L39,46 Q39,43 42,43 Z" />
+        android:fillColor="#8B5E3C"
+        android:pathData="M30,28 L78,28 Q82,28 82,32 L82,80 Q82,84 78,84 L30,84 Q26,84 26,80 L26,32 Q26,28 30,28 Z" />
 
+    <!-- Inner floor (lighter wood) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M42,57 L66,57 Q69,57 69,60 L69,65 Q69,68 66,68 L42,68 Q39,68 39,65 L39,60 Q39,57 42,57 Z" />
+        android:fillColor="#D4A76A"
+        android:pathData="M31,29 L77,29 Q81,29 81,33 L81,79 Q81,83 77,83 L31,83 Q27,83 27,79 L27,33 Q27,29 31,29 Z" />
 
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M42,71 L66,71 Q69,71 69,74 L69,79 Q69,82 66,82 L42,82 Q39,82 39,79 L39,74 Q39,71 42,71 Z" />
+    <!-- Dividers -->
+    <path android:fillColor="#6B4226"
+        android:pathData="M27,54 L81,54 L81,56 L27,56 Z" />
+    <path android:fillColor="#6B4226"
+        android:pathData="M53,29 L55,29 L55,54 L53,54 Z" />
+    <path android:fillColor="#6B4226"
+        android:pathData="M53,56 L55,56 L55,83 L53,83 Z" />
+
+    <!-- Top-left: White rice + red centre -->
+    <path android:fillColor="#FFF8EE"
+        android:pathData="M28,30 L52,30 L52,53 L28,53 Z" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M33,35 a1.2,1.2 0 1,1 2.4,0 a1.2,1.2 0 1,1 -2.4,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M38,38 a1,1 0 1,1 2,0 a1,1 0 1,1 -2,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M43,34 a1.1,1.1 0 1,1 2.2,0 a1.1,1.1 0 1,1 -2.2,0" />
+    <path android:fillColor="#EDE4D3"
+        android:pathData="M35,43 a1,1 0 1,1 2,0 a1,1 0 1,1 -2,0" />
+    <path android:fillColor="#E53935"
+        android:pathData="M37,39 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0" />
+    <path android:fillColor="#C62828"
+        android:pathData="M39,38 a1.8,1.5 0 1,1 3.6,0 a1.8,1.5 0 1,1 -3.6,0" />
+
+    <!-- Top-right: Green vegetables -->
+    <path android:fillColor="#43A047"
+        android:pathData="M56,30 L80,30 L80,53 L56,53 Z" />
+    <path android:fillColor="#2E7D32"
+        android:pathData="M62,36 Q68,32 72,38 Q68,42 62,36 Z" />
+    <path android:fillColor="#66BB6A"
+        android:pathData="M60,42 Q64,38 70,43 Q66,48 60,42 Z" />
+    <path android:fillColor="#388E3C"
+        android:pathData="M64,46 Q69,43 74,48 Q70,51 64,46 Z" />
+
+    <!-- Bottom-left: Orange curry -->
+    <path android:fillColor="#FF9800"
+        android:pathData="M28,57 L52,57 L52,82 L28,82 Z" />
+    <path android:fillColor="#F57C00"
+        android:pathData="M34,64 a4,3 0 1,1 8,0 a4,3 0 1,1 -8,0" />
+    <path android:fillColor="#FFB74D"
+        android:pathData="M36,71 a3.5,2.8 0 1,1 7,0 a3.5,2.8 0 1,1 -7,0" />
+    <path android:fillColor="#E65100"
+        android:pathData="M42,66 a2,2 0 1,1 4,0 a2,2 0 1,1 -4,0" />
+
+    <!-- Bottom-right: Egg + meat -->
+    <path android:fillColor="#FFCC80"
+        android:pathData="M56,57 L80,57 L80,82 L56,82 Z" />
+    <path android:fillColor="#FAFAFA"
+        android:pathData="M62,63 a4,3.5 0 1,1 8,0 a4,3.5 0 1,1 -8,0" />
+    <path android:fillColor="#FFC107"
+        android:pathData="M64,62.5 a2.2,2 0 1,1 4.4,0 a2.2,2 0 1,1 -4.4,0" />
+    <path android:fillColor="#A1887F"
+        android:pathData="M59,70 Q63,67 68,71 Q65,76 59,70 Z" />
+    <path android:fillColor="#8D6E63"
+        android:pathData="M67,73 Q71,70 76,74 Q73,78 67,73 Z" />
+    <path android:fillColor="#F44336"
+        android:pathData="M73,62 Q76,60 77,63 Q75,65 73,62 Z" />
 </vector>

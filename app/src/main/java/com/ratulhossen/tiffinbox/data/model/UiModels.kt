@@ -44,10 +44,28 @@ data class ChefUi(
     val story: String = "",
     /** Set by the admin after checking the chef's NID / kitchen photo (admin-only fields). */
     val nidVerified: Boolean = false,
-    val kitchenVerified: Boolean = false
+    val kitchenVerified: Boolean = false,
+    /**
+     * The chef's own delivery rates, used only while [deliveryMode] is
+     * "self". -1 means "not set" - the app's own rates apply instead, so a
+     * chef who never touches this charges exactly what TiffinBox would.
+     */
+    val selfDeliveryBaseFee: Int = -1,
+    val selfDeliveryPerKmFee: Int = -1,
+    val selfDeliveryIncludedKm: Double = -1.0,
+    /**
+     * Ceiling the admin fixed on this kitchen's own delivery fee (admin-only
+     * field, see chefLockedFields in firestore.rules). 0 = fall back to the
+     * global cap in App Settings.
+     */
+    val maxDeliveryFee: Int = 0
 ) {
     /** Both checks done: shows the "Verified" badge. */
     val isFullyVerified: Boolean get() = nidVerified && kitchenVerified
+
+    /** True once the chef has set any of their own delivery rates. */
+    val hasOwnDeliveryRates: Boolean
+        get() = selfDeliveryBaseFee >= 0 || selfDeliveryPerKmFee >= 0 || selfDeliveryIncludedKm >= 0
 }
 
 data class ChefVideoUi(
@@ -217,7 +235,18 @@ data class ChefOrderUi(
     /** Pre-order slot (epoch millis); 0 = "as soon as possible". */
     val scheduledFor: Long = 0L,
     /** mealName -> quantity, for the pre-order demand summary. */
-    val itemQuantities: Map<String, Int> = emptyMap()
+    val itemQuantities: Map<String, Int> = emptyMap(),
+    /**
+     * Who and where to deliver to - copied onto the order when it's placed so
+     * the chef can see it without reading the customer's profile (which the
+     * rules don't let them do). Blank on orders placed before these existed.
+     */
+    val customerName: String = "",
+    val customerPhone: String = "",
+    val deliveryAddress: String = "",
+    /** The delivery point, for the kitchen -> customer distance. 0 = unknown. */
+    val deliveryLatitude: Double = 0.0,
+    val deliveryLongitude: Double = 0.0
 )
 
 data class EarningsSummary(

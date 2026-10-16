@@ -412,6 +412,8 @@
     <string name="chef_dashboard_accept_button">Accept</string>
     <string name="chef_dashboard_reject_button">Reject</string>
     <string name="chef_dashboard_payment_transaction_label">%1$s Transaction ID: %2$s</string>
+    <string name="chef_order_distance">📍 %1$s away</string>
+    <string name="chef_order_chat">Chat</string>
     <string name="chef_dashboard_view_screenshot_button">View payment screenshot</string>
     <string name="chef_dashboard_screenshot_load_failed">Couldn\'t load screenshot</string>
     <string name="chef_dashboard_delivery_mode_title">Delivery</string>
@@ -647,4 +649,19 @@
     <string name="meal_plans_empty">No kitchens offer meal plans yet</string>
     <string name="meal_plans_starting_from">Starting from ৳%1$d</string>
     <string name="meal_plans_subscribe">Subscribe</string>
+    <string name="checkout_delivery_surcharge_row">%1$s area surcharge</string>
+    <string name="checkout_delivery_surcharge_generic">Extra delivery charge</string>
+    <string name="delivery_charge_title">Delivery charge</string>
+    <string name="delivery_charge_subtitle">What a customer pays you when you deliver the order yourself.</string>
+    <string name="delivery_charge_base">Base fee (৳)</string>
+    <string name="delivery_charge_per_km">Per extra km (৳)</string>
+    <string name="delivery_charge_included_km">Included km</string>
+    <string name="delivery_charge_max_note">Admin\'s maximum: ৳%1$d</string>
+    <string name="delivery_charge_over_max">You can\'t charge more than ৳%1$d.</string>
+    <string name="delivery_charge_default_note">Leave these blank to charge exactly what the app would.</string>
+    <string name="delivery_charge_save">Save charge</string>
+    <string name="delivery_charge_saved">Delivery charge saved.</string>
+    <string name="delivery_charge_tiffinbox_note">TiffinBox Delivery is on, so the app sets the charge.</string>
+    <string name="delivery_charge_example">At %1$d km: ৳%2$d</string>
+    <string name="delivery_charge_invalid">Enter a valid number in every box.</string>
 </resources>

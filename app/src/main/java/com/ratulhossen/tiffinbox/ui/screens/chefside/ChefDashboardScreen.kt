@@ -4,6 +4,7 @@ import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocalOffer
@@ -19,7 +20,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
@@ -52,6 +57,8 @@ import com.ratulhossen.tiffinbox.domain.DemandForecastEngine
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.ui.components.EarningsChart
 import com.ratulhossen.tiffinbox.ui.components.StatTile
+import com.ratulhossen.tiffinbox.ui.components.formatDistanceKm
+import com.ratulhossen.tiffinbox.util.haversineKm
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
@@ -70,7 +77,10 @@ fun ChefDashboardScreen(
     onOpenNotifications: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onOpenCoupons: () -> Unit = {},
-    onOpenDeliveryOption: () -> Unit = {}
+    onOpenDeliveryOption: () -> Unit = {},
+    onOpenVerification: () -> Unit = {},
+    /** Opens the existing chef<->customer chat thread for an order's customer. */
+    onOpenChat: (String) -> Unit = {}
 ) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
@@ -83,6 +93,9 @@ fun ChefDashboardScreen(
     var deliveryMode by remember { mutableStateOf("self") }
     var deliveryUntil by remember { mutableStateOf(0L) }
     var kitchenPhotoBase64 by remember { mutableStateOf("") }
+    // The kitchen's own point, so each order can show how far it has to go.
+    var kitchenLat by remember { mutableStateOf(0.0) }
+    var kitchenLng by remember { mutableStateOf(0.0) }
     // The chef's own full menu (incl. switched-off meals) - feeds the
     // "complete your kitchen" suggestions below.
     var myMeals by remember { mutableStateOf<List<MealUi>?>(null) }
@@ -122,6 +135,8 @@ fun ChefDashboardScreen(
         deliveryMode = freshChef?.deliveryMode ?: "self"
         deliveryUntil = freshChef?.deliveryUntil ?: 0L
         kitchenPhotoBase64 = chef?.photoBase64 ?: ""
+        kitchenLat = chef?.latitude ?: 0.0
+        kitchenLng = chef?.longitude ?: 0.0
         available = chef?.isAvailableToday ?: true
         myMeals = FirestoreCatalogRepository.getMealsForChef(chefId, includeUnavailable = true)
         videos = chef?.videos ?: emptyList()
@@ -575,6 +590,17 @@ fun ChefDashboardScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
+                    CustomerDeliveryCard(
+                        order = order,
+                        kitchenLat = kitchenLat,
+                        kitchenLng = kitchenLng,
+                        onCall = { phone ->
+                            context.startActivity(
+                                Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
+                            )
+                        },
+                        onChat = { onOpenChat(order.customerId) }
+                    )
                     if (order.paymentTransactionId.isNotBlank()) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -751,6 +777,109 @@ private fun PreOrderDemandCard(preOrders: List<ChefOrderUi>) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Who this order is for and where it has to go: the customer's name, the
+ * delivery address, how far that is from the kitchen, and one tap each to
+ * call them or open the chat thread the app already has.
+ *
+ * These come off the order document itself (written when the order was
+ * placed) - firestore.rules deliberately doesn't let a chef read a
+ * customer's profile, so this snapshot is the only thing they see.
+ * Orders placed before these fields existed simply show less.
+ */
+@Composable
+private fun CustomerDeliveryCard(
+    order: ChefOrderUi,
+    kitchenLat: Double,
+    kitchenLng: Double,
+    onCall: (String) -> Unit,
+    onChat: () -> Unit
+) {
+    val hasAnything = order.customerName.isNotBlank() ||
+        order.deliveryAddress.isNotBlank() ||
+        order.customerPhone.isNotBlank()
+    if (!hasAnything) return
+
+    val distanceKm = remember(order.id, kitchenLat, kitchenLng) {
+        if (kitchenLat == 0.0 && kitchenLng == 0.0) null
+        else if (order.deliveryLatitude == 0.0 && order.deliveryLongitude == 0.0) null
+        else haversineKm(kitchenLat, kitchenLng, order.deliveryLatitude, order.deliveryLongitude)
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            if (order.customerName.isNotBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        order.customerName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            if (order.deliveryAddress.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        Icons.Filled.Place,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        order.deliveryAddress,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (distanceKm != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.chef_order_distance, formatDistanceKm(distanceKm)),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (order.customerPhone.isNotBlank()) {
+                    TextButton(
+                        onClick = { onCall(order.customerPhone) },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Filled.Call, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(order.customerPhone, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+                TextButton(
+                    onClick = onChat,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.chef_order_chat), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
