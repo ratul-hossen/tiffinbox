@@ -91,7 +91,25 @@ fun HomeScreen(
     var hasRealDistances by remember { mutableStateOf(false) }
     // The customer's own saved (default) address - the same point used for
     // the distance math below, so the header and "nearby" always agree.
-    var myAddress by remember { mutableStateOf<String?>(null) }
+    // Starts from the copy saved on the phone last time, so the header shows
+    // the address instantly instead of "…" while Firestore loads.
+    val uidForAddress = FirebaseAuthRepository.currentUser?.uid
+    var myAddress by remember { mutableStateOf(HomeAddressCache.read(context, uidForAddress)) }
+    LaunchedEffect(uidForAddress) {
+        // Refresh on its own (not after the meals/chefs loads) and only touch
+        // the header if the saved address actually changed.
+        val uid = uidForAddress ?: run { myAddress = ""; return@LaunchedEffect }
+        // A failed read (offline) keeps the saved copy instead of blanking it.
+        val profile = FirestoreUserRepository.getProfile(uid) ?: run {
+            if (myAddress == null) myAddress = ""
+            return@LaunchedEffect
+        }
+        val fresh = profile.address.ifBlank { null }
+            ?: FirestoreUserRepository.getLocation(uid)?.let { LocationRepository.reverseGeocode(context, it) }
+            ?: ""
+        if (fresh != myAddress) myAddress = fresh
+        HomeAddressCache.write(context, uid, fresh)
+    }
     var rewards by remember { mutableStateOf<RewardsStatus?>(null) }
     LaunchedEffect(Unit) {
         if (FirebaseAuthRepository.currentUser != null) rewards = FirestoreOrderRepository.getMyRewards()
@@ -132,9 +150,6 @@ fun HomeScreen(
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
         val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
-        myAddress = uid?.let { FirestoreUserRepository.getProfile(it)?.address }?.ifBlank { null }
-            ?: myLocation?.let { LocationRepository.reverseGeocode(context, it) }
-            ?: ""
         if (myLocation != null) {
             chefs = firestoreChefs.withRealDistances(myLocation)
             hasRealDistances = true
@@ -700,4 +715,16 @@ private fun HeaderCircleButton(onClick: () -> Unit, content: @Composable () -> U
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { content() }
+}
+
+/** Last known Home header address per account, kept on the phone (SharedPreferences). */
+private object HomeAddressCache {
+    private const val PREFS = "home_address_cache"
+
+    fun read(context: android.content.Context, uid: String?): String? =
+        uid?.let { context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getString(it, null) }
+
+    fun write(context: android.content.Context, uid: String, address: String) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putString(uid, address).apply()
+    }
 }

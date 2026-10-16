@@ -650,6 +650,11 @@ and the `role_customer` photo unchanged.
 - Meal Details has no top bar: the 4:3 photo starts at the very top behind
   the status bar with a dark top fade and a floating round back button; the
   Today's Special badge moved to the photo's bottom-left.
+- Home header address shows instantly: `HomeAddressCache` (SharedPreferences,
+  per uid) seeds it, and a separate LaunchedEffect refreshes it from
+  `users/{uid}` right away (it used to wait for meals/coupons/orders/chefs
+  to load and stayed "…" if there were no chefs). A failed/offline read
+  keeps the cached copy.
 
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
