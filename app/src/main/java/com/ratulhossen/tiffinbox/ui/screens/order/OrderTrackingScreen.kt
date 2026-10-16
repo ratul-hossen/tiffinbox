@@ -26,6 +26,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.label
 import com.ratulhossen.tiffinbox.data.model.toOrderStage
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 private val TRACKED_STAGES = listOf(
     OrderStage.PLACED,
@@ -142,7 +143,7 @@ fun OrderTrackingScreen(orderId: String, onDone: (chefId: String) -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
         if (stage == OrderStage.DELIVERED) {
-            Button(
+            TiffinButton(
                 onClick = { chefId?.let(onDone) },
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {

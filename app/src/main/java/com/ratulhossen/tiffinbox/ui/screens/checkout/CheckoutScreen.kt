@@ -31,6 +31,7 @@ import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.util.ImageCompressor
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 private enum class PaymentMethod(val available: Boolean) {
     CASH_ON_DELIVERY(available = true),
@@ -110,7 +111,7 @@ fun CheckoutScreen(
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
-                    Button(
+                    TiffinButton(
                         onClick = {
                             errorMessage = null
                             if (selectedPayment.isMobileBanking) {

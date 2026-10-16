@@ -88,8 +88,22 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   order tracking (real Firestore-backed, not a fake timer), reviews,
   favorites, subscriptions (weekly/monthly plans), chef dashboard with
   real earnings/forecast charts (Vico), chef menu manager.
-- Firebase Auth (email/password + Google Sign-In via Credential Manager),
-  email verification (fire-and-forget on signup). **No SMS OTP** - it was
+- Firebase Auth (email/password + Google Sign-In via Credential Manager).
+  **Email verification is enforced** (2026-10-16, free on Spark):
+  `EmailVerificationScreen` (route `email_verification/{role}/{next}`)
+  blocks an unverified email/password account after signup (next =
+  location setup), on login and on app reopen (Splash reloads the user
+  first) until the emailed link is clicked; resend + logout buttons.
+  `FirebaseAuthRepository.needsEmailVerification()` exempts Google
+  accounts and demo chefs' fake `@tiffinbox.app` emails.
+- **No fake sample data shown to real users** (2026-10-16): Home, Chef
+  list, Search, Favorites, Orders and Menu Manager start empty and show
+  only Firestore data (previously they fell back to `SampleData` chefs/
+  meals/orders whenever Firestore was empty, so a brand-new account saw 3
+  fake orders). `SampleData.categories` (static filter chips) is still
+  used. The old Profile "Developer: Send sample data" button
+  (`FirestoreSeedRepository`) was removed - admin-web's "Seed demo chefs"
+  replaces it. **No SMS OTP** - it was
   built once (Firebase Phone Auth) but removed 2026-10-16 on the owner's
   explicit instruction: Phone Auth SMS needs the paid Blaze plan (Spark
   can only use Console "test numbers"), which violates the free-only rule.
@@ -342,6 +356,61 @@ new Blaze/billing costs (that pattern has been asked and declined
 multiple times already — always use the free-tier equivalents above) or
 to silently dropping the admin-provisioned-only delivery-partner design
 in favor of the reference screenshots' public self-signup role.
+
+## admin-web Chef Approvals page (2026-10-16)
+
+Sidebar "Chef Approvals" (Catalog group, red pending-count pill) →
+`ChefApprovalsPage.tsx`: tabs "Waiting for review" / "Rejected"; each card
+shows kitchen photo, name/owner, kitchen type, experience, menu-item count,
+photo/location checks, bio, phone/WhatsApp/bKash/Nagad, a Google Maps link
+to the saved lat/lng, and **WhatsApp + Gmail buttons for contacting the
+chef manually** (owner explicitly said: no in-app messaging to chefs -
+follow-ups happen by hand over WhatsApp/email). Actions: Approve, Reject
+(confirm), and "Back to waiting" on rejected ones. All writes go through
+`lib/chefApproval.ts` `setChefApproval()` (also used by ChefsPage's
+Approved toggle): sets `isVerified` + `approvalStatus`
+("pending"/"approved"/"rejected") + `approvalUpdatedAt`; approval also
+drops an in-app notification. Android reads `approvalStatus`
+(`ChefUi.approvalStatus`) to show a "not approved" message instead of the
+waiting message on `ChefDashboardScreen`.
+
+## Visual refresh: 5 themes, gradient buttons, Apple-style polish (2026-10-16)
+
+Owner (frustrated the app still looked "basic/boring", wanted Apple-smooth,
+colorful, image-rich, multiple user-selectable themes, new buttons):
+- **Themes** (`ui/theme/`): `ThemePalette` = BLACK_RED (default),
+  SUNSET_ORANGE, OCEAN_BLUE, CLASSIC_GREEN, DYNAMIC (Material You wallpaper
+  colors on Android 12+, falls back to Black&Red). Separate `ThemeMode`
+  SYSTEM/LIGHT/DARK. Both persisted in `ThemePreferences`. Each palette is a
+  `BrandColors` (Color.kt) on shared iOS-style neutrals; its two gradient
+  colors are exposed via `LocalBrandGradient` / `brandGradient()`.
+  Never rename enum entries (persisted by name).
+- **`TiffinButton`** (`ui/components/TiffinButton.kt`): gradient pill +
+  colored glow + springy press - a drop-in for Material `Button(onClick,
+  modifier, enabled) {}`; every screen's primary `Button` was switched to it.
+- Home: gradient header (location/greeting/profile/search), hero banner
+  photo `res/drawable-nodpi/hero_food.jpg` (placeholder - owner may replace
+  it with a Nano Banana-generated image; keep the same filename), round
+  emoji category tiles, animated reveal, empty state. Settings: swatch-card
+  theme picker + segmented mode picker. Bottom bar: rounded floating
+  surface with tinted active pill. Cards: bigger images, softer shadows,
+  larger radii (Shape.kt).
+
+## Real photos across the app (2026-10-16)
+
+Owner generated ~21 images with Nano Banana from prompts written in chat
+(shared via a Google Drive folder) and asked for as many images as possible.
+All live in `app/src/main/res/drawable-nodpi/` as compressed JPEGs (~1.6MB
+total): `splash_bg`, `onboarding_1..3` (full-screen 9:16, dark bottom third
+for text), `role_customer`/`role_chef` (3:4 photo cards; role_chef is a crop
+of the meal-prep shot), `login_header`, `hero_food` (Home banner),
+`chef_dashboard_banner`, `chef_pending`, `location_setup`, `delivery_rider`,
+`cat_*` (Home category circles), `empty_*` + `email_verify` (round
+empty-state illustrations). Shared helpers in
+`ui/components/PhotoComponents.kt`: `FullBleedPhoto` (+ `bottomScrim()`),
+`CirclePhoto`, `PhotoEmptyState`. To swap an image, replace the file with
+the same name. Two images show real people the owner knows (onboarding_1,
+chef_pending) - owner was reminded to get their OK before public release.
 
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 

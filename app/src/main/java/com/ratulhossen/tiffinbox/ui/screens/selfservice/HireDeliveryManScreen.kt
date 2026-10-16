@@ -21,6 +21,7 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSelfServiceRepository
 import com.ratulhossen.tiffinbox.data.model.DeliveryPartnerUi
 import com.ratulhossen.tiffinbox.data.model.SelfServiceRequestUi
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +97,7 @@ fun HireDeliveryManScreen(requestId: String, onBack: () -> Unit) {
                                     Text(partner.phone, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
-                            Button(
+                            TiffinButton(
                                 enabled = hiringId == null,
                                 onClick = {
                                     hiringId = partner.id

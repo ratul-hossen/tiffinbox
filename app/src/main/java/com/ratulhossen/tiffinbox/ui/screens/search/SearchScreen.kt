@@ -25,6 +25,7 @@ import com.ratulhossen.tiffinbox.domain.ml.MlSearchIntentModel
 import com.ratulhossen.tiffinbox.domain.ml.PriceTier
 import com.ratulhossen.tiffinbox.domain.ml.SearchIntent
 import com.ratulhossen.tiffinbox.ui.components.MealCard
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 /** BDT price bands matching the tiers MlSearchIntentModel.kt's price_tier_intent head was trained on. */
 private fun priceTierOf(price: Int): PriceTier = when {
@@ -47,11 +48,11 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var vegOnly by remember { mutableStateOf(false) }
-    var allMeals by remember { mutableStateOf(SampleData.meals) }
+    var allMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         val firestoreMeals = FirestoreCatalogRepository.getAllMeals()
-        if (firestoreMeals.isNotEmpty()) allMeals = firestoreMeals
+        allMeals = firestoreMeals
     }
 
     // Natural-language search intent (veg + price-tier), predicted on-device
@@ -140,13 +141,6 @@ private fun EmptySearchState() {
             .padding(top = 48.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("🍽️", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.search_empty_state_message),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        PhotoEmptyState(resId = R.drawable.empty_search, title = stringResource(R.string.search_empty_state_message))
     }
 }

@@ -1,134 +1,128 @@
 package com.ratulhossen.tiffinbox.ui.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
-private val GreenLightColors = lightColorScheme(
-    primary = TiffinEmerald,
+/** The current palette's two gradient colors - read via [brandGradient]. */
+data class BrandGradient(val start: Color, val end: Color)
+
+val LocalBrandGradient = staticCompositionLocalOf { BrandGradient(BlackRedBrand.gradientStart, BlackRedBrand.gradientEnd) }
+
+/** Diagonal brand gradient for buttons, headers and banners. */
+@Composable
+fun brandGradient(): Brush {
+    val g = LocalBrandGradient.current
+    return Brush.linearGradient(listOf(g.start, g.end))
+}
+
+private fun lightScheme(b: BrandColors): ColorScheme = lightColorScheme(
+    primary = b.primary,
     onPrimary = Color.White,
-    primaryContainer = TiffinEmeraldLight,
-    onPrimaryContainer = TiffinEmeraldDark,
-    secondary = TiffinGraphite,
+    primaryContainer = b.primaryContainer,
+    onPrimaryContainer = b.onPrimaryContainer,
+    secondary = b.secondary,
     onSecondary = Color.White,
-    secondaryContainer = TiffinGraphiteLight,
-    onSecondaryContainer = TiffinGraphiteDark,
-    tertiary = TiffinAmber,
+    secondaryContainer = NeutralSurfaceVariant,
+    onSecondaryContainer = NeutralOnSurface,
+    tertiary = b.tertiary,
     onTertiary = Color.White,
-    tertiaryContainer = TiffinAmberLight,
-    onTertiaryContainer = TiffinAmberDark,
-    background = TiffinBackground,
-    onBackground = TiffinOnSurface,
-    surface = TiffinSurface,
-    onSurface = TiffinOnSurface,
-    surfaceVariant = TiffinSurfaceDim,
-    onSurfaceVariant = TiffinOnSurfaceMuted,
-    outline = TiffinOutline,
-    outlineVariant = TiffinOutline,
-    error = TiffinRed,
+    tertiaryContainer = b.primaryContainer,
+    onTertiaryContainer = b.onPrimaryContainer,
+    background = NeutralBackground,
+    onBackground = NeutralOnSurface,
+    surface = NeutralSurface,
+    onSurface = NeutralOnSurface,
+    surfaceVariant = NeutralSurfaceVariant,
+    onSurfaceVariant = NeutralOnSurfaceMuted,
+    surfaceContainer = NeutralSurface,
+    surfaceContainerLow = NeutralSurface,
+    surfaceContainerHigh = NeutralSurface,
+    outline = NeutralOutline,
+    outlineVariant = NeutralOutline,
+    error = ErrorRed,
     onError = Color.White,
-    errorContainer = TiffinRedLight,
-    onErrorContainer = TiffinRed
+    errorContainer = ErrorRedContainer,
+    onErrorContainer = Color(0xFF7A0B05)
 )
 
-private val GreenDarkColors = darkColorScheme(
-    primary = TiffinEmeraldBright,
-    onPrimary = TiffinEmeraldOnBright,
-    primaryContainer = TiffinEmeraldDark,
-    onPrimaryContainer = TiffinEmeraldLight,
-    secondary = TiffinGraphiteLight,
-    onSecondary = TiffinGraphiteDark,
-    secondaryContainer = TiffinGraphiteDark,
-    onSecondaryContainer = TiffinGraphiteLight,
-    tertiary = TiffinAmberLight,
-    onTertiary = TiffinAmberDark,
-    tertiaryContainer = TiffinAmberDark,
-    onTertiaryContainer = TiffinAmberLight,
-    background = TiffinBackgroundDark,
-    onBackground = TiffinOnSurfaceDark,
-    surface = TiffinSurfaceDark,
-    onSurface = TiffinOnSurfaceDark,
-    surfaceVariant = TiffinSurfaceDimDark,
-    onSurfaceVariant = TiffinOnSurfaceMutedDark,
-    outline = TiffinOutlineDark,
-    outlineVariant = TiffinOutlineDark,
-    error = TiffinRedLight,
-    onError = TiffinRed,
-    errorContainer = TiffinRed,
-    onErrorContainer = TiffinRedLight
-)
-
-private val BlackRedLightColors = lightColorScheme(
-    primary = BlackRedPrimary,
-    onPrimary = Color.White,
-    primaryContainer = BlackRedPrimaryLight,
-    onPrimaryContainer = BlackRedPrimaryDark,
-    secondary = BlackRedSecondary,
+private fun darkScheme(b: BrandColors): ColorScheme = darkColorScheme(
+    primary = b.primaryDark,
+    onPrimary = b.onPrimaryDark,
+    primaryContainer = b.onPrimaryContainer,
+    onPrimaryContainer = b.primaryContainer,
+    secondary = b.secondary,
     onSecondary = Color.White,
-    secondaryContainer = BlackRedSecondaryLight,
-    onSecondaryContainer = BlackRedSecondaryDark,
-    tertiary = BlackRedSecondary,
-    onTertiary = Color.White,
-    tertiaryContainer = BlackRedSecondaryLight,
-    onTertiaryContainer = BlackRedSecondaryDark,
-    background = BlackRedBackground,
-    onBackground = BlackRedOnSurface,
-    surface = BlackRedSurface,
-    onSurface = BlackRedOnSurface,
-    surfaceVariant = BlackRedSurfaceDim,
-    onSurfaceVariant = BlackRedOnSurfaceMuted,
-    outline = BlackRedOutline,
-    outlineVariant = BlackRedOutline,
-    error = BlackRedPrimary,
-    onError = Color.White,
-    errorContainer = BlackRedPrimaryLight,
-    onErrorContainer = BlackRedPrimaryDark
+    secondaryContainer = NeutralSurfaceVariantDark,
+    onSecondaryContainer = NeutralOnSurfaceDark,
+    tertiary = b.tertiary,
+    onTertiary = Color.Black,
+    tertiaryContainer = b.onPrimaryContainer,
+    onTertiaryContainer = b.primaryContainer,
+    background = NeutralBackgroundDark,
+    onBackground = NeutralOnSurfaceDark,
+    surface = NeutralSurfaceDark,
+    onSurface = NeutralOnSurfaceDark,
+    surfaceVariant = NeutralSurfaceVariantDark,
+    onSurfaceVariant = NeutralOnSurfaceMutedDark,
+    surfaceContainer = NeutralSurfaceDark,
+    surfaceContainerLow = NeutralSurfaceDark,
+    surfaceContainerHigh = NeutralSurfaceVariantDark,
+    outline = NeutralOutlineDark,
+    outlineVariant = NeutralOutlineDark,
+    error = Color(0xFFFF6961),
+    onError = Color.Black,
+    errorContainer = Color(0xFF5C0A05),
+    onErrorContainer = ErrorRedContainer
 )
 
-private val BlackRedDarkColors = darkColorScheme(
-    primary = BlackRedPrimaryBright,
-    onPrimary = BlackRedOnPrimaryBright,
-    primaryContainer = BlackRedPrimaryDark,
-    onPrimaryContainer = BlackRedPrimaryLight,
-    secondary = BlackRedSecondaryLight,
-    onSecondary = BlackRedSecondaryDark,
-    secondaryContainer = BlackRedSecondaryDark,
-    onSecondaryContainer = BlackRedSecondaryLight,
-    tertiary = BlackRedSecondaryLight,
-    onTertiary = BlackRedSecondaryDark,
-    tertiaryContainer = BlackRedSecondaryDark,
-    onTertiaryContainer = BlackRedSecondaryLight,
-    background = BlackRedBackgroundDark,
-    onBackground = BlackRedOnSurfaceDark,
-    surface = BlackRedSurfaceDark,
-    onSurface = BlackRedOnSurfaceDark,
-    surfaceVariant = BlackRedSurfaceDimDark,
-    onSurfaceVariant = BlackRedOnSurfaceMutedDark,
-    outline = BlackRedOutlineDark,
-    outlineVariant = BlackRedOutlineDark,
-    error = BlackRedPrimaryBright,
-    onError = BlackRedOnPrimaryBright,
-    errorContainer = BlackRedPrimaryDark,
-    onErrorContainer = BlackRedPrimaryLight
-)
+private fun brandFor(palette: ThemePalette): BrandColors = when (palette) {
+    ThemePalette.BLACK_RED -> BlackRedBrand
+    ThemePalette.SUNSET_ORANGE -> SunsetBrand
+    ThemePalette.OCEAN_BLUE -> OceanBrand
+    ThemePalette.CLASSIC_GREEN -> GreenBrand
+    ThemePalette.DYNAMIC -> BlackRedBrand
+}
 
 @Composable
 fun TiffinBoxTheme(
     palette: ThemePalette = ThemePreferences.current,
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = when (ThemePreferences.mode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    },
     content: @Composable () -> Unit
 ) {
-    val colors = when (palette) {
-        ThemePalette.CLASSIC_GREEN -> if (darkTheme) GreenDarkColors else GreenLightColors
-        ThemePalette.BLACK_RED -> if (darkTheme) BlackRedDarkColors else BlackRedLightColors
+    val useDynamic = palette == ThemePalette.DYNAMIC && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val colors: ColorScheme
+    val gradient: BrandGradient
+    if (useDynamic) {
+        val context = LocalContext.current
+        colors = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        gradient = BrandGradient(colors.primary, colors.tertiary)
+    } else {
+        val brand = brandFor(palette)
+        colors = if (darkTheme) darkScheme(brand) else lightScheme(brand)
+        gradient = BrandGradient(brand.gradientStart, brand.gradientEnd)
     }
-    MaterialTheme(
-        colorScheme = colors,
-        typography = TiffinTypography,
-        shapes = TiffinShapes,
-        content = content
-    )
+    CompositionLocalProvider(LocalBrandGradient provides gradient) {
+        MaterialTheme(
+            colorScheme = colors,
+            typography = TiffinTypography,
+            shapes = TiffinShapes,
+            content = content
+        )
+    }
 }

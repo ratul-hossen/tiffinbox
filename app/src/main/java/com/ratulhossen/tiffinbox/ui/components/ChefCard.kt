@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
@@ -56,20 +57,22 @@ fun ChefCard(
                 indication = LocalIndication.current,
                 onClick = onClick
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp)
+                    .height(132.dp)
             ) {
                 Base64Thumbnail(
                     base64 = chef.photoBase64,
                     emoji = chef.emoji,
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape,
-                    emojiFontSize = 40.sp
+                    emojiFontSize = 52.sp
                 )
                 val isFavorite = FavoritesStore.isFavorite(chef.id)
                 Box(

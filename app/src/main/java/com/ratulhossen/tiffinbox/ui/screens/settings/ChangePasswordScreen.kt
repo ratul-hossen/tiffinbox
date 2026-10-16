@@ -18,6 +18,7 @@ import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.AuthResult
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +94,7 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Button(
+            TiffinButton(
                 onClick = {
                     errorMessage = null
                     successMessage = null

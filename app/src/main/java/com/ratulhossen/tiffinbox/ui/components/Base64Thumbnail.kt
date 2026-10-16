@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +59,14 @@ fun Base64Thumbnail(
         Box(
             modifier = modifier
                 .clip(shape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f)
+                        )
+                    )
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(emoji, style = TextStyle(fontSize = emojiFontSize))

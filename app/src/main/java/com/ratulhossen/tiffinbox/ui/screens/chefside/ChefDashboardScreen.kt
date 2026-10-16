@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -44,6 +45,12 @@ import com.ratulhossen.tiffinbox.ui.components.EarningsChart
 import com.ratulhossen.tiffinbox.ui.components.StatTile
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.FullBleedPhoto
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun ChefDashboardScreen(
@@ -59,6 +66,7 @@ fun ChefDashboardScreen(
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
     var kitchenName by remember { mutableStateOf<String?>(null) }
     var isApproved by remember { mutableStateOf<Boolean?>(null) }
+    var isRejected by remember { mutableStateOf(false) }
     var deliveryMode by remember { mutableStateOf("self") }
     var kitchenPhotoBase64 by remember { mutableStateOf("") }
     var isUploadingPhoto by remember { mutableStateOf(false) }
@@ -92,6 +100,7 @@ fun ChefDashboardScreen(
         kitchenPhotoBase64 = chef?.photoBase64 ?: ""
         videos = chef?.videos ?: emptyList()
         isApproved = chef?.isVerified ?: false
+        isRejected = chef?.approvalStatus == "rejected"
         if (isApproved == true) {
             val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
             forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
@@ -123,14 +132,24 @@ fun ChefDashboardScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .shadow(10.dp, MaterialTheme.shapes.large)
+                    .clip(MaterialTheme.shapes.large)
+            ) {
+                FullBleedPhoto(resId = R.drawable.chef_pending, modifier = Modifier.fillMaxSize())
+            }
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                stringResource(R.string.chef_dashboard_pending_title),
+                stringResource(if (isRejected) R.string.chef_dashboard_rejected_title else R.string.chef_dashboard_pending_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                stringResource(R.string.chef_dashboard_pending_message),
+                stringResource(if (isRejected) R.string.chef_dashboard_rejected_message else R.string.chef_dashboard_pending_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -167,6 +186,35 @@ fun ChefDashboardScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        // Photo banner (res/drawable-nodpi/chef_dashboard_banner.jpg) - the
+        // photo's left side is dark by design, so the kitchen name sits there.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .shadow(10.dp, MaterialTheme.shapes.large)
+                .clip(MaterialTheme.shapes.large)
+        ) {
+            FullBleedPhoto(
+                resId = R.drawable.chef_dashboard_banner,
+                modifier = Modifier.fillMaxSize(),
+                alignment = Alignment.CenterEnd,
+                scrim = Brush.horizontalGradient(
+                    listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+                )
+            )
+            Text(
+                kitchenName ?: stringResource(R.string.chef_dashboard_kitchen_name),
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth(0.6f)
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -291,7 +339,7 @@ fun ChefDashboardScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Button(
+                TiffinButton(
                     onClick = {
                         if (videoUrl.isNotBlank()) {
                             FirestoreChefRepository.addVideo(chefId, videoUrl, videoCaption)
@@ -445,7 +493,7 @@ fun ChefDashboardScreen(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { respondToOrder(order.id, "Accepted") }) {
+                        TiffinButton(onClick = { respondToOrder(order.id, "Accepted") }) {
                             Text(stringResource(R.string.chef_dashboard_accept_button))
                         }
                         OutlinedButton(onClick = { respondToOrder(order.id, "Cancelled") }) {

@@ -2,6 +2,10 @@ package com.ratulhossen.tiffinbox.ui.screens.auth
 
 import android.util.Log
 import androidx.compose.foundation.background
+import com.ratulhossen.tiffinbox.ui.theme.brandGradient
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,6 +41,9 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.FullBleedPhoto
+import com.ratulhossen.tiffinbox.ui.components.bottomScrim
 
 /**
  * Looks up the OAuth web client id that the Google Services Gradle plugin
@@ -282,6 +289,34 @@ fun LoginScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        // Food photo header (res/drawable-nodpi/login_header.jpg) with the
+        // gradient app logo tucked into its bottom-left corner.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .shadow(12.dp, MaterialTheme.shapes.large)
+                .clip(MaterialTheme.shapes.large)
+        ) {
+            FullBleedPhoto(
+                resId = R.drawable.login_header,
+                modifier = Modifier.fillMaxSize(),
+                scrim = bottomScrim(0.6f)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(14.dp)
+                    .size(56.dp)
+                    .shadow(10.dp, RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(brandGradient()),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🍱", fontSize = 28.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
             if (isLoginMode) stringResource(R.string.login_welcome_back) else stringResource(R.string.login_create_account_title),
             fontSize = 24.sp,
@@ -350,7 +385,7 @@ fun LoginScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
+        TiffinButton(
             onClick = { submit() },
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth().height(52.dp)
@@ -581,7 +616,7 @@ private fun ChefSignupStepper(
                     Text(stringResource(R.string.login_step_back_button))
                 }
             }
-            Button(
+            TiffinButton(
                 onClick = {
                     if (step < stepTitles.lastIndex) onStepChange(step + 1) else onSubmit()
                 },

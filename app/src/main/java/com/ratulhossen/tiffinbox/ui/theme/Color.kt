@@ -2,65 +2,90 @@ package com.ratulhossen.tiffinbox.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Modern minimal: near-white/near-black neutrals, one sharp accent.
+/**
+ * One accent "brand" per palette, on top of shared Apple-style neutrals
+ * (iOS grouped-background greys in light mode, true black + elevated greys
+ * in dark mode). [gradientStart]/[gradientEnd] drive every gradient in the
+ * app (buttons, Home header, hero banner) via LocalBrandGradient.
+ */
+data class BrandColors(
+    val primary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color,
+    val primaryDark: Color,
+    val onPrimaryDark: Color,
+    val secondary: Color,
+    val tertiary: Color,
+    val gradientStart: Color,
+    val gradientEnd: Color
+)
 
-// Primary — emerald, used for buttons, links, active states, verified badge
-val TiffinEmerald = Color(0xFF059669)
-val TiffinEmeraldDark = Color(0xFF065F46)
-val TiffinEmeraldLight = Color(0xFFD1FAE5)
+val BlackRedBrand = BrandColors(
+    primary = Color(0xFFE11D2E),
+    primaryContainer = Color(0xFFFFE1E4),
+    onPrimaryContainer = Color(0xFF7A0A16),
+    primaryDark = Color(0xFFFF4D5E),
+    onPrimaryDark = Color(0xFF2A0006),
+    secondary = Color(0xFF1C1C1E),
+    tertiary = Color(0xFFFF9F0A),
+    gradientStart = Color(0xFFFF3B4E),
+    gradientEnd = Color(0xFF8E0E1C)
+)
 
-val TiffinEmeraldBright = Color(0xFF10B981)
-val TiffinEmeraldOnBright = Color(0xFF052E1F)
+val SunsetBrand = BrandColors(
+    primary = Color(0xFFF2600C),
+    primaryContainer = Color(0xFFFFE6D5),
+    onPrimaryContainer = Color(0xFF6B2500),
+    primaryDark = Color(0xFFFF8A3D),
+    onPrimaryDark = Color(0xFF2E0E00),
+    secondary = Color(0xFFD9265B),
+    tertiary = Color(0xFFFFB800),
+    gradientStart = Color(0xFFFF9500),
+    gradientEnd = Color(0xFFFF2D55)
+)
 
-// Secondary — near-neutral graphite, used sparingly for secondary chips/badges
-val TiffinGraphite = Color(0xFF374151)
-val TiffinGraphiteLight = Color(0xFFF3F4F6)
-val TiffinGraphiteDark = Color(0xFF1F2937)
+val OceanBrand = BrandColors(
+    primary = Color(0xFF0A6CFF),
+    primaryContainer = Color(0xFFDCEBFF),
+    onPrimaryContainer = Color(0xFF002A6B),
+    primaryDark = Color(0xFF4D9BFF),
+    onPrimaryDark = Color(0xFF001233),
+    secondary = Color(0xFF5E5CE6),
+    tertiary = Color(0xFF30D5C8),
+    gradientStart = Color(0xFF32ADE6),
+    gradientEnd = Color(0xFF5E5CE6)
+)
 
-// Tertiary — reserved only for rating stars, kept deliberately restrained
-val TiffinAmber = Color(0xFFD97706)
-val TiffinAmberLight = Color(0xFFFEF3C7)
-val TiffinAmberDark = Color(0xFF78350F)
+val GreenBrand = BrandColors(
+    primary = Color(0xFF059669),
+    primaryContainer = Color(0xFFD1FAE5),
+    onPrimaryContainer = Color(0xFF064E3B),
+    primaryDark = Color(0xFF34D399),
+    onPrimaryDark = Color(0xFF022C22),
+    secondary = Color(0xFF0E7490),
+    tertiary = Color(0xFFF59E0B),
+    gradientStart = Color(0xFF34C759),
+    gradientEnd = Color(0xFF0E7490)
+)
 
-val TiffinRed = Color(0xFFDC2626)
-val TiffinRedLight = Color(0xFFFEE2E2)
+// Apple-style neutrals shared by every palette.
+val NeutralBackground = Color(0xFFF2F2F7)
+val NeutralSurface = Color(0xFFFFFFFF)
+val NeutralSurfaceVariant = Color(0xFFE9E9EF)
+val NeutralOnSurface = Color(0xFF111114)
+val NeutralOnSurfaceMuted = Color(0xFF6C6C72)
+val NeutralOutline = Color(0xFFD8D8DE)
 
-val TiffinBackground = Color(0xFFFAFAFA)
-val TiffinSurface = Color(0xFFFFFFFF)
-val TiffinSurfaceDim = Color(0xFFF3F4F6)
-val TiffinOnSurface = Color(0xFF111827)
-val TiffinOnSurfaceMuted = Color(0xFF6B7280)
-val TiffinOutline = Color(0xFFE5E7EB)
+val NeutralBackgroundDark = Color(0xFF000000)
+val NeutralSurfaceDark = Color(0xFF1C1C1E)
+val NeutralSurfaceVariantDark = Color(0xFF2C2C2E)
+val NeutralOnSurfaceDark = Color(0xFFF5F5F7)
+val NeutralOnSurfaceMutedDark = Color(0xFFA1A1A8)
+val NeutralOutlineDark = Color(0xFF3A3A3C)
 
-val TiffinBackgroundDark = Color(0xFF0B0F0D)
-val TiffinSurfaceDark = Color(0xFF16191C)
-val TiffinSurfaceDimDark = Color(0xFF1F2428)
-val TiffinOnSurfaceDark = Color(0xFFF3F4F6)
-val TiffinOnSurfaceMutedDark = Color(0xFF9CA3AF)
-val TiffinOutlineDark = Color(0xFF2C3236)
+val ErrorRed = Color(0xFFFF3B30)
+val ErrorRedContainer = Color(0xFFFFE2E0)
 
-// Black + White + Red palette — a bolder, higher-contrast alternative
-// theme, user-selectable in Settings (ThemePreferences).
-val BlackRedPrimary = Color(0xFFE11D2E)
-val BlackRedPrimaryDark = Color(0xFF8C0F1C)
-val BlackRedPrimaryLight = Color(0xFFFBD7DA)
-val BlackRedPrimaryBright = Color(0xFFFF3B4E)
-val BlackRedOnPrimaryBright = Color(0xFF1A0004)
-
-val BlackRedSecondary = Color(0xFF1A1A1A)
-val BlackRedSecondaryLight = Color(0xFFEDEDED)
-val BlackRedSecondaryDark = Color(0xFF2B2B2B)
-
-val BlackRedBackground = Color(0xFFFFFFFF)
-val BlackRedSurface = Color(0xFFFFFFFF)
-val BlackRedSurfaceDim = Color(0xFFF2F2F2)
-val BlackRedOnSurface = Color(0xFF0D0D0D)
-val BlackRedOnSurfaceMuted = Color(0xFF5C5C5C)
-val BlackRedOutline = Color(0xFFDADADA)
-
-val BlackRedBackgroundDark = Color(0xFF000000)
-val BlackRedSurfaceDark = Color(0xFF121212)
-val BlackRedSurfaceDimDark = Color(0xFF1E1E1E)
-val BlackRedOnSurfaceDark = Color(0xFFF5F5F5)
-val BlackRedOnSurfaceMutedDark = Color(0xFFABABAB)
-val BlackRedOutlineDark = Color(0xFF333333)
+// Rating stars / success states, independent of palette.
+val StarAmber = Color(0xFFFFB300)
+val SuccessGreen = Color(0xFF34C759)

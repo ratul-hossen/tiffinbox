@@ -29,7 +29,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
-import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreMealRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
@@ -43,7 +42,7 @@ private data class ManagedMeal(val meal: MealUi, val isAvailable: Boolean)
 @Composable
 fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
     var meals by remember(chefId) {
-        mutableStateOf(SampleData.mealsForChef(chefId).map { ManagedMeal(it, true) })
+        mutableStateOf<List<ManagedMeal>>(emptyList())
     }
 
     LaunchedEffect(chefId) {

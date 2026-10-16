@@ -14,6 +14,7 @@ import androidx.navigation.NavType
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.CompleteGoogleProfileScreen
+import com.ratulhossen.tiffinbox.ui.screens.auth.EmailVerificationScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LocationSetupScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
@@ -75,8 +76,15 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 val user = FirebaseAuthRepository.currentUser
                 val destination = if (user != null) {
                     FirestoreUserRepository.registerFcmToken(user.uid)
-                    val role = FirestoreUserRepository.getRole(user.uid)
-                    if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
+                    val role = FirestoreUserRepository.getRole(user.uid) ?: UserRole.CUSTOMER.name
+                    // isEmailVerified is cached on the device - reload once
+                    // so someone who clicked the link since last launch isn't
+                    // sent back to the verification screen.
+                    if (FirebaseAuthRepository.needsEmailVerification(user) &&
+                        !FirebaseAuthRepository.reloadAndCheckEmailVerified()
+                    ) {
+                        Routes.emailVerification(role, "home")
+                    } else if (role == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
                 } else {
                     Routes.ONBOARDING
                 }
@@ -104,11 +112,20 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             LoginScreen(
                 role = role,
                 onLoginSuccess = { resolvedRole ->
-                    val destination = if (resolvedRole == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
+                    val destination = when {
+                        FirebaseAuthRepository.needsEmailVerification() -> Routes.emailVerification(resolvedRole, "home")
+                        resolvedRole == UserRole.CHEF.name -> Routes.CHEF_DASHBOARD
+                        else -> Routes.MAIN
+                    }
                     navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
                 },
                 onSignupComplete = { uid, signupRole ->
-                    navController.navigate(Routes.locationSetup(uid, signupRole)) {
+                    val next = if (FirebaseAuthRepository.needsEmailVerification()) {
+                        Routes.emailVerification(signupRole, "location")
+                    } else {
+                        Routes.locationSetup(uid, signupRole)
+                    }
+                    navController.navigate(next) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
                 },
@@ -134,6 +151,32 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                     navController.navigate(Routes.locationSetup(uid, role)) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.EMAIL_VERIFICATION,
+            arguments = listOf(
+                navArgument("role") { type = NavType.StringType },
+                navArgument("next") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
+            val next = backStackEntry.arguments?.getString("next") ?: "home"
+            EmailVerificationScreen(
+                onVerified = {
+                    val uid = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+                    val destination = when {
+                        next == "location" -> Routes.locationSetup(uid, role)
+                        role == UserRole.CHEF.name -> Routes.CHEF_DASHBOARD
+                        else -> Routes.MAIN
+                    }
+                    navController.navigate(destination) { popUpTo(0) { inclusive = true } }
+                },
+                onLogout = {
+                    FirebaseAuthRepository.signOut()
+                    navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
                 }
             )
         }

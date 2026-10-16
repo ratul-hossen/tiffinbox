@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.model.MealUi
@@ -44,16 +45,18 @@ fun MealCard(
                 indication = LocalIndication.current,
                 onClick = onClick
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Base64Thumbnail(
                 base64 = meal.photoBase64,
                 emoji = meal.emoji,
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(84.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -75,6 +78,7 @@ fun MealCard(
                 Text(
                     stringResource(R.string.price_tag, meal.price),
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }

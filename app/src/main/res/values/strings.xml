@@ -63,6 +63,17 @@
 
     <string name="login_toggle_to_login">আগে থেকে Account আছে? Login করুন</string>
 
+    <!-- EmailVerificationScreen -->
+    <string name="email_verification_title">ইমেইল যাচাই করুন</string>
+    <string name="email_verification_body">%1$s ঠিকানায় একটা যাচাই লিংক পাঠানো হয়েছে। ইমেইলটা খুলে লিংকে ক্লিক করুন, তারপর নিচের বাটন চাপুন।</string>
+    <string name="email_verification_spam_hint">ইমেইল না পেলে Spam/Junk ফোল্ডার দেখুন।</string>
+    <string name="email_verification_check_button">আমি যাচাই করেছি</string>
+    <string name="email_verification_resend_button">আবার ইমেইল পাঠান</string>
+    <string name="email_verification_not_yet">এখনো যাচাই হয়নি — ইমেইলের লিংকে ক্লিক করে আবার চেষ্টা করুন</string>
+    <string name="email_verification_resent">নতুন যাচাই ইমেইল পাঠানো হয়েছে</string>
+    <string name="email_verification_resend_failed">ইমেইল পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন</string>
+    <string name="email_verification_logout_button">অন্য অ্যাকাউন্ট ব্যবহার করুন (Logout)</string>
+
     <!-- LocationSetupScreen -->
     <string name="location_setup_title">আপনার লোকেশন দিন</string>
     <string name="location_setup_subtitle_customer">আপনার কাছাকাছি chef খুঁজে দেখাতে আমাদের আপনার লোকেশন দরকার</string>
@@ -110,6 +121,11 @@
     <string name="home_section_recommended">আপনার জন্য Recommended</string>
     <string name="home_section_ai_recommended">✨ AI Recommended For You</string>
     <string name="home_section_nearby">কাছাকাছি Home Chef</string>
+    <string name="home_hero_badge">🔥 আজকের স্পেশাল</string>
+    <string name="home_hero_title">ঘরের রান্না, সরাসরি আপনার দরজায়</string>
+    <string name="home_hero_subtitle">কাছের হোম শেফদের তাজা খাবার অর্ডার করুন</string>
+    <string name="home_empty_title">এখনো কোনো chef নেই</string>
+    <string name="home_empty_subtitle">আপনার এলাকায় chef যোগ হলেই এখানে দেখাবে</string>
     <string name="home_see_all">সব দেখুন</string>
 
     <!-- SearchScreen -->
@@ -242,6 +258,14 @@
     <string name="settings_theme_title">থিম</string>
     <string name="settings_theme_subtitle">অ্যাপের রঙ পছন্দ করুন</string>
     <string name="settings_theme_black_red">Black &amp; Red</string>
+    <string name="settings_theme_sunset">Sunset Orange</string>
+    <string name="settings_theme_ocean">Ocean Blue</string>
+    <string name="settings_theme_dynamic">Dynamic (ওয়ালপেপার থেকে)</string>
+    <string name="settings_theme_dynamic_note">Android 12+ এ ফোনের ওয়ালপেপারের রং নেয়</string>
+    <string name="settings_mode_title">মোড</string>
+    <string name="settings_mode_system">সিস্টেম</string>
+    <string name="settings_mode_light">লাইট</string>
+    <string name="settings_mode_dark">ডার্ক</string>
     <string name="settings_theme_classic_green">Classic Green</string>
     <string name="settings_menu_change_password">পাসওয়ার্ড পরিবর্তন করুন</string>
     <string name="settings_menu_payment_methods">পেমেন্ট মেথড</string>
@@ -280,10 +304,6 @@
     <string name="privacy_policy_title">প্রাইভেসি পলিসি</string>
     <string name="privacy_policy_body">TiffinBox আপনার নাম, ইমেইল, ফোন নম্বর, এবং লোকেশন ব্যবহার করে অর্ডার এবং ডেলিভারি সম্পন্ন করতে। এই নীতি বর্তমানে একটি early-stage placeholder — অ্যাপ পাবলিশ করার আগে একজন আইনজীবীর সাথে চূড়ান্ত প্রাইভেসি পলিসি তৈরি করে নিন।</string>
 
-    <string name="profile_seeding_status_sending">পাঠানো হচ্ছে...</string>
-    <string name="profile_seeding_status_success">✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে</string>
-    <string name="profile_seeding_status_failure">❌ %1$s</string>
-    <string name="profile_dev_seed_button">Developer: Sample data Firestore-এ পাঠান</string>
 
     <!-- ReviewScreen -->
     <string name="review_title">খাবার কেমন লাগলো?</string>
@@ -342,6 +362,8 @@
     <string name="chef_dashboard_post_video_button">পোস্ট করুন</string>
     <string name="chef_dashboard_video_untitled">ভিডিও</string>
     <string name="chef_dashboard_pending_title">অ্যাকাউন্ট যাচাইয়ের অপেক্ষায়</string>
+    <string name="chef_dashboard_rejected_title">আবেদন গ্রহণ করা হয়নি</string>
+    <string name="chef_dashboard_rejected_message">দুঃখিত, আপনার কিচেনের আবেদনটি এই মুহূর্তে গ্রহণ করা যায়নি। বিস্তারিত জানতে TiffinBox টিম আপনার WhatsApp বা ইমেইলে যোগাযোগ করবে।</string>
     <string name="chef_dashboard_pending_message">অ্যাডমিন আপনার কিচেন প্রোফাইল যাচাই করার পর আপনি মেনু ম্যানেজ করতে এবং অর্ডার নিতে পারবেন। অনুগ্রহ করে অপেক্ষা করুন।</string>
 
     <!-- MenuManagerScreen -->

@@ -34,7 +34,9 @@ data class ChefUi(
     val kitchenType: String = "",
     val yearsOfExperience: Int = 0,
     /** True only for chefs created by admin-web's "Seed demo chefs" button; shown as a "Demo" badge so customers aren't misled. */
-    val isDemo: Boolean = false
+    val isDemo: Boolean = false,
+    /** "pending" / "approved" / "rejected", set by admin-web's Chef Approvals page; blank on older docs. */
+    val approvalStatus: String = ""
 )
 
 data class ChefVideoUi(

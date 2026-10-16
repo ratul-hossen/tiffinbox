@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, signOut as signOutSecondary } from "fir
 import { db, secondaryAuth } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, Order, Review } from "../types";
+import { setChefApproval } from "../lib/chefApproval";
 import { logActivity } from "../lib/activityLog";
 import { buildRecycleBinData, recycleBinEntryId, softDelete } from "../lib/recycleBin";
 import { DEMO_CHEFS } from "../data/demoChefSeed";
@@ -216,23 +217,14 @@ export default function ChefsPage({ search }: Props) {
     setBusyId(chef.id);
     try {
       const next = !chef[field];
-      await updateDoc(doc(db, "chefs", chef.id), { [field]: next });
-      await logActivity(
-        field === "isVerified" ? "Toggled chef verification" : "Toggled chef availability",
-        "chefs",
-        chef.id,
-        { [field]: next },
-      );
-      if (field === "isVerified" && next) {
-        // In-app notification (notifications/{uid}/items) - the chef's own
-        // dashboard pending-approval screen already reflects this live, but
-        // this also shows up in their notification history.
-        await addDoc(collection(db, "notifications", chef.id, "items"), {
-          title: "Account approved",
-          body: "Your kitchen profile has been approved - you can now manage your menu and receive orders.",
-          createdAt: Date.now(),
-        });
+      if (field === "isVerified") {
+        // Same write path as the Chef Approvals page, so approvalStatus and
+        // the chef's in-app notification stay in sync with isVerified.
+        await setChefApproval(chef, next ? "approved" : "pending");
+        return;
       }
+      await updateDoc(doc(db, "chefs", chef.id), { [field]: next });
+      await logActivity("Toggled chef availability", "chefs", chef.id, { [field]: next });
     } finally {
       setBusyId(null);
     }

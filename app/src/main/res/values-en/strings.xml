@@ -61,6 +61,17 @@
 
     <string name="login_toggle_to_login">Already have an Account? Login</string>
 
+    <!-- EmailVerificationScreen -->
+    <string name="email_verification_title">Verify your email</string>
+    <string name="email_verification_body">We sent a verification link to %1$s. Open the email, tap the link, then press the button below.</string>
+    <string name="email_verification_spam_hint">Can\'t find it? Check your Spam/Junk folder.</string>
+    <string name="email_verification_check_button">I\'ve verified</string>
+    <string name="email_verification_resend_button">Resend email</string>
+    <string name="email_verification_not_yet">Not verified yet. Tap the link in the email, then try again</string>
+    <string name="email_verification_resent">A new verification email was sent</string>
+    <string name="email_verification_resend_failed">Couldn\'t send the email, please try again in a bit</string>
+    <string name="email_verification_logout_button">Use a different account (Logout)</string>
+
     <!-- LocationSetupScreen -->
     <string name="location_setup_title">Set your location</string>
     <string name="location_setup_subtitle_customer">We need your location to show you nearby chefs</string>
@@ -108,6 +119,11 @@
     <string name="home_section_recommended">Recommended for you</string>
     <string name="home_section_ai_recommended">✨ AI Recommended For You</string>
     <string name="home_section_nearby">Home Chefs Nearby</string>
+    <string name="home_hero_badge">🔥 Today\'s special</string>
+    <string name="home_hero_title">Home-cooked food, right to your door</string>
+    <string name="home_hero_subtitle">Order fresh meals from home chefs near you</string>
+    <string name="home_empty_title">No chefs yet</string>
+    <string name="home_empty_subtitle">Chefs in your area will show up here once they join</string>
     <string name="home_see_all">See all</string>
 
     <!-- SearchScreen -->
@@ -240,6 +256,14 @@
     <string name="settings_theme_title">Theme</string>
     <string name="settings_theme_subtitle">Choose the app\'s color theme</string>
     <string name="settings_theme_black_red">Black &amp; Red</string>
+    <string name="settings_theme_sunset">Sunset Orange</string>
+    <string name="settings_theme_ocean">Ocean Blue</string>
+    <string name="settings_theme_dynamic">Dynamic (from wallpaper)</string>
+    <string name="settings_theme_dynamic_note">Uses your wallpaper colors on Android 12+</string>
+    <string name="settings_mode_title">Mode</string>
+    <string name="settings_mode_system">System</string>
+    <string name="settings_mode_light">Light</string>
+    <string name="settings_mode_dark">Dark</string>
     <string name="settings_theme_classic_green">Classic Green</string>
     <string name="settings_menu_change_password">Change Password</string>
     <string name="settings_menu_payment_methods">Payment Methods</string>
@@ -278,10 +302,6 @@
     <string name="privacy_policy_title">Privacy Policy</string>
     <string name="privacy_policy_body">TiffinBox uses your name, email, phone number, and location to fulfill orders and deliveries. This policy is currently an early-stage placeholder - have a lawyer draft the final privacy policy before publishing the app.</string>
 
-    <string name="profile_seeding_status_sending">Sending...</string>
-    <string name="profile_seeding_status_success">✅ Sample chefs/meals sent to Firestore</string>
-    <string name="profile_seeding_status_failure">❌ %1$s</string>
-    <string name="profile_dev_seed_button">Developer: Send sample data to Firestore</string>
 
     <!-- ReviewScreen -->
     <string name="review_title">How was the food?</string>
@@ -340,6 +360,8 @@
     <string name="chef_dashboard_post_video_button">Post</string>
     <string name="chef_dashboard_video_untitled">Video</string>
     <string name="chef_dashboard_pending_title">Waiting for account verification</string>
+    <string name="chef_dashboard_rejected_title">Application not approved</string>
+    <string name="chef_dashboard_rejected_message">Sorry, your kitchen application could not be approved right now. The TiffinBox team will contact you on WhatsApp or email with details.</string>
     <string name="chef_dashboard_pending_message">Once an admin verifies your kitchen profile, you\'ll be able to manage your menu and receive orders. Please check back soon.</string>
 
     <!-- MenuManagerScreen -->

@@ -19,12 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
-import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.PastOrderUi
 import com.ratulhossen.tiffinbox.data.model.label
 import com.ratulhossen.tiffinbox.ui.components.StatTile
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 private val MINI_TRACKED_STAGES = listOf(
     OrderStage.PLACED,
@@ -36,18 +36,18 @@ private val MINI_TRACKED_STAGES = listOf(
 
 @Composable
 fun OrdersScreen() {
-    var orders by remember { mutableStateOf(SampleData.pastOrders) }
+    var orders by remember { mutableStateOf<List<PastOrderUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         val firestoreOrders = FirestoreOrderRepository.getMyOrders()
-        if (firestoreOrders.isNotEmpty()) orders = firestoreOrders
+        orders = firestoreOrders
         isLoading = false
     }
 
     if (!isLoading && orders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.orders_empty_message), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            PhotoEmptyState(resId = R.drawable.empty_orders, title = stringResource(R.string.orders_empty_message))
         }
         return
     }

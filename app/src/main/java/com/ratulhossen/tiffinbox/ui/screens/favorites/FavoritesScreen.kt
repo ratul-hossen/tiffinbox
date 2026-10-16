@@ -19,17 +19,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.FavoritesStore
-import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
+import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
 
 @Composable
 fun FavoritesScreen(onChefClick: (String) -> Unit) {
-    var allChefs by remember { mutableStateOf(SampleData.chefs) }
+    var allChefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
-        if (firestoreChefs.isNotEmpty()) allChefs = firestoreChefs
+        allChefs = firestoreChefs
     }
 
     val favoriteChefs = allChefs.filter { FavoritesStore.isFavorite(it.id) }
@@ -39,20 +40,11 @@ fun FavoritesScreen(onChefClick: (String) -> Unit) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("❤️", fontSize = 40.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.favorites_empty_title),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    stringResource(R.string.favorites_empty_subtitle),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            PhotoEmptyState(
+                resId = R.drawable.empty_favorites,
+                title = stringResource(R.string.favorites_empty_title),
+                subtitle = stringResource(R.string.favorites_empty_subtitle)
+            )
         }
     } else {
         LazyVerticalGrid(

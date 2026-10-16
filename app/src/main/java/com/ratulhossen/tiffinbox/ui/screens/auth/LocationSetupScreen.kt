@@ -26,6 +26,10 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.data.location.LocationRepository
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.FullBleedPhoto
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 
 @Composable
 fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) {
@@ -78,6 +82,16 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(190.dp)
+                .shadow(10.dp, MaterialTheme.shapes.large)
+                .clip(MaterialTheme.shapes.large)
+        ) {
+            FullBleedPhoto(resId = R.drawable.location_setup, modifier = Modifier.fillMaxSize())
+        }
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
             stringResource(R.string.location_setup_title),
             fontSize = 24.sp,
@@ -95,7 +109,7 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
         )
         Spacer(modifier = Modifier.height(28.dp))
 
-        Button(
+        TiffinButton(
             onClick = {
                 errorMessage = null
                 isDetecting = true

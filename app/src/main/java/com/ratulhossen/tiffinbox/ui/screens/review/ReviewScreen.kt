@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
 import com.ratulhossen.tiffinbox.ui.components.StarRatingInput
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @Composable
 fun ReviewScreen(chefId: String, onSubmitted: () -> Unit) {
@@ -64,7 +65,7 @@ fun ReviewScreen(chefId: String, onSubmitted: () -> Unit) {
         )
 
         Spacer(modifier = Modifier.height(28.dp))
-        Button(
+        TiffinButton(
             onClick = {
                 FirestoreReviewRepository.submitReview(
                     chefId = chefId,
