@@ -615,7 +615,7 @@ com.ratulhossen.tiffinbox/
 │
 ├── presentation/
 │   ├── ui/
-│   │   ├── auth/             # Login, Signup, OTP
+│   │   ├── auth/             # Login, Signup, Google profile, Location setup
 │   │   ├── home/             # Home, discovery
 │   │   ├── chef/             # Chef list, chef details
 │   │   ├── meal/             # Meal details

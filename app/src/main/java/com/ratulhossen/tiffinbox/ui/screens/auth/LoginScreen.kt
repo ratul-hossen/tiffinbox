@@ -36,7 +36,6 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
-import com.ratulhossen.tiffinbox.util.normalizeBangladeshPhone
 import kotlinx.coroutines.launch
 
 /**
@@ -57,7 +56,7 @@ private fun defaultWebClientIdOrNull(context: android.content.Context): String? 
 fun LoginScreen(
     role: String,
     onLoginSuccess: (resolvedRole: String) -> Unit,
-    onNeedsPhoneVerification: (normalizedPhone: String, role: String) -> Unit,
+    onSignupComplete: (uid: String, role: String) -> Unit,
     onGoogleNeedsProfile: (uid: String, role: String) -> Unit
 ) {
     var isLoginMode by remember { mutableStateOf(true) }
@@ -67,6 +66,7 @@ fun LoginScreen(
     var kitchenName by remember { mutableStateOf("") }
     var kitchenType by remember { mutableStateOf("") }
     var yearsOfExperience by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
     var whatsappNumber by remember { mutableStateOf("") }
     var bkashNumber by remember { mutableStateOf("") }
     var nagadNumber by remember { mutableStateOf("") }
@@ -80,9 +80,6 @@ fun LoginScreen(
     val context = LocalContext.current
     val emailPasswordRequiredMessage = stringResource(R.string.login_email_password_required)
     val kitchenNameRequiredMessage = stringResource(R.string.login_kitchen_name_required)
-    val whatsappRequiredMessage = stringResource(R.string.login_whatsapp_number_required)
-    val whatsappInvalidMessage = stringResource(R.string.login_whatsapp_number_invalid)
-    val bkashRequiredMessage = stringResource(R.string.login_bkash_number_required)
     val googleSignInFailedMessage = stringResource(R.string.login_google_signin_failed)
     val googleSignInCancelledMessage = stringResource(R.string.login_google_signin_cancelled)
     val isChefRole = role == UserRole.CHEF.name
@@ -93,24 +90,18 @@ fun LoginScreen(
             errorMessage = emailPasswordRequiredMessage
             return
         }
-        var normalizedPhone: String? = null
+        var contacts: SignupContacts? = null
         if (!isLoginMode) {
             if (isChefRole && kitchenName.isBlank()) {
                 errorMessage = kitchenNameRequiredMessage
                 return
             }
-            if (whatsappNumber.isBlank()) {
-                errorMessage = whatsappRequiredMessage
-                return
-            }
-            normalizedPhone = normalizeBangladeshPhone(whatsappNumber)
-            if (normalizedPhone == null) {
-                errorMessage = whatsappInvalidMessage
-                return
-            }
-            if (isChefRole && bkashNumber.isBlank()) {
-                errorMessage = bkashRequiredMessage
-                return
+            when (val check = validateSignupContacts(isChefRole, phoneNumber, whatsappNumber, bkashNumber, nagadNumber)) {
+                is SignupContactResult.Invalid -> {
+                    errorMessage = context.getString(check.messageRes)
+                    return
+                }
+                is SignupContactResult.Valid -> contacts = check.contacts
             }
         }
         isLoading = true
@@ -145,23 +136,25 @@ fun LoginScreen(
                             name = name.trim(),
                             email = email.trim(),
                             role = role,
-                            whatsappNumber = normalizedPhone.orEmpty()
+                            phoneNumber = contacts?.phoneNumber.orEmpty(),
+                            whatsappNumber = contacts?.whatsappNumber.orEmpty()
                         )
                         if (isChefRole) {
                             FirestoreChefRepository.createChefProfile(
                                 uid = uid,
                                 kitchenName = kitchenName.trim(),
                                 ownerName = name.trim(),
-                                whatsappNumber = normalizedPhone.orEmpty(),
-                                bkashNumber = bkashNumber.trim(),
-                                nagadNumber = nagadNumber.trim(),
+                                phoneNumber = contacts?.phoneNumber.orEmpty(),
+                                whatsappNumber = contacts?.whatsappNumber.orEmpty(),
+                                bkashNumber = contacts?.bkashNumber.orEmpty(),
+                                nagadNumber = contacts?.nagadNumber.orEmpty(),
                                 kitchenType = kitchenType.trim(),
                                 yearsOfExperience = yearsOfExperience.toIntOrNull() ?: 0
                             )
                         }
                         FirestoreUserRepository.registerFcmToken(uid)
                         isLoading = false
-                        onNeedsPhoneVerification(normalizedPhone.orEmpty(), role)
+                        onSignupComplete(uid, role)
                     }
                 }
                 is AuthResult.Failure -> {
@@ -223,11 +216,10 @@ fun LoginScreen(
                             onLoginSuccess(existingRole)
                         } else {
                             // Brand-new Google sign-up: still needs the same
-                            // WhatsApp/bKash number, phone verification, and
+                            // phone/WhatsApp/bKash-or-Nagad numbers and
                             // location setup an email/password signup goes
                             // through - CompleteGoogleProfileScreen collects
-                            // the former, then reuses the existing
-                            // phone-verification/location-setup flow.
+                            // the former, then hands off to location setup.
                             isLoading = false
                             onGoogleNeedsProfile(uid, role)
                         }
@@ -271,6 +263,7 @@ fun LoginScreen(
             kitchenName = kitchenName, onKitchenNameChange = { kitchenName = it },
             kitchenType = kitchenType, onKitchenTypeChange = { kitchenType = it },
             yearsOfExperience = yearsOfExperience, onYearsOfExperienceChange = { yearsOfExperience = it },
+            phoneNumber = phoneNumber, onPhoneNumberChange = { phoneNumber = it },
             whatsappNumber = whatsappNumber, onWhatsappNumberChange = { whatsappNumber = it },
             bkashNumber = bkashNumber, onBkashNumberChange = { bkashNumber = it },
             nagadNumber = nagadNumber, onNagadNumberChange = { nagadNumber = it },
@@ -308,6 +301,16 @@ fun LoginScreen(
                 onValueChange = { name = it },
                 label = { Text(stringResource(R.string.login_name_label)) },
                 singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                label = { Text(stringResource(R.string.login_phone_number_label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -402,6 +405,7 @@ private fun ChefSignupStepper(
     kitchenName: String, onKitchenNameChange: (String) -> Unit,
     kitchenType: String, onKitchenTypeChange: (String) -> Unit,
     yearsOfExperience: String, onYearsOfExperienceChange: (String) -> Unit,
+    phoneNumber: String, onPhoneNumberChange: (String) -> Unit,
     whatsappNumber: String, onWhatsappNumberChange: (String) -> Unit,
     bkashNumber: String, onBkashNumberChange: (String) -> Unit,
     nagadNumber: String, onNagadNumberChange: (String) -> Unit,
@@ -416,9 +420,9 @@ private fun ChefSignupStepper(
         stringResource(R.string.login_step_confirm_title)
     )
     val canProceed = when (step) {
-        0 -> name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+        0 -> name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && phoneNumber.isNotBlank()
         1 -> kitchenName.isNotBlank() && whatsappNumber.isNotBlank()
-        else -> bkashNumber.isNotBlank()
+        else -> bkashNumber.isNotBlank() || nagadNumber.isNotBlank()
     }
 
     Column(
@@ -475,6 +479,15 @@ private fun ChefSignupStepper(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = onPhoneNumberChange,
+                    label = { Text(stringResource(R.string.login_phone_number_label)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
                     value = email,
                     onValueChange = onEmailChange,
                     label = { Text(stringResource(R.string.login_email_label)) },
@@ -526,6 +539,12 @@ private fun ChefSignupStepper(
                 )
             }
             else -> {
+                Text(
+                    stringResource(R.string.login_payment_number_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = bkashNumber,
                     onValueChange = onBkashNumberChange,

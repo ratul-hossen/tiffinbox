@@ -16,7 +16,6 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.CompleteGoogleProfileScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LocationSetupScreen
 import com.ratulhossen.tiffinbox.ui.screens.auth.LoginScreen
-import com.ratulhossen.tiffinbox.ui.screens.auth.PhoneVerificationScreen
 import com.ratulhossen.tiffinbox.ui.screens.cart.CartScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatListScreen
 import com.ratulhossen.tiffinbox.ui.screens.chat.ChefChatScreen
@@ -108,8 +107,10 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                     val destination = if (resolvedRole == UserRole.CHEF.name) Routes.CHEF_DASHBOARD else Routes.MAIN
                     navController.navigate(destination) { popUpTo(Routes.SPLASH) { inclusive = true } }
                 },
-                onNeedsPhoneVerification = { phoneNumber, verifyRole ->
-                    navController.navigate(Routes.phoneVerification(phoneNumber, verifyRole))
+                onSignupComplete = { uid, signupRole ->
+                    navController.navigate(Routes.locationSetup(uid, signupRole)) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
                 },
                 onGoogleNeedsProfile = { uid, verifyRole ->
                     navController.navigate(Routes.completeGoogleProfile(uid, verifyRole))
@@ -129,25 +130,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             CompleteGoogleProfileScreen(
                 uid = uid,
                 role = role,
-                onCompleted = { normalizedPhone ->
-                    navController.navigate(Routes.phoneVerification(normalizedPhone, role))
-                }
-            )
-        }
-
-        composable(
-            route = Routes.PHONE_VERIFICATION,
-            arguments = listOf(
-                navArgument("phoneNumber") { type = NavType.StringType },
-                navArgument("role") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val phoneNumber = backStackEntry.arguments?.getString("phoneNumber").orEmpty()
-            val role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name
-            PhoneVerificationScreen(
-                phoneNumber = phoneNumber,
-                onVerified = {
-                    val uid = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+                onCompleted = {
                     navController.navigate(Routes.locationSetup(uid, role)) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }

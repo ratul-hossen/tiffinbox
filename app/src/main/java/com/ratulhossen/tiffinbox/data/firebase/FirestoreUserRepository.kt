@@ -11,29 +11,17 @@ object FirestoreUserRepository {
     private val db: FirebaseFirestore
         get() = FirebaseFirestore.getInstance()
 
-    fun upsertProfile(uid: String, name: String, email: String, role: String, whatsappNumber: String = "") {
+    fun upsertProfile(uid: String, name: String, email: String, role: String, phoneNumber: String = "", whatsappNumber: String = "") {
         try {
             db.collection("users").document(uid).set(
                 hashMapOf(
                     "name" to name,
                     "email" to email,
                     "role" to role,
+                    "phoneNumber" to phoneNumber,
                     "whatsappNumber" to whatsappNumber,
-                    "phoneVerified" to false,
                     "createdAt" to System.currentTimeMillis()
                 ),
-                SetOptions.merge()
-            )
-        } catch (e: Exception) {
-            // Firebase not configured yet, or offline — safe to ignore.
-        }
-    }
-
-    /** Flips phoneVerified to true once PhoneVerificationRepository confirms the OTP. */
-    fun markPhoneVerified(uid: String) {
-        try {
-            db.collection("users").document(uid).set(
-                hashMapOf("phoneVerified" to true),
                 SetOptions.merge()
             )
         } catch (e: Exception) {

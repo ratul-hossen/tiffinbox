@@ -28,11 +28,14 @@
     <string name="login_email_password_required">Enter email and password</string>
     <string name="login_kitchen_name_label">Kitchen name</string>
     <string name="login_kitchen_name_required">Give your kitchen a name</string>
+    <string name="login_phone_number_label">Phone number</string>
+    <string name="login_phone_number_required">Enter your phone number</string>
+    <string name="login_phone_number_invalid">Enter a valid Bangladeshi phone number (e.g. 01XXXXXXXXX)</string>
     <string name="login_whatsapp_number_label">WhatsApp number</string>
     <string name="login_whatsapp_number_required">Enter your WhatsApp number</string>
     <string name="login_whatsapp_number_invalid">Enter a valid Bangladeshi number (e.g. 01XXXXXXXXX)</string>
     <string name="login_bkash_number_label">bKash number</string>
-    <string name="login_nagad_number_label">Nagad number (optional)</string>
+    <string name="login_nagad_number_label">Nagad number</string>
     <string name="login_kitchen_type_label">Kitchen type</string>
     <string name="login_years_experience_label">Experience (years)</string>
     <string name="kitchen_type_home">Home Kitchen</string>
@@ -43,7 +46,9 @@
     <string name="login_step_confirm_title">Confirm</string>
     <string name="login_step_next_button">Next</string>
     <string name="login_step_back_button">Back</string>
-    <string name="login_bkash_number_required">Enter your bKash number (to receive payments)</string>
+    <string name="login_bkash_number_required">Enter a bKash or Nagad number (to receive payments; at least one is required)</string>
+    <string name="login_payment_number_invalid">Enter a valid bKash/Nagad number (e.g. 01XXXXXXXXX)</string>
+    <string name="login_payment_number_hint">bKash or Nagad, at least one number is required</string>
     <string name="login_button">Login</string>
     <string name="complete_google_profile_title">Just a bit more</string>
     <string name="complete_google_profile_subtitle">A few more details before you continue</string>
@@ -54,14 +59,6 @@
     <string name="login_google_signin_cancelled">Google sign-in was cancelled</string>
     <string name="login_toggle_to_signup">New here? Sign Up</string>
 
-    <!-- PhoneVerificationScreen -->
-    <string name="phone_verification_title">Verify your phone number</string>
-    <string name="phone_verification_subtitle">An OTP code was sent to %1$s</string>
-    <string name="phone_verification_code_label">6-digit code</string>
-    <string name="phone_verification_code_required">Enter the full 6-digit code</string>
-    <string name="phone_verification_verify_button">Verify</string>
-    <string name="phone_verification_resend_button">Resend code</string>
-    <string name="phone_verification_send_failed">Couldn\'t send the code, please try again</string>
     <string name="login_toggle_to_login">Already have an Account? Login</string>
 
     <!-- LocationSetupScreen -->

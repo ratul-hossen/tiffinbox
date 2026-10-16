@@ -337,6 +337,13 @@ export default function ChefsPage({ search }: Props) {
                       )}
                     </div>
                     <div className="text-xs text-apple-secondary">{chef.ownerName}</div>
+                    {/* Contact/payment numbers given at signup - shown so an
+                        admin can check them before approving (there's no SMS
+                        OTP step; that needs the paid Blaze plan). */}
+                    <div className="text-[11px] text-apple-secondary mt-1 space-y-0.5">
+                      <div>📞 {chef.phoneNumber || "–"} · WhatsApp {chef.whatsappNumber || "–"}</div>
+                      <div>bKash {chef.bkashNumber || "–"} · Nagad {chef.nagadNumber || "–"}</div>
+                    </div>
                   </div>
                   <div className="text-xs text-apple-secondary/70">{chef.id.slice(0, 6)}</div>
                 </div>

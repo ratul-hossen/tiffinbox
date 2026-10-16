@@ -28,6 +28,7 @@ export interface Chef {
   bkashNumber?: string;
   nagadNumber?: string;
   whatsappNumber?: string;
+  phoneNumber?: string;
   // true only for chefs created via the "Seed demo chefs" button on
   // ChefsPage - lets "Remove all demo chefs" find exactly this data and
   // nothing else, and lets the app show a "Demo" badge to real users.
@@ -59,6 +60,8 @@ export interface AppUser {
   name?: string;
   email?: string;
   role?: "CUSTOMER" | "CHEF" | string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
   createdAt?: number; // epoch millis
 }
 

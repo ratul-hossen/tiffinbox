@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,19 +24,18 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
-import com.ratulhossen.tiffinbox.util.normalizeBangladeshPhone
 import kotlinx.coroutines.launch
 
 /**
  * Shown right after a brand-new Google sign-up (an existing account signing
  * back in with Google skips this entirely). Google gives a name/email/photo
- * but nothing else, so this collects the same WhatsApp number (both roles)
- * and bKash number + kitchen name (chef) the email/password signup form
- * already requires, then hands off to the same phone-verification and
- * location-setup steps so both signup paths end up equivalent.
+ * but nothing else, so this collects the same WhatsApp number
+ * plus phone number (both roles), bKash-or-Nagad number + kitchen name
+ * (chef) the email/password signup form already requires, then hands off to
+ * the same location-setup step so both signup paths end up equivalent.
  */
 @Composable
-fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normalizedPhone: String) -> Unit) {
+fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: () -> Unit) {
     val isChefRole = role == UserRole.CHEF.name
     val user = FirebaseAuthRepository.currentUser
     val name = user?.displayName.orEmpty()
@@ -44,6 +44,7 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
     var kitchenName by remember { mutableStateOf("") }
     var kitchenType by remember { mutableStateOf("") }
     var yearsOfExperience by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
     var whatsappNumber by remember { mutableStateOf("") }
     var bkashNumber by remember { mutableStateOf("") }
     var nagadNumber by remember { mutableStateOf("") }
@@ -51,10 +52,8 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val kitchenNameRequiredMessage = stringResource(R.string.login_kitchen_name_required)
-    val whatsappRequiredMessage = stringResource(R.string.login_whatsapp_number_required)
-    val whatsappInvalidMessage = stringResource(R.string.login_whatsapp_number_invalid)
-    val bkashRequiredMessage = stringResource(R.string.login_bkash_number_required)
 
     fun submit() {
         errorMessage = null
@@ -62,18 +61,12 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
             errorMessage = kitchenNameRequiredMessage
             return
         }
-        if (whatsappNumber.isBlank()) {
-            errorMessage = whatsappRequiredMessage
-            return
-        }
-        val normalizedPhone = normalizeBangladeshPhone(whatsappNumber)
-        if (normalizedPhone == null) {
-            errorMessage = whatsappInvalidMessage
-            return
-        }
-        if (isChefRole && bkashNumber.isBlank()) {
-            errorMessage = bkashRequiredMessage
-            return
+        val contacts = when (val check = validateSignupContacts(isChefRole, phoneNumber, whatsappNumber, bkashNumber, nagadNumber)) {
+            is SignupContactResult.Invalid -> {
+                errorMessage = context.getString(check.messageRes)
+                return
+            }
+            is SignupContactResult.Valid -> check.contacts
         }
 
         isLoading = true
@@ -83,23 +76,25 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
                 name = name,
                 email = email,
                 role = role,
-                whatsappNumber = normalizedPhone
+                phoneNumber = contacts.phoneNumber,
+                whatsappNumber = contacts.whatsappNumber
             )
             if (isChefRole) {
                 FirestoreChefRepository.createChefProfile(
                     uid = uid,
                     kitchenName = kitchenName.trim(),
                     ownerName = name,
-                    whatsappNumber = normalizedPhone,
-                    bkashNumber = bkashNumber.trim(),
-                    nagadNumber = nagadNumber.trim(),
+                    phoneNumber = contacts.phoneNumber,
+                    whatsappNumber = contacts.whatsappNumber,
+                    bkashNumber = contacts.bkashNumber,
+                    nagadNumber = contacts.nagadNumber,
                     kitchenType = kitchenType.trim(),
                     yearsOfExperience = yearsOfExperience.toIntOrNull() ?: 0
                 )
             }
             FirestoreUserRepository.registerFcmToken(uid)
             isLoading = false
-            onCompleted(normalizedPhone)
+            onCompleted()
         }
     }
 
@@ -146,6 +141,16 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
         }
 
         OutlinedTextField(
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it },
+            label = { Text(stringResource(R.string.login_phone_number_label)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
             value = whatsappNumber,
             onValueChange = { whatsappNumber = it },
             label = { Text(stringResource(R.string.login_whatsapp_number_label)) },
@@ -156,6 +161,12 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: (normali
         Spacer(modifier = Modifier.height(12.dp))
 
         if (isChefRole) {
+            Text(
+                stringResource(R.string.login_payment_number_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = bkashNumber,
                 onValueChange = { bkashNumber = it },
