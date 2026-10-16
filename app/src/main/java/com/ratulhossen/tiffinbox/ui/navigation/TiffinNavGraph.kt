@@ -1,5 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.navigation
 
+import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefCouponsScreen
+import com.ratulhossen.tiffinbox.ui.screens.profile.EditProfileScreen
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -214,6 +216,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
                 onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
                 onSelfServiceClick = { navController.navigate(Routes.SELF_SERVICE_REQUEST) },
+                onEditProfileClick = { navController.navigate(Routes.EDIT_PROFILE) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -309,7 +312,40 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 },
                 onManageMenu = { navController.navigate(Routes.MENU_MANAGER) },
                 onOpenMessages = { navController.navigate(Routes.CHEF_CHAT_LIST) },
-                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) }
+                onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
+                onOpenCoupons = { navController.navigate(Routes.CHEF_COUPONS) }
+            )
+        }
+
+        composable(Routes.CHEF_COUPONS) {
+            ChefCouponsScreen(
+                chefId = FirebaseAuthRepository.currentUser?.uid.orEmpty(),
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.EDIT_PROFILE) {
+            EditProfileScreen(
+                onBack = { navController.popBackStack() },
+                onChangeLocation = { role ->
+                    val uid = FirebaseAuthRepository.currentUser?.uid.orEmpty()
+                    navController.navigate(Routes.locationEdit(uid, role))
+                }
+            )
+        }
+
+        composable(
+            route = Routes.LOCATION_EDIT,
+            arguments = listOf(
+                navArgument("uid") { type = NavType.StringType },
+                navArgument("role") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            LocationSetupScreen(
+                uid = backStackEntry.arguments?.getString("uid").orEmpty(),
+                role = backStackEntry.arguments?.getString("role") ?: UserRole.CUSTOMER.name,
+                onLocationSaved = { navController.popBackStack() }
             )
         }
 

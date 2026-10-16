@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.profile
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -40,7 +43,10 @@ fun ProfileScreen(
     onSettingsClick: () -> Unit,
     onPaymentMethodClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    onSelfServiceClick: () -> Unit = {}
+    onSelfServiceClick: () -> Unit = {},
+    onEditProfileClick: () -> Unit = {},
+    onMyOrdersClick: () -> Unit = {},
+    onFavoritesClick: () -> Unit = {}
 ) {
     val fallbackName = stringResource(R.string.profile_demo_user_name)
     val user = FirebaseAuthRepository.currentUser
@@ -48,19 +54,24 @@ fun ProfileScreen(
     val subtitle = user?.email ?: stringResource(R.string.profile_demo_phone)
 
     val menuItems = listOf(
-        ProfileMenuItem(Icons.Filled.Receipt, stringResource(R.string.profile_menu_my_orders)),
+        ProfileMenuItem(Icons.Filled.Edit, stringResource(R.string.edit_profile_menu), onEditProfileClick),
+        ProfileMenuItem(Icons.Filled.Receipt, stringResource(R.string.profile_menu_my_orders), onMyOrdersClick),
         ProfileMenuItem(Icons.Filled.DateRange, stringResource(R.string.profile_menu_my_subscriptions), onSubscriptionsClick),
-        ProfileMenuItem(Icons.Filled.Favorite, stringResource(R.string.profile_menu_favorites)),
-        ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management)),
+        ProfileMenuItem(Icons.Filled.Favorite, stringResource(R.string.profile_menu_favorites), onFavoritesClick),
+        // Address lives on the Edit Profile screen (with a "Change location" button).
+        ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management), onEditProfileClick),
         ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method), onPaymentMethodClick),
         ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications), onNotificationsClick),
         ProfileMenuItem(Icons.Filled.TwoWheeler, stringResource(R.string.profile_menu_self_service), onSelfServiceClick),
         ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings), onSettingsClick)
     )
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onEditProfileClick)
+                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(

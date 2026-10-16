@@ -39,6 +39,8 @@ import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
+import com.ratulhossen.tiffinbox.ui.components.PhoneAndWhatsappFields
+import com.ratulhossen.tiffinbox.ui.components.effectiveWhatsapp
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
@@ -75,6 +77,7 @@ fun LoginScreen(
     var yearsOfExperience by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var whatsappNumber by remember { mutableStateOf("") }
+    var whatsappSameAsPhone by remember { mutableStateOf(true) }
     var bkashNumber by remember { mutableStateOf("") }
     var nagadNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -103,7 +106,9 @@ fun LoginScreen(
                 errorMessage = kitchenNameRequiredMessage
                 return
             }
-            when (val check = validateSignupContacts(isChefRole, phoneNumber, whatsappNumber, bkashNumber, nagadNumber)) {
+            when (val check = validateSignupContacts(
+                    isChefRole, phoneNumber, effectiveWhatsapp(phoneNumber, whatsappNumber, whatsappSameAsPhone), bkashNumber, nagadNumber
+                )) {
                 is SignupContactResult.Invalid -> {
                     errorMessage = context.getString(check.messageRes)
                     return
@@ -272,6 +277,7 @@ fun LoginScreen(
             yearsOfExperience = yearsOfExperience, onYearsOfExperienceChange = { yearsOfExperience = it },
             phoneNumber = phoneNumber, onPhoneNumberChange = { phoneNumber = it },
             whatsappNumber = whatsappNumber, onWhatsappNumberChange = { whatsappNumber = it },
+            whatsappSameAsPhone = whatsappSameAsPhone, onWhatsappSameAsPhoneChange = { whatsappSameAsPhone = it },
             bkashNumber = bkashNumber, onBkashNumberChange = { bkashNumber = it },
             nagadNumber = nagadNumber, onNagadNumberChange = { nagadNumber = it },
             isLoading = isLoading,
@@ -340,23 +346,13 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text(stringResource(R.string.login_phone_number_label)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = whatsappNumber,
-                onValueChange = { whatsappNumber = it },
-                label = { Text(stringResource(R.string.login_whatsapp_number_label)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth()
+            PhoneAndWhatsappFields(
+                phoneNumber = phoneNumber,
+                onPhoneNumberChange = { phoneNumber = it },
+                whatsappNumber = whatsappNumber,
+                onWhatsappNumberChange = { whatsappNumber = it },
+                whatsappSameAsPhone = whatsappSameAsPhone,
+                onWhatsappSameAsPhoneChange = { whatsappSameAsPhone = it }
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -442,6 +438,7 @@ private fun ChefSignupStepper(
     yearsOfExperience: String, onYearsOfExperienceChange: (String) -> Unit,
     phoneNumber: String, onPhoneNumberChange: (String) -> Unit,
     whatsappNumber: String, onWhatsappNumberChange: (String) -> Unit,
+    whatsappSameAsPhone: Boolean, onWhatsappSameAsPhoneChange: (Boolean) -> Unit,
     bkashNumber: String, onBkashNumberChange: (String) -> Unit,
     nagadNumber: String, onNagadNumberChange: (String) -> Unit,
     isLoading: Boolean,
@@ -455,8 +452,9 @@ private fun ChefSignupStepper(
         stringResource(R.string.login_step_confirm_title)
     )
     val canProceed = when (step) {
-        0 -> name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && phoneNumber.isNotBlank()
-        1 -> kitchenName.isNotBlank() && whatsappNumber.isNotBlank()
+        0 -> name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && phoneNumber.isNotBlank() &&
+            (whatsappSameAsPhone || whatsappNumber.isNotBlank())
+        1 -> kitchenName.isNotBlank()
         else -> bkashNumber.isNotBlank() || nagadNumber.isNotBlank()
     }
 
@@ -513,13 +511,13 @@ private fun ChefSignupStepper(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = phoneNumber,
-                    onValueChange = onPhoneNumberChange,
-                    label = { Text(stringResource(R.string.login_phone_number_label)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.fillMaxWidth()
+                PhoneAndWhatsappFields(
+                    phoneNumber = phoneNumber,
+                    onPhoneNumberChange = onPhoneNumberChange,
+                    whatsappNumber = whatsappNumber,
+                    onWhatsappNumberChange = onWhatsappNumberChange,
+                    whatsappSameAsPhone = whatsappSameAsPhone,
+                    onWhatsappSameAsPhoneChange = onWhatsappSameAsPhoneChange
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
@@ -561,15 +559,6 @@ private fun ChefSignupStepper(
                     label = { Text(stringResource(R.string.login_years_experience_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = whatsappNumber,
-                    onValueChange = onWhatsappNumberChange,
-                    label = { Text(stringResource(R.string.login_whatsapp_number_label)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

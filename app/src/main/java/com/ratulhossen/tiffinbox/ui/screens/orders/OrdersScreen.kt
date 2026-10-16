@@ -1,5 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.screens.orders
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,11 +40,39 @@ private val MINI_TRACKED_STAGES = listOf(
 fun OrdersScreen() {
     var orders by remember { mutableStateOf<List<PastOrderUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var reloadKey by remember { mutableStateOf(0) }
+    var confirmCancel by remember { mutableStateOf<PastOrderUi?>(null) }
+    var cancelFailed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(reloadKey) {
         val firestoreOrders = FirestoreOrderRepository.getMyOrders()
         orders = firestoreOrders
         isLoading = false
+    }
+
+    confirmCancel?.let { order ->
+        AlertDialog(
+            onDismissRequest = { confirmCancel = null },
+            title = { Text(stringResource(R.string.orders_cancel_confirm_title)) },
+            text = { Text(stringResource(R.string.orders_cancel_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmCancel = null
+                    scope.launch {
+                        cancelFailed = !FirestoreOrderRepository.cancelOrderByCustomer(order.id)
+                        reloadKey++
+                    }
+                }) {
+                    Text(stringResource(R.string.orders_cancel_button), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmCancel = null }) {
+                    Text(stringResource(R.string.orders_cancel_keep_button))
+                }
+            }
+        )
     }
 
     if (!isLoading && orders.isEmpty()) {
@@ -65,20 +95,28 @@ fun OrdersScreen() {
                 )
                 StatTile(
                     stringResource(R.string.orders_stat_total_spent),
-                    stringResource(R.string.price_tag, orders.sumOf { it.total }),
+                    stringResource(R.string.price_tag, orders.filter { it.status != OrderStage.CANCELLED }.sumOf { it.total }),
                     Modifier.weight(1f)
+                )
+            }
+            if (cancelFailed) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.orders_cancel_failed),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
         }
         items(orders, key = { it.id }) { order ->
-            OrderRow(order)
+            OrderRow(order, onCancel = { confirmCancel = order })
         }
     }
 }
 
 @Composable
-private fun OrderRow(order: PastOrderUi) {
+private fun OrderRow(order: PastOrderUi, onCancel: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -111,8 +149,36 @@ private fun OrderRow(order: PastOrderUi) {
             Spacer(modifier = Modifier.height(10.dp))
             if (order.status == OrderStage.DELIVERED || order.status == OrderStage.CANCELLED) {
                 StatusChip(order.status)
+                if (order.status == OrderStage.CANCELLED && order.cancelReason.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(
+                            when (order.cancelReason) {
+                                "auto_expired" -> R.string.orders_cancel_reason_expired
+                                "customer" -> R.string.orders_cancel_reason_customer
+                                else -> R.string.orders_cancel_reason_other
+                            }
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             } else {
                 MiniProgressTimeline(order.status)
+            }
+            if (order.canCancel) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.orders_waiting_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onCancel) {
+                        Text(stringResource(R.string.orders_cancel_button), color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
         }
     }

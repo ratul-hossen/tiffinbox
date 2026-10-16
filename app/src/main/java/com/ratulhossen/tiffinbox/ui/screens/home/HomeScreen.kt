@@ -1,5 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.screens.home
 
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -66,6 +68,7 @@ fun HomeScreen(
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
+    var catalogMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     // Only true once we've replaced the static/demo distanceKm with a real
     // haversine distance from the customer's own saved location - until
     // then the 2-3km "nearby" radius filter below would be meaningless.
@@ -77,15 +80,27 @@ fun HomeScreen(
         // (see ml/ at the repo root), run entirely on-device from the meal's
         // own price/isVeg/availableQuantity - no server involved.
         val allMeals = FirestoreCatalogRepository.getAllMeals()
+        catalogMeals = allMeals
         if (allMeals.isNotEmpty()) {
+            // Real offer counts (active coupons) for the model's numOffers
+            // feature, plus a light personal boost from the customer's own
+            // order history: chefs they've ordered from again, and categories
+            // they've ordered before. The trained model stays the main signal.
+            val offerCounts = FirestoreCouponRepository.getActiveOfferCounts()
+            val platformOffers = offerCounts[""] ?: 0
+            val (chefOrderCounts, orderedMealIds) = FirestoreOrderRepository.getMyOrderSignals()
+            val orderedCategories = allMeals.filter { it.id in orderedMealIds }.map { it.category }.toSet()
             aiRecommendedMeals = allMeals
                 .sortedByDescending { meal ->
-                    MlRecommendModel.predict(
+                    val modelScore = MlRecommendModel.predict(
                         avgPrice = meal.price.toDouble(),
                         vegFraction = if (meal.isVeg) 1.0 else 0.0,
-                        numOffers = 0.0,
+                        numOffers = ((offerCounts[meal.chefId] ?: 0) + platformOffers).toDouble(),
                         popularity = meal.availableQuantity.toDouble()
                     )
+                    val chefAffinity = 0.15 * ((chefOrderCounts[meal.chefId] ?: 0).coerceAtMost(3) / 3.0)
+                    val categoryAffinity = if (meal.category in orderedCategories) 0.08 else 0.0
+                    modelScore + chefAffinity + categoryAffinity
                 }
                 .take(10)
         }
@@ -102,9 +117,18 @@ fun HomeScreen(
         }
     }
 
-    val recommendedChefs = remember(chefs) { RecommendationEngine.recommend(chefs) }
-    val nearbyChefs = remember(chefs, hasRealDistances) {
-        val sorted = chefs.sortedBy { it.distanceKm }
+    // Category tiles filter both the meals shown and the chef rows: only
+    // chefs who have at least one meal in the selected category remain.
+    val categoryMeals = remember(catalogMeals, selectedCategory) {
+        selectedCategory?.let { cat -> catalogMeals.filter { it.category.equals(cat, ignoreCase = true) } }.orEmpty()
+    }
+    val visibleChefs = remember(chefs, categoryMeals, selectedCategory) {
+        if (selectedCategory == null) chefs
+        else categoryMeals.map { it.chefId }.toSet().let { ids -> chefs.filter { it.id in ids } }
+    }
+    val recommendedChefs = remember(visibleChefs) { RecommendationEngine.recommend(visibleChefs) }
+    val nearbyChefs = remember(visibleChefs, hasRealDistances) {
+        val sorted = visibleChefs.sortedBy { it.distanceKm }
         if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
     }
 
@@ -311,6 +335,38 @@ fun HomeScreen(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
+                }
+            }
+        }
+
+        selectedCategory?.let { cat ->
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                stringResource(R.string.home_category_meals_title, cat),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (categoryMeals.isEmpty()) {
+                Text(
+                    stringResource(R.string.home_category_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+            } else {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(categoryMeals, key = { it.id }) { meal ->
+                        MealCard(
+                            meal = meal,
+                            modifier = Modifier.width(240.dp),
+                            onClick = { onMealClick(meal.id) }
+                        )
+                    }
                 }
             }
         }

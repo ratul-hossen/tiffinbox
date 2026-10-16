@@ -18,6 +18,8 @@ import {
   Repeat,
   Sun,
   Trash2,
+  TrendingUp,
+  TicketPercent,
   UserCheck,
   Users as UsersIcon,
   type LucideIcon,
@@ -29,6 +31,8 @@ import Login from "./components/Login";
 import AccessDenied from "./components/AccessDenied";
 import Dashboard from "./components/Dashboard";
 import ChefsPage from "./components/ChefsPage";
+import RevenuePage from "./components/RevenuePage";
+import CouponsPage from "./components/CouponsPage";
 import ChefApprovalsPage from "./components/ChefApprovalsPage";
 import PendingApprovalsCount from "./components/PendingApprovalsCount";
 import MealsPage from "./components/MealsPage";
@@ -46,6 +50,8 @@ import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
   | "dashboard"
+  | "revenue"
+  | "coupons"
   | "chefApprovals"
   | "chefs"
   | "meals"
@@ -81,6 +87,13 @@ const TABS: TabMeta[] = [
     description: "Everything on TiffinBox, in one place.",
   },
   {
+    key: "revenue",
+    label: "Revenue",
+    icon: TrendingUp,
+    group: "Overview",
+    description: "Sales, platform earnings and top chefs over time.",
+  },
+  {
     key: "chefApprovals",
     label: "Chef Approvals",
     icon: UserCheck,
@@ -111,6 +124,14 @@ const TABS: TabMeta[] = [
     group: "Operations",
     searchPlaceholder: "Search orders…",
     description: "Track status, payment proof, and delivery handling.",
+  },
+  {
+    key: "coupons",
+    label: "Coupons",
+    icon: TicketPercent,
+    group: "Operations",
+    searchPlaceholder: "Search coupons…",
+    description: "Promo codes - platform-wide or per chef. Cancel any chef's coupon here too.",
   },
   {
     key: "subscriptions",
@@ -350,6 +371,8 @@ export default function App() {
           </div>
 
           {tab === "dashboard" && <Dashboard />}
+          {tab === "revenue" && <RevenuePage />}
+          {tab === "coupons" && <CouponsPage search={search} />}
           {tab === "chefApprovals" && <ChefApprovalsPage search={search} />}
           {tab === "chefs" && <ChefsPage search={search} />}
           {tab === "meals" && <MealsPage search={search} />}

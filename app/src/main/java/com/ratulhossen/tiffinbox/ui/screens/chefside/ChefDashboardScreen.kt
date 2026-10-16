@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Edit
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
@@ -58,7 +61,9 @@ fun ChefDashboardScreen(
     onLogout: () -> Unit,
     onManageMenu: () -> Unit,
     onOpenMessages: () -> Unit,
-    onOpenNotifications: () -> Unit = {}
+    onOpenNotifications: () -> Unit = {},
+    onEditProfile: () -> Unit = {},
+    onOpenCoupons: () -> Unit = {}
 ) {
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
@@ -179,10 +184,22 @@ fun ChefDashboardScreen(
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onOpenCoupons) {
+                    Icon(Icons.Filled.LocalOffer, contentDescription = stringResource(R.string.chef_coupons_title))
+                }
+                IconButton(onClick = onEditProfile) {
+                    Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.edit_profile_title))
+                }
                 IconButton(onClick = onOpenNotifications) {
                     Icon(Icons.Filled.Notifications, contentDescription = stringResource(R.string.notifications_title))
                 }
-                TextButton(onClick = onLogout) { Text(stringResource(R.string.action_logout)) }
+                IconButton(onClick = onLogout) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = stringResource(R.string.action_logout),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
 

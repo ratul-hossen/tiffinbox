@@ -129,8 +129,14 @@ data class PastOrderUi(
     val itemsSummary: String,
     val total: Int,
     val status: OrderStage,
-    val placedOn: String
-)
+    val placedOn: String,
+    val chefId: String = "",
+    /** "customer" / "auto_expired" / "chef" / "admin" when [status] is CANCELLED; blank otherwise. */
+    val cancelReason: String = ""
+) {
+    /** A customer may cancel only while the chef hasn't accepted yet. */
+    val canCancel: Boolean get() = status == OrderStage.PLACED
+}
 
 /** [days] is the package's total duration, matching the "Package Type: 7/10/15/30 Days" reference screen. */
 enum class SubscriptionPlan(val days: Int) {

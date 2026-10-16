@@ -1,6 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.screens.auth
 
-import android.Manifest
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -23,7 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.data.location.LocationFailure
 import com.ratulhossen.tiffinbox.data.location.LocationRepository
+import com.ratulhossen.tiffinbox.data.location.LocationResult
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
@@ -47,31 +50,55 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
     val addressNotFoundMessage = stringResource(R.string.location_setup_address_not_found)
     val addressRequiredMessage = stringResource(R.string.location_setup_address_required)
 
-    fun saveLocation(latitude: Double, longitude: Double) {
+    val locationOffMessage = stringResource(R.string.location_setup_location_off)
+    var showOpenSettings by remember { mutableStateOf(false) }
+
+    fun saveLocation(latitude: Double, longitude: Double, resolvedAddress: String) {
         if (isChefRole) {
-            FirestoreChefRepository.updateLocation(uid, latitude, longitude)
+            FirestoreChefRepository.updateLocation(uid, latitude, longitude, resolvedAddress)
         } else {
-            FirestoreUserRepository.saveLocation(uid, latitude, longitude)
+            FirestoreUserRepository.saveLocation(uid, latitude, longitude, resolvedAddress)
         }
         onLocationSaved()
     }
 
+    fun detectAndSave() {
+        errorMessage = null
+        showOpenSettings = false
+        isDetecting = true
+        scope.launch {
+            when (val result = LocationRepository.detectCurrentLocation(context)) {
+                is LocationResult.Success -> {
+                    val readable = LocationRepository.reverseGeocode(context, result.point).orEmpty()
+                    isDetecting = false
+                    saveLocation(result.point.latitude, result.point.longitude, readable)
+                }
+                is LocationResult.Failure -> {
+                    isDetecting = false
+                    when (result.reason) {
+                        LocationFailure.NO_PERMISSION -> errorMessage = permissionDeniedMessage
+                        LocationFailure.LOCATION_OFF -> {
+                            errorMessage = locationOffMessage
+                            showOpenSettings = true
+                        }
+                        LocationFailure.NO_FIX -> errorMessage = gpsFailedMessage
+                    }
+                }
+            }
+        }
+    }
+
+    // Asks for both fine and coarse: on Android 12+ the user may grant only
+    // "approximate", which used to be treated as a denial when only FINE was
+    // requested.
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (!granted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        if (grants.values.any { it }) {
+            detectAndSave()
+        } else {
             isDetecting = false
             errorMessage = permissionDeniedMessage
-            return@rememberLauncherForActivityResult
-        }
-        scope.launch {
-            val point = LocationRepository.getCurrentLocation(context)
-            isDetecting = false
-            if (point != null) {
-                saveLocation(point.latitude, point.longitude)
-            } else {
-                errorMessage = gpsFailedMessage
-            }
         }
     }
 
@@ -111,20 +138,12 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
 
         TiffinButton(
             onClick = {
-                errorMessage = null
-                isDetecting = true
                 if (LocationRepository.hasLocationPermission(context)) {
-                    scope.launch {
-                        val point = LocationRepository.getCurrentLocation(context)
-                        isDetecting = false
-                        if (point != null) {
-                            saveLocation(point.latitude, point.longitude)
-                        } else {
-                            errorMessage = gpsFailedMessage
-                        }
-                    }
+                    detectAndSave()
                 } else {
-                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    errorMessage = null
+                    isDetecting = true
+                    permissionLauncher.launch(LocationRepository.PERMISSIONS)
                 }
             },
             enabled = !isDetecting && !isGeocoding,
@@ -175,7 +194,7 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
                     val point = LocationRepository.geocodeAddress(context, address.trim())
                     isGeocoding = false
                     if (point != null) {
-                        saveLocation(point.latitude, point.longitude)
+                        saveLocation(point.latitude, point.longitude, address.trim())
                     } else {
                         errorMessage = addressNotFoundMessage
                     }
@@ -198,6 +217,16 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
                 color = MaterialTheme.colorScheme.error,
                 fontSize = 13.sp
             )
+        }
+        if (showOpenSettings) {
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = {
+                context.startActivity(
+                    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }) {
+                Text(stringResource(R.string.location_setup_open_settings))
+            }
         }
     }
 }

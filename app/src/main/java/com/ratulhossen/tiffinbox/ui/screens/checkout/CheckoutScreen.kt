@@ -1,5 +1,11 @@
 package com.ratulhossen.tiffinbox.ui.screens.checkout
 
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
+import com.ratulhossen.tiffinbox.data.firebase.CouponCheck
+import com.ratulhossen.tiffinbox.data.firebase.CouponUi
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.data.firebase.SavedAddress
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,8 +67,21 @@ fun CheckoutScreen(
     onBack: () -> Unit,
     onOrderPlaced: (orderId: String) -> Unit
 ) {
-    val defaultAddress = stringResource(R.string.home_location)
-    var address by remember { mutableStateOf(defaultAddress) }
+    var address by remember { mutableStateOf("") }
+    var couponInput by remember { mutableStateOf("") }
+    var appliedCoupon by remember { mutableStateOf<CouponUi?>(null) }
+    var couponMessage by remember { mutableStateOf<String?>(null) }
+    var couponChecking by remember { mutableStateOf(false) }
+    // Re-computed from the live subtotal so changing the cart can't keep a stale discount.
+    val discount = appliedCoupon?.takeIf { CartStore.subtotal >= it.minOrder }?.discountFor(CartStore.subtotal) ?: 0
+    val payableTotal = (CartStore.total - discount).coerceAtLeast(0)
+    var savedAddresses by remember { mutableStateOf<List<SavedAddress>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        val uid = FirebaseAuthRepository.currentUser?.uid ?: return@LaunchedEffect
+        val (list, defaultIndex) = FirestoreUserRepository.getSavedAddresses(uid)
+        savedAddresses = list
+        if (address.isBlank()) address = list.getOrNull(defaultIndex)?.address.orEmpty()
+    }
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH_ON_DELIVERY) }
     var placing by remember { mutableStateOf(false) }
     var transactionId by remember { mutableStateOf("") }
@@ -147,12 +166,17 @@ fun CheckoutScreen(
                                     subtotal = CartStore.subtotal,
                                     deliveryFee = CartStore.DELIVERY_FEE,
                                     platformFee = CartStore.PLATFORM_FEE,
-                                    total = CartStore.total,
+                                    total = payableTotal,
                                     deliveryAddress = address,
                                     paymentMethod = selectedPayment.name,
                                     paymentTransactionId = if (selectedPayment.isMobileBanking) transactionId.trim() else null,
-                                    paymentScreenshotBase64 = screenshotBase64
+                                    paymentScreenshotBase64 = screenshotBase64,
+                                    couponCode = if (discount > 0) appliedCoupon?.code.orEmpty() else "",
+                                    discount = discount
                                 )
+                                if (orderId != null && discount > 0) {
+                                    appliedCoupon?.let { FirestoreCouponRepository.recordUse(it.code) }
+                                }
                                 placing = false
                                 if (orderId != null) {
                                     CartStore.clear()
@@ -165,7 +189,7 @@ fun CheckoutScreen(
                             .fillMaxWidth()
                             .height(52.dp)
                     ) {
-                        Text(stringResource(R.string.checkout_place_order_button, CartStore.total))
+                        Text(stringResource(R.string.checkout_place_order_button, payableTotal))
                     }
                 }
             }
@@ -179,6 +203,23 @@ fun CheckoutScreen(
         ) {
             Text(stringResource(R.string.checkout_delivery_address_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
+            if (savedAddresses.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.checkout_saved_addresses_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    savedAddresses.forEach { saved ->
+                        FilterChip(
+                            selected = address == saved.address,
+                            onClick = { address = saved.address },
+                            label = { Text(saved.label.ifBlank { saved.address.take(18) }) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+            }
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
@@ -282,14 +323,69 @@ fun CheckoutScreen(
                 }
             }
 
+            // Promo code: the chef's own, an admin coupon for this chef, or a platform-wide one.
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(stringResource(R.string.coupon_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = couponInput,
+                    onValueChange = {
+                        couponInput = it
+                        if (appliedCoupon != null) {
+                            appliedCoupon = null
+                            couponMessage = null
+                        }
+                    },
+                    placeholder = { Text(stringResource(R.string.coupon_placeholder)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedButton(
+                    enabled = !couponChecking && couponInput.isNotBlank(),
+                    onClick = {
+                        couponChecking = true
+                        couponMessage = null
+                        val chefId = items.firstOrNull()?.meal?.chefId.orEmpty()
+                        scope.launch {
+                            when (val check = FirestoreCouponRepository.validate(couponInput, chefId, CartStore.subtotal)) {
+                                is CouponCheck.Valid -> {
+                                    appliedCoupon = check.coupon
+                                    couponMessage = context.getString(R.string.coupon_applied, check.discount)
+                                }
+                                is CouponCheck.Invalid -> {
+                                    appliedCoupon = null
+                                    couponMessage = context.getString(check.messageRes)
+                                }
+                            }
+                            couponChecking = false
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.coupon_apply))
+                }
+            }
+            if (couponMessage != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    couponMessage.orEmpty(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (appliedCoupon != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
             Text(stringResource(R.string.checkout_order_summary_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
             SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.DELIVERY_FEE)
             SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
+            if (discount > 0) {
+                SummaryRow(stringResource(R.string.coupon_discount_row, appliedCoupon?.code.orEmpty()), -discount)
+            }
             Divider(modifier = Modifier.padding(vertical = 6.dp))
-            SummaryRow(stringResource(R.string.cart_summary_total), CartStore.total, bold = true)
+            SummaryRow(stringResource(R.string.cart_summary_total), payableTotal, bold = true)
         }
     }
 }
@@ -301,6 +397,11 @@ private fun SummaryRow(label: String, amount: Int, bold: Boolean = false) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
-        Text(stringResource(R.string.price_tag, amount), fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
+        // Negative amounts are discounts: show "-৳50" in the accent color, not "৳-50".
+        Text(
+            if (amount < 0) "-" + stringResource(R.string.price_tag, -amount) else stringResource(R.string.price_tag, amount),
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            color = if (amount < 0) MaterialTheme.colorScheme.primary else LocalContentColor.current
+        )
     }
 }

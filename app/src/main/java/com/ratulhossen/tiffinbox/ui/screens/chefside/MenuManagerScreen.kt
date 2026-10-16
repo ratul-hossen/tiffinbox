@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import com.ratulhossen.tiffinbox.data.SampleData
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -118,7 +121,7 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
     if (showAddDialog) {
         AddMealDialog(
             onDismiss = { showAddDialog = false },
-            onAdd = { name, price, photoBase64 ->
+            onAdd = { name, price, photoBase64, category ->
                 val newMeal = MealUi(
                     id = "meal_${System.currentTimeMillis()}",
                     chefId = chefId,
@@ -126,7 +129,7 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
                     emoji = "🍽️",
                     description = "নতুন যোগ করা মিল",
                     price = price,
-                    category = "Lunch",
+                    category = category,
                     isVeg = true,
                     allergens = listOf("None"),
                     dietaryTags = emptyList(),
@@ -145,12 +148,14 @@ fun MenuManagerScreen(chefId: String, onBack: () -> Unit) {
 @Composable
 private fun AddMealDialog(
     onDismiss: () -> Unit,
-    onAdd: (name: String, price: Int, photoBase64: String) -> Unit
+    onAdd: (name: String, price: Int, photoBase64: String, category: String) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
+    // Same categories as the Home category filter (SampleData.categories).
+    var category by remember { mutableStateOf("Lunch") }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var isCompressing by remember { mutableStateOf(false) }
 
@@ -179,6 +184,20 @@ private fun AddMealDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(stringResource(R.string.menu_manager_category_label), style = MaterialTheme.typography.labelMedium)
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SampleData.categories.forEach { option ->
+                        FilterChip(
+                            selected = category == option,
+                            onClick = { category = option },
+                            label = { Text(option) }
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedButton(
                     onClick = {
@@ -210,13 +229,13 @@ private fun AddMealDialog(
                     if (name.isNotBlank() && priceValue > 0) {
                         val uri = photoUri
                         if (uri == null) {
-                            onAdd(name, priceValue, "")
+                            onAdd(name, priceValue, "", category)
                         } else {
                             isCompressing = true
                             scope.launch {
                                 val base64 = ImageCompressor.compressToBase64(context, uri)
                                 isCompressing = false
-                                onAdd(name, priceValue, base64.orEmpty())
+                                onAdd(name, priceValue, base64.orEmpty(), category)
                             }
                         }
                     }

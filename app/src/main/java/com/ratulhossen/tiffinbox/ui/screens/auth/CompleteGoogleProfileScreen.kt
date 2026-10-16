@@ -23,6 +23,8 @@ import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
+import com.ratulhossen.tiffinbox.ui.components.PhoneAndWhatsappFields
+import com.ratulhossen.tiffinbox.ui.components.effectiveWhatsapp
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
@@ -47,6 +49,7 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: () -> Un
     var yearsOfExperience by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var whatsappNumber by remember { mutableStateOf("") }
+    var whatsappSameAsPhone by remember { mutableStateOf(true) }
     var bkashNumber by remember { mutableStateOf("") }
     var nagadNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -62,7 +65,9 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: () -> Un
             errorMessage = kitchenNameRequiredMessage
             return
         }
-        val contacts = when (val check = validateSignupContacts(isChefRole, phoneNumber, whatsappNumber, bkashNumber, nagadNumber)) {
+        val contacts = when (val check = validateSignupContacts(
+            isChefRole, phoneNumber, effectiveWhatsapp(phoneNumber, whatsappNumber, whatsappSameAsPhone), bkashNumber, nagadNumber
+        )) {
             is SignupContactResult.Invalid -> {
                 errorMessage = context.getString(check.messageRes)
                 return
@@ -141,23 +146,13 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: () -> Un
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        OutlinedTextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            label = { Text(stringResource(R.string.login_phone_number_label)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = whatsappNumber,
-            onValueChange = { whatsappNumber = it },
-            label = { Text(stringResource(R.string.login_whatsapp_number_label)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
+        PhoneAndWhatsappFields(
+            phoneNumber = phoneNumber,
+            onPhoneNumberChange = { phoneNumber = it },
+            whatsappNumber = whatsappNumber,
+            onWhatsappNumberChange = { whatsappNumber = it },
+            whatsappSameAsPhone = whatsappSameAsPhone,
+            onWhatsappSameAsPhoneChange = { whatsappSameAsPhone = it }
         )
         Spacer(modifier = Modifier.height(12.dp))
 

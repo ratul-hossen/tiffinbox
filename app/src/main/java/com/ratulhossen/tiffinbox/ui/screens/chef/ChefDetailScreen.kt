@@ -1,5 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.screens.chef
 
+import com.ratulhossen.tiffinbox.data.firebase.ReviewUi
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
@@ -50,6 +52,11 @@ fun ChefDetailScreen(
     var meals by remember(chefId) { mutableStateOf(SampleData.mealsForChef(chefId)) }
     var isLoading by remember(chefId) { mutableStateOf(chefState == null) }
     val context = LocalContext.current
+    var reviews by remember(chefId) { mutableStateOf<List<ReviewUi>>(emptyList()) }
+
+    LaunchedEffect(chefId) {
+        reviews = FirestoreReviewRepository.getReviewsForChef(chefId)
+    }
 
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chefState = it }
@@ -224,6 +231,59 @@ fun ChefDetailScreen(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
                     onClick = { onMealClick(meal.id) }
                 )
+            }
+            item {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    stringResource(R.string.chef_detail_reviews_title) + if (reviews.isNotEmpty()) " (${reviews.size})" else "",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (reviews.isEmpty()) {
+                    Text(
+                        stringResource(R.string.chef_detail_no_reviews),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
+                }
+            }
+            items(reviews, key = { it.id }) { review ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp)) {
+                        if (review.photoBase64.isNotBlank()) {
+                            Base64Thumbnail(
+                                base64 = review.photoBase64,
+                                emoji = "🍽️",
+                                modifier = Modifier.size(72.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "★ " + String.format(java.util.Locale.US, "%.1f", review.overallRating),
+                                color = MaterialTheme.colorScheme.tertiary,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            if (review.comment.isNotBlank()) {
+                                Text(review.comment, style = MaterialTheme.typography.bodyMedium)
+                            }
+                            Text(
+                                review.createdOn,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
             item { Spacer(modifier = Modifier.height(24.dp)) }
         }

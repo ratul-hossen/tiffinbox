@@ -83,6 +83,73 @@
     <string name="location_setup_confirm_address_button">Use this address</string>
     <string name="location_setup_detecting">Finding your location…</string>
     <string name="location_setup_permission_denied">Location permission denied — enter your address manually below</string>
+    <string name="location_setup_location_off">Your phone\'s Location (GPS) is off - turn it on and try again</string>
+    <string name="location_setup_open_settings">Open location settings</string>
+    <string name="whatsapp_same_as_phone">My WhatsApp number is the same as my phone number</string>
+    <string name="action_cancel_generic">Cancel</string>
+    <string name="saved_addresses_title">Saved addresses (up to %1$d)</string>
+    <string name="saved_addresses_default">Default</string>
+    <string name="saved_addresses_make_default">Make default</string>
+    <string name="saved_addresses_add">Add a new address</string>
+    <string name="saved_addresses_edit">Edit address</string>
+    <string name="saved_addresses_delete">Delete</string>
+    <string name="saved_addresses_no_text">No address text</string>
+    <string name="saved_addresses_label_field">Name (e.g. Home, Office)</string>
+    <string name="saved_addresses_label_home">Home</string>
+    <string name="saved_addresses_label_office">Office</string>
+    <string name="checkout_saved_addresses_hint">Pick one of your saved addresses</string>
+    <string name="coupon_title">Promo code</string>
+    <string name="coupon_placeholder">Enter a coupon code</string>
+    <string name="coupon_apply">Apply</string>
+    <string name="coupon_applied">✓ Coupon applied: ৳%1$d off</string>
+    <string name="coupon_discount_row">Discount (%1$s)</string>
+    <string name="coupon_error_not_found">No coupon with this code</string>
+    <string name="coupon_error_inactive">This coupon has been cancelled</string>
+    <string name="coupon_error_not_started">This coupon isn\'t active yet</string>
+    <string name="coupon_error_expired">This coupon has expired</string>
+    <string name="coupon_error_used_up">This coupon has reached its usage limit</string>
+    <string name="coupon_error_wrong_chef">This coupon isn\'t valid for this kitchen</string>
+    <string name="coupon_error_min_order">Your order is below this coupon\'s minimum</string>
+    <string name="coupon_error_network">Couldn\'t check the coupon, please try again</string>
+    <string name="coupon_error_bad_code">Code must be 3-20 letters/numbers, no spaces</string>
+    <string name="coupon_error_bad_value">Invalid discount (1-100 for percent)</string>
+    <string name="coupon_error_bad_time">Validity must be at least 1 hour</string>
+    <string name="coupon_error_code_taken">That code already exists - pick another</string>
+    <string name="coupon_status_active">Active</string>
+    <string name="coupon_status_paused">Paused</string>
+    <string name="coupon_status_expired">Expired</string>
+    <string name="coupon_status_used_up">Used up</string>
+    <string name="coupon_status_cancelled_admin">Cancelled by admin</string>
+    <string name="chef_coupons_title">My coupons</string>
+    <string name="chef_coupons_new">New coupon</string>
+    <string name="chef_coupons_code_label">Code (e.g. EID20)</string>
+    <string name="chef_coupons_percent_label">Discount %</string>
+    <string name="chef_coupons_flat_label">Discount ৳</string>
+    <string name="chef_coupons_min_order_label">Minimum order ৳</string>
+    <string name="chef_coupons_max_discount_label">Max discount ৳ (0 = no cap)</string>
+    <string name="chef_coupons_validity_label">How long it stays valid</string>
+    <string name="chef_coupons_duration_label">Duration</string>
+    <string name="chef_coupons_hours">Hours</string>
+    <string name="chef_coupons_days">Days</string>
+    <string name="chef_coupons_max_uses_label">Max uses (0 = unlimited)</string>
+    <string name="chef_coupons_create_button">Create coupon</string>
+    <string name="chef_coupons_created">✓ Coupon created</string>
+    <string name="chef_coupons_list_title">Your kitchen\'s coupons</string>
+    <string name="chef_coupons_empty">No coupons yet</string>
+    <string name="chef_coupons_valid_until">Valid until %1$s</string>
+    <string name="chef_coupons_pause">Pause</string>
+    <string name="chef_coupons_resume">Resume</string>
+    <string name="edit_profile_title">Edit profile</string>
+    <string name="edit_profile_menu">Edit profile</string>
+    <string name="edit_profile_email_label">Email (can\'t be changed)</string>
+    <string name="edit_profile_location_label">Location</string>
+    <string name="edit_profile_location_none">No location set yet</string>
+    <string name="edit_profile_change_location">Change location</string>
+    <string name="edit_profile_save">Save</string>
+    <string name="edit_profile_saved">✓ Profile updated</string>
+    <string name="edit_profile_save_failed">Couldn\'t save, please try again</string>
+    <string name="edit_profile_name_required">Enter your name</string>
+    <string name="edit_profile_kitchen_section">Kitchen details</string>
     <string name="location_setup_gps_failed">Couldn\'t get your location, please enter your address manually</string>
     <string name="location_setup_address_not_found">Couldn\'t find that address, please try again</string>
     <string name="location_setup_address_required">Enter an address</string>
@@ -124,6 +191,9 @@
     <string name="home_hero_subtitle">Order fresh meals from home chefs near you</string>
     <string name="home_empty_title">No chefs yet</string>
     <string name="home_empty_subtitle">Chefs in your area will show up here once they join</string>
+    <string name="home_category_meals_title">%1$s menu</string>
+    <string name="home_category_empty">No meals in this category yet</string>
+    <string name="menu_manager_category_label">Category</string>
     <string name="home_see_all">See all</string>
 
     <!-- SearchScreen -->
@@ -212,6 +282,15 @@
     <string name="order_tracking_review_button">Give a Review</string>
 
     <!-- OrdersScreen -->
+    <string name="orders_cancel_button">Cancel order</string>
+    <string name="orders_cancel_keep_button">Keep it</string>
+    <string name="orders_cancel_confirm_title">Cancel this order?</string>
+    <string name="orders_cancel_confirm_body">The chef hasn\'t accepted it yet, so it can still be cancelled.</string>
+    <string name="orders_cancel_failed">Couldn\'t cancel - the chef may have already accepted it</string>
+    <string name="orders_waiting_hint">Auto-cancels if the chef doesn\'t accept within 12 hours</string>
+    <string name="orders_cancel_reason_expired">Auto-cancelled: the chef didn\'t accept within 12 hours</string>
+    <string name="orders_cancel_reason_customer">You cancelled this order</string>
+    <string name="orders_cancel_reason_other">Cancelled</string>
     <string name="orders_empty_message">No orders yet</string>
     <string name="orders_stat_total_orders">Total Orders</string>
     <string name="orders_stat_total_spent">Total Spent</string>
@@ -306,6 +385,10 @@
     <!-- ReviewScreen -->
     <string name="review_title">How was the food?</string>
     <string name="review_subtitle">Rukhsana\'s Kitchen — rate 4 different aspects</string>
+    <string name="review_add_photo">Add a food photo (optional)</string>
+    <string name="review_photo_selected">Photo added ✓ (tap to change)</string>
+    <string name="chef_detail_reviews_title">Reviews</string>
+    <string name="chef_detail_no_reviews">No reviews yet</string>
     <string name="review_comment_label">Comment (optional)</string>
     <string name="review_submit_button">Submit Review</string>
     <string name="review_skip_button">Not now, Skip</string>

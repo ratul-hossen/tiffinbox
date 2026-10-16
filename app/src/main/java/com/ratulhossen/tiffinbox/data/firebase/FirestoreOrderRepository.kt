@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.ratulhossen.tiffinbox.data.model.CartItemUi
@@ -18,7 +19,82 @@ import java.util.Locale
  * configured yet or the device is offline, so they never interrupt the
  * demo flow. This mirrors the Order model in README.md.
  */
+/** A "Placed" order the chef hasn't accepted within this window is cancelled automatically. */
+const val ORDER_ACCEPT_TIMEOUT_MS = 12L * 60 * 60 * 1000
+
 object FirestoreOrderRepository {
+
+    /**
+     * Free-tier stand-in for a scheduled Cloud Function: whenever an order is
+     * read (customer history, chef dashboard, admin-web), a still-"Placed"
+     * order older than [ORDER_ACCEPT_TIMEOUT_MS] is flipped to "Cancelled"
+     * (cancelReason = "auto_expired") on the spot. Returns the status the
+     * caller should show.
+     */
+    private fun effectiveStatus(doc: DocumentSnapshot): String {
+        val status = doc.getString("status") ?: "Placed"
+        val placedAt = doc.getLong("placedAt") ?: 0L
+        if (status == "Placed" && placedAt > 0 && System.currentTimeMillis() - placedAt > ORDER_ACCEPT_TIMEOUT_MS) {
+            try {
+                doc.reference.update(
+                    mapOf(
+                        "status" to "Cancelled",
+                        "cancelReason" to "auto_expired",
+                        "cancelledAt" to System.currentTimeMillis()
+                    )
+                )
+                doc.getString("customerId")?.let { customerId ->
+                    FirestoreNotificationRepository.addNotification(
+                        uid = customerId,
+                        title = "Order cancelled",
+                        body = "The chef didn't accept your order within 12 hours, so it was cancelled automatically."
+                    )
+                }
+            } catch (e: Exception) {
+                // Offline - it will be retried on the next read.
+            }
+            return "Cancelled"
+        }
+        return status
+    }
+
+    /**
+     * Customer-side cancel, only allowed while the order is still "Placed"
+     * (checked inside a transaction so it can't race the chef accepting).
+     * Returns true if it was cancelled.
+     */
+    suspend fun cancelOrderByCustomer(orderId: String): Boolean {
+        return try {
+            val db = FirebaseFirestore.getInstance()
+            val ref = db.collection("orders").document(orderId)
+            val chefId = db.runTransaction { tx ->
+                val snap = tx.get(ref)
+                if (snap.getString("status") != "Placed") {
+                    null
+                } else {
+                    tx.update(
+                        ref,
+                        mapOf(
+                            "status" to "Cancelled",
+                            "cancelReason" to "customer",
+                            "cancelledAt" to System.currentTimeMillis()
+                        )
+                    )
+                    snap.getString("chefId").orEmpty()
+                }
+            }.await() ?: return false
+            if (chefId.isNotBlank()) {
+                FirestoreNotificationRepository.addNotification(
+                    uid = chefId,
+                    title = "Order cancelled",
+                    body = "A customer cancelled their order before you accepted it."
+                )
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     /** Returns the new order's id on success, or null if it couldn't be placed. */
     suspend fun placeOrder(
@@ -30,7 +106,9 @@ object FirestoreOrderRepository {
         deliveryAddress: String,
         paymentMethod: String,
         paymentTransactionId: String? = null,
-        paymentScreenshotBase64: String? = null
+        paymentScreenshotBase64: String? = null,
+        couponCode: String = "",
+        discount: Int = 0
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -51,6 +129,9 @@ object FirestoreOrderRepository {
                 "subtotal" to subtotal,
                 "deliveryFee" to deliveryFee,
                 "platformFee" to platformFee,
+                // total already has the coupon discount taken off.
+                "couponCode" to couponCode,
+                "discount" to discount,
                 "totalPrice" to total,
                 "deliveryAddress" to deliveryAddress,
                 "paymentMethod" to paymentMethod,
@@ -150,7 +231,7 @@ object FirestoreOrderRepository {
                         customerId = doc.getString("customerId").orEmpty(),
                         itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
                         totalPrice = (doc.getLong("totalPrice") ?: 0L).toInt(),
-                        status = doc.getString("status") ?: "Placed",
+                        status = effectiveStatus(doc),
                         placedAt = doc.getLong("placedAt") ?: 0L,
                         paymentMethod = doc.getString("paymentMethod").orEmpty(),
                         paymentTransactionId = doc.getString("paymentTransactionId").orEmpty(),
@@ -169,7 +250,7 @@ object FirestoreOrderRepository {
     }
 
     suspend fun getEarningsSummary(chefId: String, chartDays: Int = 14): EarningsSummary {
-        val orders = fetchRecentOrders(chefId)
+        val orders = fetchRecentOrders(chefId).filter { it.status != "Cancelled" }
         val dayFormat = SimpleDateFormat("MM/dd", Locale.US)
         val now = System.currentTimeMillis()
         val dayMillis = 24L * 60 * 60 * 1000
@@ -232,12 +313,41 @@ object FirestoreOrderRepository {
                         chefEmoji = chefEmoji,
                         itemsSummary = itemNames.joinToString(", ").ifBlank { "—" },
                         total = (doc.getLong("totalPrice") ?: 0L).toInt(),
-                        status = (doc.getString("status") ?: "Placed").toOrderStage() ?: OrderStage.PLACED,
-                        placedOn = if (placedAt > 0) dateFormat.format(Date(placedAt)) else ""
+                        status = effectiveStatus(doc).toOrderStage() ?: OrderStage.PLACED,
+                        placedOn = if (placedAt > 0) dateFormat.format(Date(placedAt)) else "",
+                        chefId = chefId,
+                        cancelReason = doc.getString("cancelReason")
+                            ?: if (doc.getString("status") == "Placed") "auto_expired" else ""
                     )
                 }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    /**
+     * Personalization signal for the AI recommendations on Home: how many
+     * non-cancelled orders this customer has placed per chef, plus every
+     * mealId they've ordered. Empty for a new or signed-out user.
+     */
+    suspend fun getMyOrderSignals(): Pair<Map<String, Int>, Set<String>> {
+        return try {
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return emptyMap<String, Int>() to emptySet()
+            val docs = FirebaseFirestore.getInstance()
+                .collection("orders")
+                .whereEqualTo("customerId", customerId)
+                .limit(100)
+                .get()
+                .await()
+                .documents
+                .filter { it.getString("status") != "Cancelled" }
+            val chefCounts = docs.mapNotNull { it.getString("chefId") }.groupingBy { it }.eachCount()
+            val mealIds = docs.flatMap { doc ->
+                (doc.get("items") as? List<*>)?.mapNotNull { (it as? Map<*, *>)?.get("mealId") as? String }.orEmpty()
+            }.toSet()
+            chefCounts to mealIds
+        } catch (e: Exception) {
+            emptyMap<String, Int>() to emptySet()
         }
     }
 

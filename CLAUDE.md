@@ -396,6 +396,71 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   surface with tinted active pill. Cards: bigger images, softer shadows,
   larger radii (Shape.kt).
 
+## Rules hardening, order expiry/cancel, addresses, review photos, category filter, revenue, coupons (2026-10-16)
+
+- **firestore.rules** (owner must re-paste into Console): chefs can't
+  touch `isVerified`/`approvalStatus`/`approvalUpdatedAt`/`isDemo`/`userId`
+  and must be created unapproved (except admin-seeded demo chefs on
+  `demo.*@tiffinbox.app`); users can't change their own `role`; order
+  updates are field-scoped (customer may only cancel while "Placed"; chef
+  only status/cancel fields; delivery partner only status); new `coupons`
+  block.
+- **12h auto-cancel** (`FirestoreOrderRepository.ORDER_ACCEPT_TIMEOUT_MS`):
+  no Cloud Functions, so whichever client reads a still-"Placed" order older
+  than 12h (customer Orders, chef dashboard, admin-web OrdersPage) flips it
+  to Cancelled with `cancelReason: "auto_expired"` and notifies the customer.
+  **Customer cancel**: `cancelOrderByCustomer()` (transaction, only while
+  Placed) via a button on OrdersScreen; notifies the chef.
+- **Saved addresses**: up to 2 (`MAX_SAVED_ADDRESSES`) in
+  `users/{uid}.savedAddresses` + `defaultAddressIndex`; default mirrored to
+  top-level address/lat/lng. UI `ui/screens/profile/SavedAddressesSection.kt`
+  on Edit Profile (customers; chefs keep the single kitchen location card);
+  Checkout shows them as chips and pre-fills the default.
+- **Review photos**: optional `photoBase64` on reviews (ReviewScreen picker);
+  ChefDetailScreen now lists reviews (it never showed them before);
+  admin-web ReviewsPage shows the photo.
+- **Home category filter**: tapping a category tile shows that category's
+  meals and filters chef rows to chefs having such meals. MenuManager's
+  add-meal dialog now has a category picker (it used to hardcode "Lunch").
+- **admin-web Revenue page** (`RevenuePage.tsx`, Overview group): range
+  7/30/90/all, daily/monthly bars with hover, sales / platform earnings
+  (platformFee+deliveryFee) / avg order / coupon discounts / cancelled,
+  top-10 chefs table. Cancelled orders excluded from sales.
+- **Coupons**: `coupons/{CODE}` (doc id = uppercase code). Fields:
+  discountType percent|flat, value, minOrder, maxDiscount, chefId (""=all
+  kitchens, admin only), createdBy admin|chef, validFrom/validUntil,
+  isActive, usedCount, maxUses, cancelledByAdmin. admin-web `CouponsPage.tsx`
+  (create global/per-chef with datetime validity, cancel/reactivate/delete
+  any incl. chefs'); app `ChefCouponsScreen` (tag icon on chef dashboard;
+  validity in hours/days; pause/resume own; can't revive admin-cancelled);
+  Checkout "Promo code" field -> `FirestoreCouponRepository.validate()`,
+  order stores `couponCode`/`discount`, total already discounted.
+
+## Location fix, WhatsApp-same-as-phone, Edit Profile (2026-10-16)
+
+- **Location detection** (`data/location/LocationRepository.kt`):
+  `detectCurrentLocation()` returns `LocationResult` with a
+  `LocationFailure` reason (NO_PERMISSION / LOCATION_OFF / NO_FIX). Asks for
+  FINE + COARSE together (Android 12+ "approximate" used to count as denied),
+  checks the device Location toggle (shows an "Open location settings"
+  button), tries a fresh fix (high accuracy, 15s timeout) then the fused
+  last-known then any platform provider's last-known. Saves a
+  reverse-geocoded readable `address` next to lat/lng on `users/{uid}` /
+  `chefs/{uid}`. On an emulator, a location must be set in Extended
+  Controls → Location or no fix ever arrives.
+- **WhatsApp same as phone:** `ui/components/ContactFields.kt`
+  `PhoneAndWhatsappFields` (checkbox ticked by default hides the WhatsApp
+  field) + `effectiveWhatsapp()`; used in both signup paths (chef stepper:
+  phone + WhatsApp both on step 1 now) and Edit Profile.
+- **Edit Profile** (`ui/screens/profile/EditProfileScreen.kt`, route
+  `edit_profile`): name, phone/WhatsApp, read-only email, location card with
+  "Change location" (route `location_edit/{uid}/{role}` = same
+  LocationSetupScreen but pops back); chefs also edit kitchen name +
+  bKash/Nagad. Same validator as signup. Reached from Profile (header tap,
+  new first menu item, and the previously-dead "Address Management") and
+  a pencil icon on ChefDashboard's header. Profile's dead "My Orders" /
+  "Favorites" items now switch to those tabs.
+
 ## Animated gradient backdrop everywhere (2026-10-16)
 
 Owner felt plain white screens looked dull and asked for an animated,
@@ -479,6 +544,13 @@ constraint (see "Known billing constraint" above).
   see `ml/data/SOURCE.md` for exact reproduction steps; the shipped model
   artifacts the app actually reads live in `app/src/main/assets/ml/` and
   **are** committed.
+- **2026-10-16 update:** the model's `numOffers` input now gets the real
+  count of active coupons usable at each chef
+  (`FirestoreCouponRepository.getActiveOfferCounts()`, was a constant 0),
+  and Home adds a small rule-based personal boost (+0.15 max for chefs the
+  customer ordered from, +0.08 for categories they ordered) from
+  `FirestoreOrderRepository.getMyOrderSignals()`. Documented in
+  `ml/MODEL_REPORT.md`; F1 scores unchanged (they measure the model alone).
 - **Scope note:** this covers exactly the 2 features the owner asked for
   (recommendation + NL search) — not a general ML platform. Don't expand
   it with more trained models without a fresh explicit ask.

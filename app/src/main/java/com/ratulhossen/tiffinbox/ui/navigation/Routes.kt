@@ -7,6 +7,10 @@ object Routes {
     const val LOGIN = "login/{role}"
     const val COMPLETE_GOOGLE_PROFILE = "complete_google_profile/{uid}/{role}"
     const val LOCATION_SETUP = "location_setup/{uid}/{role}"
+    // Same LocationSetupScreen, reached from Edit Profile - pops back instead of going home.
+    const val LOCATION_EDIT = "location_edit/{uid}/{role}"
+    const val EDIT_PROFILE = "edit_profile"
+    const val CHEF_COUPONS = "chef_coupons"
     // next = "location" (fresh signup -> location setup) or "home" (login / app reopen)
     const val EMAIL_VERIFICATION = "email_verification/{role}/{next}"
     const val MAIN = "main"
@@ -38,6 +42,7 @@ object Routes {
     fun login(role: String) = "login/$role"
     fun completeGoogleProfile(uid: String, role: String) = "complete_google_profile/$uid/$role"
     fun locationSetup(uid: String, role: String) = "location_setup/$uid/$role"
+    fun locationEdit(uid: String, role: String) = "location_edit/$uid/$role"
     fun emailVerification(role: String, next: String) = "email_verification/$role/$next"
     fun orderTracking(orderId: String) = "order_tracking/$orderId"
     fun review(chefId: String) = "review/$chefId"
