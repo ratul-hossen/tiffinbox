@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -63,6 +64,8 @@ fun MealDetailScreen(
         return
     }
     val meal = mealState!!
+    // The header/photo runs behind the status bar - keep its icons white.
+    LightStatusBarIcons()
     var quantity by remember(mealId) { mutableIntStateOf(1) }
 
     Scaffold(

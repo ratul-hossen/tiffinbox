@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
@@ -88,6 +89,8 @@ fun HomeScreen(
     cartCount: Int = 0
 ) {
     val context = LocalContext.current
+    // The header/photo runs behind the status bar - keep its icons white.
+    LightStatusBarIcons()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
@@ -567,7 +570,12 @@ fun HomeScreen(
             }
         }
 
-        if (chefs.isEmpty()) {
+        // Also shown when kitchens exist but none is within reach of the
+        // customer (e.g. every kitchen is in another city), instead of empty
+        // section headers with nothing under them.
+        val nothingNearby = chefs.isNotEmpty() && selectedCategory == null &&
+            recommendedChefs.isEmpty() && nearbyChefs.isEmpty() && aiMealsShown.isEmpty()
+        if (chefs.isEmpty() || nothingNearby) {
             Spacer(modifier = Modifier.height(28.dp))
             PhotoEmptyState(
                 resId = R.drawable.empty_orders,
@@ -576,22 +584,24 @@ fun HomeScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-        SectionHeader(
-            title = stringResource(R.string.home_section_recommended),
-            onSeeAllClick = { onSeeAllClick("recommended") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(recommendedChefs) { chef ->
-                ChefCard(
-                    chef = chef,
-                    modifier = Modifier.width(180.dp),
-                    onClick = { onChefClick(chef.id) }
-                )
+        if (recommendedChefs.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(
+                title = stringResource(R.string.home_section_recommended),
+                onSeeAllClick = { onSeeAllClick("recommended") }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(recommendedChefs) { chef ->
+                    ChefCard(
+                        chef = chef,
+                        modifier = Modifier.width(180.dp),
+                        onClick = { onChefClick(chef.id) }
+                    )
+                }
             }
         }
 
@@ -617,22 +627,24 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-        SectionHeader(
-            title = stringResource(R.string.home_section_nearby),
-            onSeeAllClick = { onSeeAllClick("nearby") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(nearbyChefs) { chef ->
-                ChefCard(
-                    chef = chef,
-                    modifier = Modifier.width(180.dp),
-                    onClick = { onChefClick(chef.id) }
-                )
+        if (nearbyChefs.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(
+                title = stringResource(R.string.home_section_nearby),
+                onSeeAllClick = { onSeeAllClick("nearby") }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(nearbyChefs) { chef ->
+                    ChefCard(
+                        chef = chef,
+                        modifier = Modifier.width(180.dp),
+                        onClick = { onChefClick(chef.id) }
+                    )
+                }
             }
         }
     }

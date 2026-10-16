@@ -680,6 +680,12 @@ and the `role_customer` photo unchanged.
 - **Colours:** the Home header drift and the root backdrop now use only the
   theme's brand pair + a deep shade (no tertiary), so Black & Red stays
   red/black (it used to turn orange / amber-brown).
+- **Final recheck fixes:** Home hides "Recommended for you" / "Home Chefs
+  Nearby" when they'd be empty and shows the "No chefs yet / will show up
+  once they join" empty state when kitchens exist but none is in reach;
+  `LightStatusBarIcons()` (ui/components/StatusBarIcons.kt) keeps the status
+  bar icons white on Home and Meal Details (both draw behind the status bar;
+  in light mode the icons were dark on red/dark).
 
 ## UI/UX self-review (2026-10-16)
 
