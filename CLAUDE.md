@@ -503,6 +503,8 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   saved (`isAvailable`, customers no longer see switched-off meals),
   `addMeal()` now returns the real doc id (the list used a fake id before).
   Photos stay optional; meals without one get a "📷 add a photo" nudge.
+- Cart rows also show the meal photo (`Base64Thumbnail`, emoji fallback) -
+  every meal/chef image spot now goes through the same component.
 - **Chef dashboard**: kitchen photo becomes the banner; large 16:9 preview;
   "Available today" switch is now saved; a "Set up your kitchen" checklist
   (kitchen photo, menu, meal photos, today's special, video) - suggestions
