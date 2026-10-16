@@ -13,6 +13,19 @@ private const val EARTH_RADIUS_KM = 6371.0
 /** The "2-3km" nearby radius the user asked for, in kilometers. */
 const val NEARBY_RADIUS_KM = 3.0
 
+/**
+ * Recommendations (Home "Recommended for you", AI picks, Today's Special
+ * banner, the chef list's Recommended sort) only include kitchens within this
+ * distance once the customer has a saved location - recommending a kitchen
+ * that can't deliver to them breaks trust. Wider than [NEARBY_RADIUS_KM] so
+ * there is still something to recommend.
+ */
+const val RECOMMEND_RADIUS_KM = 10.0
+
+/** Chefs a customer can be recommended: all of them until real distances are known. */
+fun List<ChefUi>.recommendable(hasRealDistances: Boolean): List<ChefUi> =
+    if (hasRealDistances) filter { it.distanceKm <= RECOMMEND_RADIUS_KM } else this
+
 /** Great-circle distance between two lat/lng points, in kilometers. */
 fun haversineKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val dLat = Math.toRadians(lat2 - lat1)

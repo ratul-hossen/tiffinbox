@@ -24,6 +24,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
+import com.ratulhossen.tiffinbox.util.recommendable
 import com.ratulhossen.tiffinbox.util.withRealDistances
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TopAppBarDefaults
@@ -75,7 +76,7 @@ fun ChefListScreen(
 
     val sortedChefs = remember(chefs, sort, hasRealDistances) {
         when (sort) {
-            ChefSort.RECOMMENDED -> RecommendationEngine.recommend(chefs)
+            ChefSort.RECOMMENDED -> RecommendationEngine.recommend(chefs.recommendable(hasRealDistances))
             ChefSort.NEARBY -> {
                 val sorted = chefs.sortedBy { it.distanceKm }
                 if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted

@@ -64,6 +64,7 @@ import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
+import com.ratulhossen.tiffinbox.util.recommendable
 import com.ratulhossen.tiffinbox.util.withRealDistances
 import com.ratulhossen.tiffinbox.ui.components.CirclePhoto
 import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
@@ -144,7 +145,6 @@ fun HomeScreen(
                     val categoryAffinity = if (meal.category in orderedCategories) 0.08 else 0.0
                     modelScore + chefAffinity + categoryAffinity
                 }
-                .take(10)
         }
 
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
@@ -168,23 +168,32 @@ fun HomeScreen(
         if (selectedCategory == null) chefs
         else categoryMeals.map { it.chefId }.toSet().let { ids -> chefs.filter { it.id in ids } }
     }
-    val recommendedChefs = remember(visibleChefs) { RecommendationEngine.recommend(visibleChefs) }
+    val recommendedChefs = remember(visibleChefs, hasRealDistances) {
+        RecommendationEngine.recommend(visibleChefs.recommendable(hasRealDistances))
+    }
+    // Kitchens close enough to recommend from (see RECOMMEND_RADIUS_KM). Empty
+    // until the chefs load, so far-away meals never flash in first.
+    val recommendableChefIds = remember(chefs, hasRealDistances) {
+        chefs.recommendable(hasRealDistances).map { it.id }.toSet()
+    }
+    val aiMealsShown = remember(aiRecommendedMeals, recommendableChefIds) {
+        aiRecommendedMeals.filter { it.chefId in recommendableChefIds }.take(10)
+    }
     // Chefs marked these as Today's Special in Menu Manager (it lapses at
     // midnight by itself). Only from chefs listed to this customer, nearest
     // first. If nobody marked one today, fall back to the top AI picks with
     // a real photo so the banner is never an empty promise.
-    val todaySpecials = remember(catalogMeals, chefs) {
-        val chefDistance = chefs.associate { it.id to it.distanceKm }
+    val todaySpecials = remember(catalogMeals, chefs, recommendableChefIds) {
+        val chefDistance = chefs.filter { it.id in recommendableChefIds }.associate { it.id to it.distanceKm }
         catalogMeals
             .filter { it.isTodaySpecial && it.chefId in chefDistance && it.availableQuantity > 0 }
             .sortedBy { chefDistance[it.chefId] ?: Double.MAX_VALUE }
             .take(8)
     }
     val heroIsSpecial = todaySpecials.isNotEmpty()
-    val heroMeals = remember(todaySpecials, aiRecommendedMeals, chefs) {
-        val listedChefIds = chefs.map { it.id }.toSet()
+    val heroMeals = remember(todaySpecials, aiMealsShown) {
         todaySpecials.ifEmpty {
-            aiRecommendedMeals.filter { it.photoBase64.isNotBlank() && it.chefId in listedChefIds }.take(5)
+            aiMealsShown.filter { it.photoBase64.isNotBlank() }.take(5)
         }
     }
 
@@ -561,7 +570,7 @@ fun HomeScreen(
             }
         }
 
-        if (aiRecommendedMeals.isNotEmpty()) {
+        if (aiMealsShown.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 stringResource(R.string.home_section_ai_recommended),
@@ -573,7 +582,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(aiRecommendedMeals, key = { it.id }) { meal ->
+                items(aiMealsShown, key = { it.id }) { meal ->
                     MealCard(
                         meal = meal,
                         modifier = Modifier.width(220.dp),

@@ -46,6 +46,7 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 |---|---|---|---|---|
 | C1 | Distance "2635.8 km" | দশমিকসহ বড় সংখ্যা পড়তে কষ্ট, ভাঙা data মনে হয়। | ১০ km-এর বেশি হলে পূর্ণ সংখ্যা, হাজারে comma ("2,636 km")। | ✅ Fixed |
 | C2 | নতুন chef-এর rating "0.0 (0)" | ০ star মানে খারাপ chef মনে হয়, আসলে review-ই হয়নি। | Review না থাকলে "New" badge। | ❓ Owner (নতুন লেখা) |
+| C4 | "Recommended" অংশে ২,৬০০ km দূরের kitchen-ও আসত | যে deliver করতে পারবে না তাকে recommend করলে user-এর বিশ্বাস কমে। | সব recommendation (chef, AI meal, Today's banner, chef list) শুধু ১০ km-এর মধ্যে। | ✅ Fixed (owner-এর সিদ্ধান্ত) |
 | C3 | Kitchen photo না থাকলে বড় gradient box-এ একটা emoji | Card-এর ৬০% জায়গা খালি লাগে। | Chef-কে photo দেওয়ার nudge আগেই আছে। Placeholder-এ সূক্ষ্ম pattern দেওয়া যায়। | 🕓 Later |
 
 ## Meal Details

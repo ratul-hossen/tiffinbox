@@ -655,6 +655,13 @@ and the `role_customer` photo unchanged.
   `users/{uid}` right away (it used to wait for meals/coupons/orders/chefs
   to load and stayed "…" if there were no chefs). A failed/offline read
   keeps the cached copy.
+- **Recommendations stay within 10 km** (`RECOMMEND_RADIUS_KM`, GeoUtils
+  `recommendable()`; owner's choice): Home "Recommended for you", "AI
+  Recommended For You", the Today's Special / Today's pick banner and the
+  chef list's Recommended sort skip kitchens farther than 10 km once the
+  customer has a saved location ("Nearby" stays 3 km). Owner tests from
+  Malaysia against Bangladesh kitchens - to test, set a Dhaka address as
+  the default saved address.
 
 ## UI/UX self-review (2026-10-16)
 
