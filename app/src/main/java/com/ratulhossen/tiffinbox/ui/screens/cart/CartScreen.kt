@@ -14,6 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
@@ -29,6 +35,15 @@ fun CartScreen(
     onCheckout: () -> Unit
 ) {
     val items = CartStore.items
+    // Distance-based delivery fee for this kitchen (admin-set pricing).
+    var etaMinutes by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(items.firstOrNull()?.meal?.chefId) {
+        val chefId = items.firstOrNull()?.meal?.chefId ?: return@LaunchedEffect
+        DeliveryQuoter.quote(chefId)?.let {
+            CartStore.deliveryFee = it.fee
+            etaMinutes = it.minutes
+        }
+    }
 
     Scaffold(
         // Transparent so the app-wide AnimatedGradientBackground shows through.
@@ -49,7 +64,14 @@ fun CartScreen(
                 Surface(shadowElevation = 8.dp) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
-                        SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.DELIVERY_FEE)
+                        SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.deliveryFee)
+                        etaMinutes?.let {
+                            Text(
+                                stringResource(R.string.delivery_eta_short, it),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
                         Divider(modifier = Modifier.padding(vertical = 6.dp))
                         SummaryRow(stringResource(R.string.cart_summary_total), CartStore.total, bold = true)

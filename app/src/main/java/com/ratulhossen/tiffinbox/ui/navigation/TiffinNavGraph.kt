@@ -32,8 +32,11 @@ import com.ratulhossen.tiffinbox.ui.screens.chefside.DeliveryApplicationScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.DeliveryOptionScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.MenuManagerScreen
 import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefListScreen
+import com.ratulhossen.tiffinbox.ui.screens.cheflist.ChefMapScreen
 import com.ratulhossen.tiffinbox.ui.screens.main.MainScreen
 import com.ratulhossen.tiffinbox.ui.screens.meal.MealDetailScreen
+import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefVerificationScreen
+import com.ratulhossen.tiffinbox.ui.screens.subscription.MealPlansScreen
 import com.ratulhossen.tiffinbox.ui.screens.notifications.NotificationsScreen
 import com.ratulhossen.tiffinbox.ui.screens.onboarding.OnboardingScreen
 import com.ratulhossen.tiffinbox.ui.screens.order.OrderTrackingScreen
@@ -233,7 +236,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             ChefListScreen(
                 initialSort = sort,
                 onBack = { navController.popBackStack() },
-                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) }
+                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) },
+                onMapClick = { navController.navigate(Routes.CHEF_MAP) }
             )
         }
 
@@ -301,7 +305,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
                 onEditProfile = { navController.navigate(Routes.EDIT_PROFILE) },
                 onOpenCoupons = { navController.navigate(Routes.CHEF_COUPONS) },
-                onOpenDeliveryOption = { navController.navigate(Routes.DELIVERY_OPTION) }
+                onOpenDeliveryOption = { navController.navigate(Routes.DELIVERY_OPTION) },
+                onOpenVerification = { navController.navigate(Routes.CHEF_VERIFICATION) }
             )
         }
 
@@ -318,6 +323,24 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.DELIVERY_APPLICATION) {
             DeliveryApplicationScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CHEF_VERIFICATION) {
+            ChefVerificationScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.CHEF_MAP) {
+            ChefMapScreen(
+                onBack = { navController.popBackStack() },
+                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) }
+            )
+        }
+
+        composable(Routes.MEAL_PLANS) {
+            MealPlansScreen(
+                onBack = { navController.popBackStack() },
+                onKitchenClick = { chefId -> navController.navigate(Routes.subscribe(chefId)) }
+            )
         }
 
         composable(Routes.CHEF_COUPONS) {
@@ -426,7 +449,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             MealDetailScreen(
                 mealId = mealId,
                 onBack = { navController.popBackStack() },
-                onAddedToCart = { navController.navigate(Routes.CART) }
+                onAddedToCart = { navController.navigate(Routes.CART) },
+                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) }
             )
         }
 

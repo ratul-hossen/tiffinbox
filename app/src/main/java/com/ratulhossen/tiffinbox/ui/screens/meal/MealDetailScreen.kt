@@ -26,6 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.NewKitchenBadge
+import com.ratulhossen.tiffinbox.ui.components.isNewKitchen
+import com.ratulhossen.tiffinbox.ui.components.cardEdge
+import com.ratulhossen.tiffinbox.data.model.ChefUi
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
+import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -33,7 +40,13 @@ import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import com.ratulhossen.tiffinbox.ui.components.DeliveryQuoteLine
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
+import com.ratulhossen.tiffinbox.domain.DeliveryQuote
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +54,8 @@ import androidx.compose.material3.TopAppBarDefaults
 fun MealDetailScreen(
     mealId: String,
     onBack: () -> Unit,
-    onAddedToCart: () -> Unit
+    onAddedToCart: () -> Unit,
+    onChefClick: (String) -> Unit = {}
 ) {
     var mealState by remember(mealId) { mutableStateOf<MealUi?>(SampleData.mealById(mealId)) }
     var isLoading by remember(mealId) { mutableStateOf(mealState == null) }
@@ -60,22 +74,22 @@ fun MealDetailScreen(
         return
     }
     val meal = mealState!!
+    // Who cooks it and how they're rated - the key thing to know before ordering.
+    var chef by remember(meal.chefId) { mutableStateOf<ChefUi?>(null) }
+    var deliveryQuote by remember(meal.chefId) { mutableStateOf<DeliveryQuote?>(null) }
+    LaunchedEffect(meal.chefId) {
+        chef = FirestoreCatalogRepository.getChef(meal.chefId)
+        deliveryQuote = DeliveryQuoter.quote(meal.chefId)
+    }
+    // The header/photo runs behind the status bar - keep its icons white.
+    LightStatusBarIcons()
     var quantity by remember(mealId) { mutableIntStateOf(1) }
+    // Today's plates cap an order for now; a pre-order (when sold out) is capped at 10.
+    val maxQuantity = if (meal.availableQuantity > 0) meal.availableQuantity else PRE_ORDER_MAX_PLATES
 
     Scaffold(
         // Transparent so the app-wide AnimatedGradientBackground shows through.
         containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                title = { Text(stringResource(R.string.meal_detail_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
-                    }
-                }
-            )
-        },
         bottomBar = {
             Surface(shadowElevation = 8.dp) {
                 Row(
@@ -87,9 +101,9 @@ fun MealDetailScreen(
                     QuantityStepper(
                         quantity = quantity,
                         onDecrease = { if (quantity > 1) quantity-- },
-                        onIncrease = { if (quantity < meal.availableQuantity) quantity++ },
+                        onIncrease = { if (quantity < maxQuantity) quantity++ },
                         canDecrease = quantity > 1,
-                        canIncrease = quantity < meal.availableQuantity
+                        canIncrease = quantity < maxQuantity
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     TiffinButton(
@@ -97,16 +111,16 @@ fun MealDetailScreen(
                             CartStore.add(meal, quantity)
                             onAddedToCart()
                         },
-                        enabled = meal.availableQuantity > 0,
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
                     ) {
+                        // Sold out today: it can still be pre-ordered for a later slot.
                         Text(
                             if (meal.availableQuantity > 0) {
                                 stringResource(R.string.meal_add_to_cart_button, meal.price * quantity)
                             } else {
-                                stringResource(R.string.meal_sold_out_today)
+                                stringResource(R.string.meal_preorder_button, meal.price * quantity)
                             }
                         )
                     }
@@ -114,9 +128,11 @@ fun MealDetailScreen(
             }
         }
     ) { padding ->
+        // No top bar: the photo runs edge to edge up behind the status bar,
+        // with the back button floating on it.
         Column(
             modifier = Modifier
-                .padding(padding)
+                .padding(bottom = padding.calculateBottomPadding())
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
@@ -134,11 +150,33 @@ fun MealDetailScreen(
                     shape = RectangleShape,
                     emojiFontSize = 72.sp
                 )
+                // Soft dark fade at the top so the status bar and back button stay readable.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent)))
+                )
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(8.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.35f))
+                ) {
+                    Icon(
+                        Icons.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.content_description_back),
+                        tint = Color.White
+                    )
+                }
                 if (meal.isTodaySpecial) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                        modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
                     ) {
                         Text(
                             stringResource(R.string.home_hero_badge),
@@ -153,6 +191,10 @@ fun MealDetailScreen(
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(meal.name, style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(6.dp))
+                chef?.let { c ->
+                    ChefByline(chef = c, delivery = deliveryQuote, onClick = { onChefClick(c.id) })
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
                 Text(
                     stringResource(R.string.meal_price_portion, meal.price, meal.portionSize),
                     style = MaterialTheme.typography.titleMedium,
@@ -166,26 +208,25 @@ fun MealDetailScreen(
                 Text(stringResource(R.string.meal_dietary_tags_title), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 val generalTag = stringResource(R.string.meal_general_tag)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(meal.dietaryTags.ifEmpty { listOf(generalTag) }) { tag ->
-                        AssistChip(onClick = {}, label = { Text(tag) })
-                    }
+                InfoPillRow(meal.dietaryTags.ifEmpty { listOf(generalTag) })
+
+                // Only shown when the meal actually lists allergens.
+                val allergens = meal.allergens.filter { it.isNotBlank() && !it.equals("None", ignoreCase = true) }
+                if (allergens.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(stringResource(R.string.meal_allergens_title), style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    InfoPillRow(allergens)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(stringResource(R.string.meal_allergens_title), style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(meal.allergens) { allergen ->
-                        AssistChip(onClick = {}, label = { Text(allergen) })
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                // Amber normally; red only when stock is really running out.
                 Text(
-                    stringResource(R.string.meal_plates_left, meal.availableQuantity),
+                    if (meal.availableQuantity > 0) stringResource(R.string.meal_plates_left, meal.availableQuantity)
+                    else stringResource(R.string.meal_sold_out_preorder_hint),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (meal.availableQuantity <= 3) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.tertiary
                 )
             }
         }
@@ -207,3 +248,85 @@ private fun MealDetailShimmer() {
         }
     }
 }
+
+/** Read-only info pills (not chips - nothing happens on tap, so they don't look tappable). */
+@Composable
+private fun InfoPillRow(labels: List<String>) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(labels) { label ->
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                )
+            }
+        }
+    }
+}
+
+/** "Cooked by" row: kitchen photo, name, rating (or "New") and delivery quote; opens the kitchen. */
+@Composable
+private fun ChefByline(chef: ChefUi, delivery: DeliveryQuote? = null, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        border = cardEdge(),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Base64Thumbnail(
+                base64 = chef.photoBase64,
+                emoji = chef.emoji,
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                emojiFontSize = 22.sp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.meal_by_kitchen),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    chef.kitchenName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+                delivery?.let { DeliveryQuoteLine(it) }
+            }
+            if (isNewKitchen(chef)) {
+                NewKitchenBadge()
+            } else {
+                Icon(
+                    Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private const val PRE_ORDER_MAX_PLATES = 10

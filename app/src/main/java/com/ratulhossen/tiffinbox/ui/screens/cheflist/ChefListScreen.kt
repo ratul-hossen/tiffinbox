@@ -17,6 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
+import androidx.compose.material.icons.filled.Map
+import com.ratulhossen.tiffinbox.ui.components.DistanceFilterChips
+import com.ratulhossen.tiffinbox.domain.DeliveryQuotes
+import com.ratulhossen.tiffinbox.domain.DeliveryPricing
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
+import com.ratulhossen.tiffinbox.domain.RecommendationContext
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -24,6 +33,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
+import com.ratulhossen.tiffinbox.util.recommendable
 import com.ratulhossen.tiffinbox.util.withRealDistances
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,10 +56,12 @@ private fun ChefSort.label(): String = when (this) {
 fun ChefListScreen(
     initialSort: String,
     onBack: () -> Unit,
-    onChefClick: (String) -> Unit
+    onChefClick: (String) -> Unit,
+    onMapClick: () -> Unit = {}
 ) {
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var hasRealDistances by remember { mutableStateOf(false) }
+    var recContext by remember { mutableStateOf(RecommendationContext()) }
     var sort by remember {
         mutableStateOf(
             when (initialSort) {
@@ -60,11 +72,23 @@ fun ChefListScreen(
         )
     }
 
+    // Distance filter (only once the customer's location is known); "Nearby" starts at 3 km.
+    var maxKm by remember { mutableStateOf(if (initialSort == "nearby") NEARBY_RADIUS_KM else null) }
+    var deliveryPricing by remember { mutableStateOf<DeliveryPricing?>(null) }
+
     LaunchedEffect(Unit) {
+        deliveryPricing = FirestoreAppConfigRepository.deliveryPricing()
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
         val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        recContext = RecommendationContext(
+            hasRealDistances = myLocation != null,
+            radiusKm = FirestoreAppConfigRepository.recommendRadiusKm(),
+            reviewStats = FirestoreReviewRepository.getChefReviewStats(),
+            myOrderCounts = FirestoreOrderRepository.getMyOrderSignals().first,
+            offerCounts = FirestoreCouponRepository.getActiveOfferCounts()
+        )
         if (myLocation != null) {
             chefs = firestoreChefs.withRealDistances(myLocation)
             hasRealDistances = true
@@ -73,14 +97,12 @@ fun ChefListScreen(
         }
     }
 
-    val sortedChefs = remember(chefs, sort, hasRealDistances) {
+    val sortedChefs = remember(chefs, sort, hasRealDistances, recContext, maxKm) {
+        val inRange = maxKm?.takeIf { hasRealDistances }?.let { km -> chefs.filter { it.distanceKm <= km } } ?: chefs
         when (sort) {
-            ChefSort.RECOMMENDED -> RecommendationEngine.recommend(chefs)
-            ChefSort.NEARBY -> {
-                val sorted = chefs.sortedBy { it.distanceKm }
-                if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
-            }
-            ChefSort.RATING -> chefs.sortedByDescending { it.overallRating }
+            ChefSort.RECOMMENDED -> RecommendationEngine.recommend(inRange.recommendable(hasRealDistances, recContext.radiusKm), recContext)
+            ChefSort.NEARBY -> inRange.sortedBy { it.distanceKm }
+            ChefSort.RATING -> inRange.sortedByDescending { it.overallRating }
         }
     }
 
@@ -94,6 +116,11 @@ fun ChefListScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = stringResource(R.string.content_description_back))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onMapClick) {
+                        Icon(Icons.Filled.Map, contentDescription = stringResource(R.string.chef_map_title))
                     }
                 }
             )
@@ -114,6 +141,14 @@ fun ChefListScreen(
                     )
                 }
             }
+            if (hasRealDistances) {
+                DistanceFilterChips(
+                    selectedKm = maxKm,
+                    onSelect = { maxKm = it },
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
             if (sortedChefs.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
@@ -130,6 +165,7 @@ fun ChefListScreen(
                         ChefCard(
                             chef = chef,
                             modifier = Modifier.fillMaxWidth(),
+                            delivery = deliveryPricing?.takeIf { hasRealDistances }?.let { DeliveryQuotes.quote(chef.distanceKm, it) },
                             onClick = { onChefClick(chef.id) }
                         )
                     }

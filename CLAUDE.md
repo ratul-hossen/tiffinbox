@@ -63,11 +63,13 @@ codebase:
   (`FusedLocationProviderClient`, free Play Services) + the device's
   built-in `Geocoder` (free, on-device) + a pure-math Haversine distance
   calculation (`app/src/main/java/.../util/GeoUtils.kt`). No Google Maps
-  SDK, no API key, no billing. There is currently **no visual map** (no
-  pins, no satellite/street view) anywhere in the app — only distance
-  numbers and sorted/filtered lists. If the owner ever says yes to Maps
-  billing, layer an actual map UI on top of the same stored lat/lng
-  fields; don't rebuild the location logic.
+  SDK, no API key, no billing. There is a **map view** using
+  **osmdroid 6.1.20** + OpenStreetMap tiles (free, no API key, no billing):
+  `ChefMapScreen.kt` shows the user's position, a `NEARBY_RADIUS_KM` circle
+  polygon and a marker for each nearby chef — tap opens their profile. The
+  distance numbers / sorted lists continue to work alongside it. If the owner
+  ever says yes to Maps billing, replace the osmdroid `MapView` with a
+  Google Maps `GoogleMap` composable; the lat/lng Firestore fields are the same.
 - **Video posts (chef video content) — NEW, not yet built:** true video
   file upload needs Firebase Storage (Blaze). The free-tier approach
   decided unilaterally this session (owner's instructions explicitly
@@ -640,6 +642,77 @@ top; photo cards get a ring/tick selection badge, a brand-gradient border when
 chosen, and the other card dims. Motion: one staggered entrance only. Texts
 and the `role_customer` photo unchanged.
 
+## Home header + Meal Details full-bleed photo (2026-10-16)
+
+- Home no longer has the shared top bar (MainScreen shows it only on the
+  other tabs; Home gets no top padding). Its gradient header runs up behind
+  the status bar: row 1 = profile circle, "TiffinBox", chat (green) + cart
+  (badge) circles (`HeaderCircleButton`); row 2 = location pill + points chip;
+  then greeting + `FoodOrbit` (owner likes it - keep), search.
+- Meal Details has no top bar: the 4:3 photo starts at the very top behind
+  the status bar with a dark top fade and a floating round back button; the
+  Today's Special badge moved to the photo's bottom-left.
+- Home header address shows instantly: `HomeAddressCache` (SharedPreferences,
+  per uid) seeds it, and a separate LaunchedEffect refreshes it from
+  `users/{uid}` right away (it used to wait for meals/coupons/orders/chefs
+  to load and stayed "…" if there were no chefs). A failed/offline read
+  keeps the cached copy.
+- **Recommendations stay within 10 km** (`RECOMMEND_RADIUS_KM`, GeoUtils
+  `recommendable()`; owner's choice): Home "Recommended for you", "AI
+  Recommended For You", the Today's Special / Today's pick banner and the
+  chef list's Recommended sort skip kitchens farther than 10 km once the
+  customer has a saved location ("Nearby" stays 3 km). Owner tests from
+  Malaysia against Bangladesh kitchens - to test, set a Dhaka address as
+  the default saved address.
+- **Radius is admin-set (owner, 2026-10-16):** admin-web **App Settings**
+  page (`AppSettingsPage.tsx`, System group) writes
+  `app_config/settings.recommendRadiusKm` (1-50 km, presets 2/5/10/15,
+  logged to the activity log); the app reads it via
+  `FirestoreAppConfigRepository.recommendRadiusKm()` (cached per run,
+  default 10 km). New rules block `app_config` (read all, write admin).
+- **Recommender v2** (`domain/RecommendationEngine.kt`, owner: distance is a
+  plus, not everything): 0.25 rating + 0.20 delivery (customers' on-time
+  stars) - both Bayesian-smoothed from the public `reviews` collection via
+  `FirestoreReviewRepository.getChefReviewStats()` (5-min memory cache) -
+  + 0.20 proximity + 0.10 review volume + 0.10 order volume + 0.10 repeat
+  orders + 0.05 active offer, x0.7 when not available today. AI meal picks =
+  ML score + 0.15 kitchen quality + 0.10 proximity + the existing personal
+  boosts. Reading all reviews is fine at this scale; if it grows, have
+  admin-web write per-chef aggregates instead.
+- **Colours:** the Home header drift and the root backdrop now use only the
+  theme's brand pair + a deep shade (no tertiary), so Black & Red stays
+  red/black (it used to turn orange / amber-brown).
+- **Final recheck fixes:** Home hides "Recommended for you" / "Home Chefs
+  Nearby" when they'd be empty and shows the "No chefs yet / will show up
+  once they join" empty state when kitchens exist but none is in reach;
+  `LightStatusBarIcons()` (ui/components/StatusBarIcons.kt) keeps the status
+  bar icons white on Home and Meal Details (both draw behind the status bar;
+  in light mode the icons were dark on red/dark).
+- **Review follow-ups (owner said do them):** unrated kitchens show a
+  "New" badge (`isNewKitchen()` / `NewKitchenBadge()` in ChefCard.kt) on chef
+  cards, Chef Detail and Meal Details instead of "0.0 (0)"; Home's AI row
+  skips meals already in the banner (`aiListMeals`); Meal Details has a
+  "Cooked by" row (kitchen photo, name, rating/New, opens Chef Detail -
+  `onChefClick`); content cards get a hairline `cardEdge()` border and the
+  backdrop blobs are softer (dark 0.28 / light 0.22) so cards separate.
+
+## UI/UX self-review (2026-10-16)
+
+Owner asked for a professional UI/UX critique of this session's changes and
+to keep improving from it: **`docs/UI_UX_REVIEW.md`** is the tracker (issue
+ids H/C/M/R/G, status ✅ Fixed / 🕓 Later / ❓ Owner). Fixed so far: Home
+header buttons 48dp + orbit 112dp, "See all" as a text link, distances
+formatted (`formatDistanceKm`, "2,636 km"), Meal Details read-only info pills,
+allergen section hidden when empty, plates-left amber (red at <= 3). Work the
+🕓 items in the order listed there; ❓ items need the owner's answer (they
+change copy/behaviour). Update the file whenever an item lands.
+- **Orbit reuse:** `FoodOrbit`'s ring is now `OrbitRing` (AnimatedHeader.kt,
+  angle read only in layout/draw) + `orbitFrontAngle()`. Used once more, in
+  RewardsScreen's RankHero: the 5 ranks step from Rookie to the user's rank
+  on open, land in front, then pop + star burst, then rest. Rule (owner loves
+  the orbit, said don't overdo it): never two orbits on one screen, only where
+  the motion means something; rejected spots are listed in the review doc.
+
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
 Owner's explicit ask (paraphrased from Bengali): real AI integration, not an
@@ -978,3 +1051,77 @@ either restores it or permanently deletes it.
 - `firestore.rules` — source of truth for security rules; **not
   auto-deployed** — any change here must be manually re-pasted into
   Firebase Console → Firestore Database → Rules by the owner.
+
+## Delivery fee, map, verification, meal plans, polish (2026-10-16)
+
+Owner requested: delivery fee estimate, map view, chef verification badge,
+chef profile improvements (bio/story/specialty/experience), distance filter,
+meal plan highlights, pre-orders, plates-left enforcement, and review leftovers.
+
+- **Distance-based delivery fee + ETA** (`domain/DeliveryQuote.kt`,
+  `data/DeliveryQuoter.kt`): `DeliveryQuote(fee, minutes)` computed from
+  admin-set `app_config/settings` fields `deliveryBaseFee`,
+  `deliveryFeePerKm`, `deliveryIncludedKm`. Shown as "🛵 ৳25 · ~35 min"
+  via `DeliveryQuoteLine` component on `ChefCard`, `ChefListScreen`,
+  `ChefDetailScreen`, and the "Cooked by" byline on `MealDetailScreen`.
+  Fee also pre-fills the checkout `deliveryFee` field — customers see the
+  real cost before they order. Admin sets the fee structure on the
+  **App Settings** page in admin-web.
+- **OSM map view** (`ChefMapScreen.kt`, osmdroid 6.1.20, free, no API key):
+  Chef List has a map icon → opens `ChefMapScreen` (route `chef_map`). Shows
+  the user's GPS position as a blue dot, the `NEARBY_RADIUS_KM` radius as a
+  circle polygon, and each visible chef as a marker; tap opens their profile.
+  `osmdroid-android` is the only new Gradle dependency — Apache-2.0, no API
+  key, tiles from OpenStreetMap (free). Added to `app/build.gradle.kts`.
+- **Distance filter chips** (`DistanceFilterChips.kt`): 1 km / 3 km / 5 km /
+  All chips on `ChefListScreen` (and Home's nearby section). Chips call
+  through to the list's `distanceFilter` state; filter logic is pure
+  Haversine — no new billing.
+- **Pre-orders** (`orderPlates.ts` in admin-web, `FirestoreOrderRepository`
+  `reservePlates`/`releasePlates`): a meal's `availableQuantity` is
+  decremented atomically when an order is placed and restored if the order
+  auto-expires or is cancelled. `MealDetailScreen` and `MealCard` show
+  "N plates left" (amber; red at ≤ 3). A sold-out meal shows "Pre-order"
+  instead of "Add to cart" — capped at `PRE_ORDER_MAX_PLATES = 10`.
+- **Chef verification badge** (`ChefVerificationScreen.kt`, route
+  `chef_verification`; `FirestoreVerificationRepository.kt`): chefs can
+  submit their NID photo (base64-in-Firestore, private `chef_verifications/{uid}`
+  collection) and a kitchen photo (already stored in `chefs/{uid}.photoBase64`).
+  Admin sets `nidVerified`/`kitchenVerified` (locked fields, admin-only).
+  When both are true, `ChefUi.isFullyVerified` is true → blue checkmark
+  badge on `ChefCard` and `ChefDetailScreen`. admin-web has a
+  **Verifications** page listing pending NID submissions with approve/reject.
+  `firestore.rules`: `chef_verifications` readable by admin or the chef
+  themselves; chef can only create/update with `status == "pending"` and
+  cannot write `nidVerified`/`kitchenVerified` (admin-only via `chefLockedFields`).
+- **Chef profile improvements** (`ChefDetailScreen.kt`): bio (markdown-free
+  paragraph), story, specialty list, years of experience, verified badge,
+  and `ChefFactRow` tiles (total orders, experience, overall rating). Fields
+  `bio`, `story`, `specialty: List<String>`, `yearsOfExperience: Int` on
+  `ChefUi` and Firestore `chefs/{uid}`. Chef edits them via Edit Profile
+  (`EditProfileScreen.kt`) — bio label, story label, specialty chip input.
+- **Meal plans highlight** (`MealPlansScreen.kt`, route `meal_plans`;
+  `MealPlanPromoCard.kt`): a dedicated screen listing all subscription plans
+  (weekly/monthly/7-day/10-day etc.) from every available chef. A "Meal Plan
+  Promo" card on Home nudges student-audience customers. Plans show starting
+  price per day. Tapping subscribes via the existing `SubscribeScreen`.
+- **Profile initial avatar** (`HomeScreen.kt`): the header `HeaderCircleButton`
+  profile circle now shows the user's first initial (white bold text) when
+  their `displayName` / Firestore `users/{uid}.name` is available, instead of
+  a generic Person icon. Seeded from Firebase Auth on first render, refreshed
+  from Firestore.
+- **Kitchen placeholder letter** (`Base64Thumbnail.kt`): added `initial: String?`
+  parameter. When no photo is set and `initial` is passed (from
+  `chef.kitchenName.firstOrNull()`), the gradient placeholder shows a large
+  bold uppercase letter instead of an emoji — far more polished for new
+  kitchens. Emoji path gets `Modifier.semantics { clearAndSetSemantics {} }`
+  so TalkBack skips the decorative icon (fixes UI_UX_REVIEW G3, H6, C3).
+- **Delivery fee on admin-web App Settings** (`AppSettingsPage.tsx`): three
+  new numeric fields — base fee (৳), per-km fee (৳), included km — written to
+  `app_config/settings.deliveryBaseFee/deliveryFeePerKm/deliveryIncludedKm`.
+  `admin-web/src/types.ts` extended with these fields.
+- **Admin Verifications page** (`VerificationsPage.tsx`, sidebar Operations
+  group): lists pending `chef_verifications` docs with the NID photo (base64
+  thumbnail), chef name, submission date, approve/reject buttons. Approve
+  writes `nidVerified: true` on the `chefs/{uid}` doc (admin-only field).
+  Sidebar `App.tsx` wired to route `/verifications`.

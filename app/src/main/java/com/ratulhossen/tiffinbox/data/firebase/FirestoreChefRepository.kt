@@ -110,6 +110,32 @@ object FirestoreChefRepository {
         }
     }
 
+    /** Edit Profile: the public "about" part of the kitchen profile. */
+    suspend fun updateProfileStory(
+        uid: String,
+        bio: String,
+        story: String,
+        specialty: List<String>,
+        yearsOfExperience: Int,
+        kitchenType: String
+    ): Boolean {
+        return try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf(
+                    "bio" to bio,
+                    "story" to story,
+                    "specialty" to specialty,
+                    "yearsOfExperience" to yearsOfExperience,
+                    "kitchenType" to kitchenType
+                ),
+                SetOptions.merge()
+            ).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     /** mode is "self" (chef delivers their own orders) or "tiffinbox" (TiffinBox's own delivery system). */
     fun updateDeliveryMode(uid: String, mode: String) {
         try {

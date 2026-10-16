@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +35,10 @@ import androidx.compose.ui.unit.sp
  * CLAUDE.md - this project deliberately avoids Firebase Storage), falling
  * back to the existing emoji placeholder when no photo has been set yet
  * (blank string, or an older doc from before this feature existed).
+ *
+ * Pass [initial] (first letter of the name) for kitchens/chefs: the
+ * placeholder then shows a gradient background + large initial instead of
+ * just an emoji, which looks much nicer on cards with no photo yet.
  */
 @Composable
 fun Base64Thumbnail(
@@ -40,7 +46,9 @@ fun Base64Thumbnail(
     emoji: String,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(12.dp),
-    emojiFontSize: TextUnit = 28.sp
+    emojiFontSize: TextUnit = 28.sp,
+    /** Optional first letter of the kitchen/chef name for a prettier placeholder. */
+    initial: String? = null
 ) {
     // Decoded off the main thread (a full photo decode in composition made
     // lists stutter) and cached, so scrolling back to a card is instant.
@@ -70,7 +78,27 @@ fun Base64Thumbnail(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(emoji, style = TextStyle(fontSize = emojiFontSize))
+            if (!initial.isNullOrBlank()) {
+                // Gradient background + a large letter: much nicer than an emoji
+                // for kitchen cards before the chef has uploaded a photo.
+                Text(
+                    initial.first().uppercaseChar().toString(),
+                    style = TextStyle(
+                        fontSize = emojiFontSize * 1.1f,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            } else {
+                // Pure emoji fallback (meal photos, etc.).
+                // clearAndSetSemantics{} keeps the emoji out of TalkBack — it's
+                // decorative; the card's own content description is more useful.
+                Text(
+                    emoji,
+                    style = TextStyle(fontSize = emojiFontSize),
+                    modifier = Modifier.semantics { clearAndSetSemantics {} }
+                )
+            }
         }
     }
 }

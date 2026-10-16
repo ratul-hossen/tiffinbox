@@ -284,15 +284,20 @@ TiffinBox is not *"just another food app"* — it is an **AI-native product** wi
 
 ### 1. 🎯 Personalized Recommendation Engine
 
-A hybrid scoring algorithm considers multiple weighted factors:
+A hybrid scoring algorithm (`domain/RecommendationEngine.kt`) ranks kitchens within an admin-set distance (App Settings in the admin panel, default 10 km) by:
 
 ```
-score = (0.30 × proximity_score)
-      + (0.25 × chef_rating)
-      + (0.20 × budget_match)
-      + (0.15 × dietary_match)
-      + (0.10 × repeat_order_bonus)
+score = (0.25 × rating)          // customers' overall stars, Bayesian-smoothed
+      + (0.20 × delivery)        // customers' on-time stars, Bayesian-smoothed
+      + (0.20 × proximity)       // closer within the radius = better
+      + (0.10 × review_volume)   // more reviews = more trustworthy rating
+      + (0.10 × order_volume)    // completed orders
+      + (0.10 × repeat_orders)   // kitchens this customer ordered from again
+      + (0.05 × active_offer)    // a live coupon at the kitchen
+      (× 0.7 if the kitchen isn't taking orders today)
 ```
+
+"AI Recommended For You" meals add the on-device ML model's score to the kitchen's rating/delivery quality and proximity.
 
 Recommendations improve continuously as the user places more orders. The weights can be tuned based on A/B testing and user segments.
 

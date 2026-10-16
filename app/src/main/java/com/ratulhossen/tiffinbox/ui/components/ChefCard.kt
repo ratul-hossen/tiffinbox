@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.domain.DeliveryQuote
 
 private val FavoriteRed = Color(0xFFE0303D)
 
@@ -39,6 +40,8 @@ private val FavoriteRed = Color(0xFFE0303D)
 fun ChefCard(
     chef: ChefUi,
     modifier: Modifier = Modifier,
+    /** Delivery fee + time to the customer; null when their location is unknown. */
+    delivery: DeliveryQuote? = null,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -59,6 +62,7 @@ fun ChefCard(
             ),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = cardEdge(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column {
@@ -72,7 +76,8 @@ fun ChefCard(
                     emoji = chef.emoji,
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape,
-                    emojiFontSize = 52.sp
+                    emojiFontSize = 52.sp,
+                    initial = chef.kitchenName.firstOrNull()?.toString()
                 )
                 val isFavorite = FavoritesStore.isFavorite(chef.id)
                 Box(
@@ -100,7 +105,8 @@ fun ChefCard(
                             .scale(heartScale)
                     )
                 }
-                if (chef.isVerified) {
+                // Only kitchens whose NID + kitchen photo the admin checked (every listed kitchen is approved).
+                if (chef.isFullyVerified) {
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -155,20 +161,25 @@ fun ChefCard(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Star,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                    if (isNewKitchen(chef)) {
+                        // No rating yet: "New" instead of a misleading "0.0 (0)".
+                        NewKitchenBadge()
+                    } else {
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        stringResource(R.string.chef_card_distance_km, chef.distanceKm.toString()),
+                        stringResource(R.string.chef_card_distance_km, formatDistanceKm(chef.distanceKm)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -181,6 +192,7 @@ fun ChefCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                delivery?.let { DeliveryQuoteLine(it, Modifier.padding(top = 2.dp)) }
                 if (chef.deliveryMode == "tiffinbox") {
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
@@ -198,4 +210,41 @@ fun ChefCard(
             }
         }
     }
+}
+
+/** "1.4" under 10 km; whole numbers with thousands separators beyond ("2,636"). */
+internal fun formatDistanceKm(km: Double): String =
+    if (km < 10) String.format(java.util.Locale.US, "%.1f", km)
+    else String.format(java.util.Locale.US, "%,d", kotlin.math.round(km).toLong())
+
+/** A kitchen nobody has rated yet. */
+fun isNewKitchen(chef: ChefUi): Boolean = chef.overallRating <= 0.0
+
+/** Small brand pill shown instead of a rating for kitchens with no reviews yet. */
+@Composable
+fun NewKitchenBadge(modifier: Modifier = Modifier) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+    ) {
+        Text(
+            stringResource(R.string.chef_new_badge),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
+    }
+}
+
+/** "🛵 ৳25 · ~35 min" - the delivery fee and time to this customer. */
+@Composable
+fun DeliveryQuoteLine(quote: DeliveryQuote, modifier: Modifier = Modifier) {
+    Text(
+        stringResource(R.string.delivery_quote_line, quote.fee, quote.minutes),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    )
 }

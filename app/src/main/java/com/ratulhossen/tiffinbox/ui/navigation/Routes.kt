@@ -39,6 +39,9 @@ object Routes {
     const val DELIVERY_OPTION = "delivery_option"
     const val REWARDS = "rewards"
     const val DELIVERY_APPLICATION = "delivery_application"
+    const val CHEF_VERIFICATION = "chef_verification"
+    const val CHEF_MAP = "chef_map"
+    const val MEAL_PLANS = "meal_plans"
 
     fun login(role: String) = "login/$role"
     fun completeGoogleProfile(uid: String, role: String) = "complete_google_profile/$uid/$role"

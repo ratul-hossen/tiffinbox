@@ -74,6 +74,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // Lottie: plays the app's own vector motion graphics (res/raw/lottie_*.json). Free, Apache-2.0.
     implementation("com.airbnb.android:lottie-compose:6.6.0")
+    // OpenStreetMap map view for "chefs near me" - free, no API key, no billing (not Google Maps).
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     implementation("com.patrykandpatrick.vico:compose:3.3.1")

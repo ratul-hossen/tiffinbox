@@ -41,6 +41,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
+import androidx.compose.foundation.horizontalScroll
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
+import com.ratulhossen.tiffinbox.domain.DeliveryQuotes
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
@@ -90,7 +93,8 @@ fun CheckoutScreen(
     LaunchedEffect(Unit) { rewards = FirestoreOrderRepository.getMyRewards() }
     val rank = rewards?.rank
     val rankDiscount = rank?.let { Rewards.rankDiscount(it, CartStore.subtotal) } ?: 0
-    val deliveryFee = if (rank?.freeDelivery == true) 0 else CartStore.DELIVERY_FEE
+    // Distance-based fee for this kitchen (DeliveryQuoter / admin pricing); free at the top rank.
+    val deliveryFee = if (rank?.freeDelivery == true) 0 else CartStore.deliveryFee
     val pointsUsed = if (usePoints) {
         Rewards.maxRedeemablePoints(rewards?.balance ?: 0, (CartStore.subtotal - discount - rankDiscount).coerceAtLeast(0))
     } else 0
@@ -98,6 +102,11 @@ fun CheckoutScreen(
     val payableTotal = (CartStore.subtotal + deliveryFee + CartStore.PLATFORM_FEE - discount - rankDiscount - pointsTaka)
         .coerceAtLeast(0)
     val etaMinutes = Rewards.estimatedDeliveryMinutes(chefDistanceKm)
+    // null = as soon as possible; otherwise the chosen pre-order slot (epoch millis).
+    var preOrderSlot by remember { mutableStateOf<Long?>(null) }
+    // Starts in pre-order mode when something in the cart has no plates left for today.
+    var preOrderMode by remember { mutableStateOf(CartStore.items.any { it.meal.availableQuantity < it.quantity }) }
+    var usableCoupons by remember { mutableStateOf<List<CouponUi>>(emptyList()) }
     var savedAddresses by remember { mutableStateOf<List<SavedAddress>>(emptyList()) }
     LaunchedEffect(Unit) {
         val uid = FirebaseAuthRepository.currentUser?.uid ?: return@LaunchedEffect
@@ -120,6 +129,7 @@ fun CheckoutScreen(
     val transactionIdRequiredMessage = stringResource(R.string.checkout_bkash_transaction_id_required)
     val screenshotRequiredMessage = stringResource(R.string.checkout_bkash_screenshot_required)
     val uploadFailedMessage = stringResource(R.string.checkout_bkash_upload_failed)
+    val pickSlotMessage = stringResource(R.string.checkout_preorder_pick_slot)
 
     val pickScreenshotLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -136,6 +146,8 @@ fun CheckoutScreen(
             if (me != null && chef != null && chef.latitude != 0.0) {
                 chefDistanceKm = haversineKm(me.latitude, me.longitude, chef.latitude, chef.longitude)
             }
+            CartStore.deliveryFee = DeliveryQuotes.quote(chefDistanceKm, FirestoreAppConfigRepository.deliveryPricing()).fee
+            usableCoupons = FirestoreCouponRepository.getUsableCoupons(chefId)
         }
     }
 
@@ -167,6 +179,10 @@ fun CheckoutScreen(
                     TiffinButton(
                         onClick = {
                             errorMessage = null
+                            if (preOrderMode && preOrderSlot == null) {
+                                errorMessage = pickSlotMessage
+                                return@TiffinButton
+                            }
                             if (selectedPayment.isMobileBanking) {
                                 if (transactionId.isBlank()) {
                                     errorMessage = transactionIdRequiredMessage
@@ -190,7 +206,7 @@ fun CheckoutScreen(
                                         return@launch
                                     }
                                 }
-                                val orderId = FirestoreOrderRepository.placeOrder(
+                                val result = FirestoreOrderRepository.placeOrder(
                                     items = items.toList(),
                                     subtotal = CartStore.subtotal,
                                     deliveryFee = deliveryFee,
@@ -204,8 +220,19 @@ fun CheckoutScreen(
                                     discount = discount,
                                     pointsRedeemed = pointsUsed,
                                     rankDiscount = rankDiscount,
-                                    estimatedDeliveryMinutes = etaMinutes
+                                    estimatedDeliveryMinutes = etaMinutes,
+                                    scheduledFor = if (preOrderMode) preOrderSlot ?: 0L else 0L
                                 )
+                                val orderId = result.orderId
+                                if (orderId == null) {
+                                    errorMessage = when {
+                                        result.soldOutMeal != null -> context.getString(
+                                            R.string.checkout_sold_out_error,
+                                            result.soldOutMeal.ifBlank { context.getString(R.string.checkout_sold_out_generic_meal) }
+                                        )
+                                        else -> context.getString(R.string.checkout_place_failed)
+                                    }
+                                }
                                 if (orderId != null && discount > 0) {
                                     appliedCoupon?.let { FirestoreCouponRepository.recordUse(it.code) }
                                 }
@@ -257,6 +284,32 @@ fun CheckoutScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
+
+            // When: now, or a pre-order slot so the chef cooks only what's ordered.
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(stringResource(R.string.checkout_when_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = !preOrderMode,
+                    onClick = { preOrderMode = false },
+                    label = { Text(stringResource(R.string.checkout_when_now)) }
+                )
+                FilterChip(
+                    selected = preOrderMode,
+                    onClick = { preOrderMode = true },
+                    label = { Text(stringResource(R.string.checkout_when_preorder)) }
+                )
+            }
+            if (preOrderMode) {
+                Spacer(modifier = Modifier.height(8.dp))
+                PreOrderSlotPicker(selected = preOrderSlot, onSelect = { preOrderSlot = it })
+                Text(
+                    stringResource(R.string.checkout_preorder_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(stringResource(R.string.checkout_payment_method_title), style = MaterialTheme.typography.titleMedium)
@@ -396,6 +449,31 @@ fun CheckoutScreen(
                     Text(stringResource(R.string.coupon_apply))
                 }
             }
+            if (usableCoupons.isNotEmpty() && appliedCoupon == null) {
+                // Tap an available offer instead of having to know its code.
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.coupon_available_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
+                ) {
+                    usableCoupons.forEach { coupon ->
+                        AssistChip(
+                            onClick = { couponInput = coupon.code; couponMessage = null },
+                            label = {
+                                Text(
+                                    if (coupon.discountType == "flat") stringResource(R.string.coupon_chip_flat, coupon.code, coupon.value)
+                                    else stringResource(R.string.coupon_chip_percent, coupon.code, coupon.value)
+                                )
+                            }
+                        )
+                    }
+                }
+            }
             if (couponMessage != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -443,7 +521,8 @@ fun CheckoutScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                stringResource(
+                if (preOrderMode && preOrderSlot != null) stringResource(R.string.checkout_preorder_for, formatSlot(preOrderSlot!!))
+                else stringResource(
                     R.string.checkout_eta,
                     etaMinutes,
                     java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
@@ -458,9 +537,9 @@ fun CheckoutScreen(
             Text(stringResource(R.string.checkout_order_summary_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
-            SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.DELIVERY_FEE)
+            SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.deliveryFee)
             if (deliveryFee == 0) {
-                SummaryRow(stringResource(R.string.checkout_free_delivery_row), -CartStore.DELIVERY_FEE)
+                SummaryRow(stringResource(R.string.checkout_free_delivery_row), -CartStore.deliveryFee)
             }
             SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
             if (discount > 0) {
@@ -510,7 +589,8 @@ fun CheckoutScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        stringResource(R.string.checkout_success_eta, etaMinutes),
+                        if (preOrderMode && preOrderSlot != null) stringResource(R.string.checkout_preorder_for, formatSlot(preOrderSlot!!))
+                        else stringResource(R.string.checkout_success_eta, etaMinutes),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -533,5 +613,57 @@ private fun SummaryRow(label: String, amount: Int, bold: Boolean = false) {
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = if (amount < 0) MaterialTheme.colorScheme.primary else LocalContentColor.current
         )
+    }
+}
+
+/** "Tomorrow, 12:30 PM"-style label for a pre-order slot. */
+private fun formatSlot(millis: Long): String =
+    java.text.SimpleDateFormat("EEE d MMM, h:mm a", java.util.Locale.getDefault()).format(java.util.Date(millis))
+
+/** Lunch / dinner slots chefs usually cook for. */
+private val PRE_ORDER_SLOTS = listOf(12 to 30, 13 to 30, 19 to 30, 20 to 30)
+
+/** A pre-order must leave the chef at least this long to shop and cook. */
+private const val PRE_ORDER_MIN_LEAD_MS = 2L * 60 * 60 * 1000
+
+/** Day chips (today + next 2 days) and lunch/dinner time chips; past or too-soon slots are disabled. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PreOrderSlotPicker(selected: Long?, onSelect: (Long) -> Unit) {
+    val dayLabels = listOf(
+        stringResource(R.string.checkout_day_today),
+        stringResource(R.string.checkout_day_tomorrow),
+        stringResource(R.string.checkout_day_after)
+    )
+    var dayOffset by remember { mutableStateOf(1) }
+    fun slotMillis(day: Int, hour: Int, minute: Int): Long =
+        java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.DAY_OF_YEAR, day)
+            set(java.util.Calendar.HOUR_OF_DAY, hour)
+            set(java.util.Calendar.MINUTE, minute)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    val earliest = System.currentTimeMillis() + PRE_ORDER_MIN_LEAD_MS
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        dayLabels.forEachIndexed { index, label ->
+            FilterChip(selected = dayOffset == index, onClick = { dayOffset = index }, label = { Text(label) })
+        }
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.horizontalScroll(rememberScrollState())
+    ) {
+        PRE_ORDER_SLOTS.forEach { (h, m) ->
+            val millis = slotMillis(dayOffset, h, m)
+            FilterChip(
+                selected = selected == millis,
+                enabled = millis >= earliest,
+                onClick = { onSelect(millis) },
+                label = {
+                    Text(java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault()).format(java.util.Date(millis)))
+                }
+            )
+        }
     }
 }
