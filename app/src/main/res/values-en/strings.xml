@@ -61,6 +61,17 @@
 
     <string name="login_toggle_to_login">Already have an Account? Login</string>
 
+    <!-- EmailVerificationScreen -->
+    <string name="email_verification_title">Verify your email</string>
+    <string name="email_verification_body">We sent a verification link to %1$s. Open the email, tap the link, then press the button below.</string>
+    <string name="email_verification_spam_hint">Can\'t find it? Check your Spam/Junk folder.</string>
+    <string name="email_verification_check_button">I\'ve verified</string>
+    <string name="email_verification_resend_button">Resend email</string>
+    <string name="email_verification_not_yet">Not verified yet. Tap the link in the email, then try again</string>
+    <string name="email_verification_resent">A new verification email was sent</string>
+    <string name="email_verification_resend_failed">Couldn\'t send the email, please try again in a bit</string>
+    <string name="email_verification_logout_button">Use a different account (Logout)</string>
+
     <!-- LocationSetupScreen -->
     <string name="location_setup_title">Set your location</string>
     <string name="location_setup_subtitle_customer">We need your location to show you nearby chefs</string>
@@ -278,10 +289,6 @@
     <string name="privacy_policy_title">Privacy Policy</string>
     <string name="privacy_policy_body">TiffinBox uses your name, email, phone number, and location to fulfill orders and deliveries. This policy is currently an early-stage placeholder - have a lawyer draft the final privacy policy before publishing the app.</string>
 
-    <string name="profile_seeding_status_sending">Sending...</string>
-    <string name="profile_seeding_status_success">✅ Sample chefs/meals sent to Firestore</string>
-    <string name="profile_seeding_status_failure">❌ %1$s</string>
-    <string name="profile_dev_seed_button">Developer: Send sample data to Firestore</string>
 
     <!-- ReviewScreen -->
     <string name="review_title">How was the food?</string>

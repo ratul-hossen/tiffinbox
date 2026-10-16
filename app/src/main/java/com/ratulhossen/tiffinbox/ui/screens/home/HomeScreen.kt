@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
@@ -48,7 +49,7 @@ fun HomeScreen(
     onSeeAllClick: (String) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var chefs by remember { mutableStateOf(SampleData.chefs) }
+    var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     // Only true once we've replaced the static/demo distanceKm with a real
     // haversine distance from the customer's own saved location - until

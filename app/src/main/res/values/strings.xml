@@ -63,6 +63,17 @@
 
     <string name="login_toggle_to_login">আগে থেকে Account আছে? Login করুন</string>
 
+    <!-- EmailVerificationScreen -->
+    <string name="email_verification_title">ইমেইল যাচাই করুন</string>
+    <string name="email_verification_body">%1$s ঠিকানায় একটা যাচাই লিংক পাঠানো হয়েছে। ইমেইলটা খুলে লিংকে ক্লিক করুন, তারপর নিচের বাটন চাপুন।</string>
+    <string name="email_verification_spam_hint">ইমেইল না পেলে Spam/Junk ফোল্ডার দেখুন।</string>
+    <string name="email_verification_check_button">আমি যাচাই করেছি</string>
+    <string name="email_verification_resend_button">আবার ইমেইল পাঠান</string>
+    <string name="email_verification_not_yet">এখনো যাচাই হয়নি — ইমেইলের লিংকে ক্লিক করে আবার চেষ্টা করুন</string>
+    <string name="email_verification_resent">নতুন যাচাই ইমেইল পাঠানো হয়েছে</string>
+    <string name="email_verification_resend_failed">ইমেইল পাঠানো যায়নি, একটু পরে আবার চেষ্টা করুন</string>
+    <string name="email_verification_logout_button">অন্য অ্যাকাউন্ট ব্যবহার করুন (Logout)</string>
+
     <!-- LocationSetupScreen -->
     <string name="location_setup_title">আপনার লোকেশন দিন</string>
     <string name="location_setup_subtitle_customer">আপনার কাছাকাছি chef খুঁজে দেখাতে আমাদের আপনার লোকেশন দরকার</string>
@@ -280,10 +291,6 @@
     <string name="privacy_policy_title">প্রাইভেসি পলিসি</string>
     <string name="privacy_policy_body">TiffinBox আপনার নাম, ইমেইল, ফোন নম্বর, এবং লোকেশন ব্যবহার করে অর্ডার এবং ডেলিভারি সম্পন্ন করতে। এই নীতি বর্তমানে একটি early-stage placeholder — অ্যাপ পাবলিশ করার আগে একজন আইনজীবীর সাথে চূড়ান্ত প্রাইভেসি পলিসি তৈরি করে নিন।</string>
 
-    <string name="profile_seeding_status_sending">পাঠানো হচ্ছে...</string>
-    <string name="profile_seeding_status_success">✅ Sample chef/meal Firestore-এ পাঠানো হয়েছে</string>
-    <string name="profile_seeding_status_failure">❌ %1$s</string>
-    <string name="profile_dev_seed_button">Developer: Sample data Firestore-এ পাঠান</string>
 
     <!-- ReviewScreen -->
     <string name="review_title">খাবার কেমন লাগলো?</string>

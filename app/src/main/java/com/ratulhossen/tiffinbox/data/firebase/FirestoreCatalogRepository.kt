@@ -8,7 +8,7 @@ import com.ratulhossen.tiffinbox.data.model.MealUi
 import kotlinx.coroutines.tasks.await
 
 /**
- * Reads the chefs/meals collections written by FirestoreSeedRepository /
+ * Reads the chefs/meals collections written by the app / admin-web /
  * MenuManagerScreen. Every function returns an empty list instead of
  * throwing on any failure (Firebase not configured, offline, empty
  * collection) so callers can simply fall back to SampleData.

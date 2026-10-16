@@ -19,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
-import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.PastOrderUi
@@ -36,12 +35,12 @@ private val MINI_TRACKED_STAGES = listOf(
 
 @Composable
 fun OrdersScreen() {
-    var orders by remember { mutableStateOf(SampleData.pastOrders) }
+    var orders by remember { mutableStateOf<List<PastOrderUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         val firestoreOrders = FirestoreOrderRepository.getMyOrders()
-        if (firestoreOrders.isNotEmpty()) orders = firestoreOrders
+        orders = firestoreOrders
         isLoading = false
     }
 

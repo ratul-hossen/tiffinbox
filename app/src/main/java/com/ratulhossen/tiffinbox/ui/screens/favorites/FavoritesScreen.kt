@@ -19,17 +19,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.FavoritesStore
-import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 
 @Composable
 fun FavoritesScreen(onChefClick: (String) -> Unit) {
-    var allChefs by remember { mutableStateOf(SampleData.chefs) }
+    var allChefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
-        if (firestoreChefs.isNotEmpty()) allChefs = firestoreChefs
+        allChefs = firestoreChefs
     }
 
     val favoriteChefs = allChefs.filter { FavoritesStore.isFavorite(it.id) }

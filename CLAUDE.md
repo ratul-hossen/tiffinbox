@@ -88,8 +88,22 @@ or sitting in an open PR on `claude/great-cray-r5ziwz`:
   order tracking (real Firestore-backed, not a fake timer), reviews,
   favorites, subscriptions (weekly/monthly plans), chef dashboard with
   real earnings/forecast charts (Vico), chef menu manager.
-- Firebase Auth (email/password + Google Sign-In via Credential Manager),
-  email verification (fire-and-forget on signup). **No SMS OTP** - it was
+- Firebase Auth (email/password + Google Sign-In via Credential Manager).
+  **Email verification is enforced** (2026-10-16, free on Spark):
+  `EmailVerificationScreen` (route `email_verification/{role}/{next}`)
+  blocks an unverified email/password account after signup (next =
+  location setup), on login and on app reopen (Splash reloads the user
+  first) until the emailed link is clicked; resend + logout buttons.
+  `FirebaseAuthRepository.needsEmailVerification()` exempts Google
+  accounts and demo chefs' fake `@tiffinbox.app` emails.
+- **No fake sample data shown to real users** (2026-10-16): Home, Chef
+  list, Search, Favorites, Orders and Menu Manager start empty and show
+  only Firestore data (previously they fell back to `SampleData` chefs/
+  meals/orders whenever Firestore was empty, so a brand-new account saw 3
+  fake orders). `SampleData.categories` (static filter chips) is still
+  used. The old Profile "Developer: Send sample data" button
+  (`FirestoreSeedRepository`) was removed - admin-web's "Seed demo chefs"
+  replaces it. **No SMS OTP** - it was
   built once (Firebase Phone Auth) but removed 2026-10-16 on the owner's
   explicit instruction: Phone Auth SMS needs the paid Blaze plan (Spark
   can only use Console "test numbers"), which violates the free-only rule.

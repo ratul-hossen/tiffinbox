@@ -47,11 +47,11 @@ fun SearchScreen(onMealClick: (String) -> Unit) {
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var vegOnly by remember { mutableStateOf(false) }
-    var allMeals by remember { mutableStateOf(SampleData.meals) }
+    var allMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         val firestoreMeals = FirestoreCatalogRepository.getAllMeals()
-        if (firestoreMeals.isNotEmpty()) allMeals = firestoreMeals
+        allMeals = firestoreMeals
     }
 
     // Natural-language search intent (veg + price-tier), predicted on-device

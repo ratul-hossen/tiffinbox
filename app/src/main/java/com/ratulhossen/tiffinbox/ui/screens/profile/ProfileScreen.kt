@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
-import com.ratulhossen.tiffinbox.data.firebase.FirestoreSeedRepository
 
 private data class ProfileMenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit = {})
 
@@ -43,7 +42,6 @@ fun ProfileScreen(
     onNotificationsClick: () -> Unit = {},
     onSelfServiceClick: () -> Unit = {}
 ) {
-    var seedStatus by remember { mutableStateOf<String?>(null) }
     val fallbackName = stringResource(R.string.profile_demo_user_name)
     val user = FirebaseAuthRepository.currentUser
     val displayName = user?.displayName?.takeIf { it.isNotBlank() } ?: fallbackName
@@ -59,9 +57,6 @@ fun ProfileScreen(
         ProfileMenuItem(Icons.Filled.TwoWheeler, stringResource(R.string.profile_menu_self_service), onSelfServiceClick),
         ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings), onSettingsClick)
     )
-    val seedingSendingMessage = stringResource(R.string.profile_seeding_status_sending)
-    val seedingSuccessMessage = stringResource(R.string.profile_seeding_status_success)
-    val seedingFailureTemplate = stringResource(R.string.profile_seeding_status_failure)
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -138,31 +133,5 @@ fun ProfileScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-        HorizontalDivider()
-        TextButton(
-            onClick = {
-                seedStatus = seedingSendingMessage
-                FirestoreSeedRepository.seedSampleData { result ->
-                    seedStatus = when (result) {
-                        is FirestoreSeedRepository.SeedResult.Success -> seedingSuccessMessage
-                        is FirestoreSeedRepository.SeedResult.Failure -> String.format(seedingFailureTemplate, result.message)
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-        ) {
-            Text(stringResource(R.string.profile_dev_seed_button), style = MaterialTheme.typography.labelSmall)
-        }
-        if (seedStatus != null) {
-            Text(
-                seedStatus.orEmpty(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-            )
-        }
     }
 }

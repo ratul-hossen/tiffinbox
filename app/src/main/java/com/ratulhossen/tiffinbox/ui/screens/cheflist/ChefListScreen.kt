@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
-import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
@@ -46,7 +46,7 @@ fun ChefListScreen(
     onBack: () -> Unit,
     onChefClick: (String) -> Unit
 ) {
-    var chefs by remember { mutableStateOf(SampleData.chefs) }
+    var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var hasRealDistances by remember { mutableStateOf(false) }
     var sort by remember {
         mutableStateOf(

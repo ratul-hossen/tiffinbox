@@ -35,6 +35,7 @@ object FirebaseAuthRepository {
             user.updateProfile(profileUpdate).await()
 
             try {
+                auth.useAppLanguage()
                 user.sendEmailVerification().await()
             } catch (e: Exception) {
                 // Non-fatal: the account still exists even if the verification
@@ -66,6 +67,39 @@ object FirebaseAuthRepository {
             AuthResult.Success(user)
         } catch (e: Exception) {
             AuthResult.Failure(friendlyMessage(e))
+        }
+    }
+
+    /**
+     * True when the signed-in account is an email/password account whose
+     * address hasn't been confirmed yet (verification link not clicked).
+     * Google accounts are already verified by Google, so they never need
+     * this. Demo chef accounts seeded from admin-web use fake
+     * @tiffinbox.app addresses that can't receive mail, so they're exempt.
+     */
+    fun needsEmailVerification(user: FirebaseUser? = currentUser): Boolean {
+        if (user == null) return false
+        val isPasswordAccount = user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID }
+        val isDemoAccount = user.email.orEmpty().endsWith("@tiffinbox.app")
+        return isPasswordAccount && !user.isEmailVerified && !isDemoAccount
+    }
+
+    /** Re-fetches the user from Firebase (isEmailVerified is cached until reload) and reports whether it's verified now. */
+    suspend fun reloadAndCheckEmailVerified(): Boolean {
+        return try {
+            currentUser?.reload()?.await()
+            currentUser?.isEmailVerified == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun resendVerificationEmail(): Boolean {
+        return try {
+            currentUser?.sendEmailVerification()?.await()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
