@@ -561,9 +561,11 @@ From the owner's (and a friend's) feedback + a reference food-app video.
   with original characters before swapping them in.
 - **"Dynamic like the video":** `FullBleedPhoto` now does a slow Ken Burns
   zoom/drift by default (`animated = true`, draw-phase only) everywhere it
-  is used (splash, onboarding, role select, login, location, chef banner),
-  and `FloatingFoodParticles` (AnimatedHeader.kt) drifts spices / leaves /
-  sparkles up over Splash and Onboarding.
+  is used (splash, role select, login, location, chef banner), and
+  `FloatingFoodParticles` (AnimatedHeader.kt) drifts spices / leaves /
+  sparkles up over Splash. **Onboarding's 3 cards stay still** (owner: the
+  animation looked bad there, "age vlo cilo") - `animated = false`, no
+  particles.
 
 ## Animated gradient backdrop everywhere (2026-10-16)
 
