@@ -117,11 +117,11 @@ fun CheckoutScreen(
                             if (selectedPayment.isMobileBanking) {
                                 if (transactionId.isBlank()) {
                                     errorMessage = transactionIdRequiredMessage
-                                    return@Button
+                                    return@TiffinButton
                                 }
                                 if (paymentScreenshotUri == null) {
                                     errorMessage = screenshotRequiredMessage
-                                    return@Button
+                                    return@TiffinButton
                                 }
                             }
                             placing = true
