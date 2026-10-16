@@ -1,14 +1,10 @@
 package com.ratulhossen.tiffinbox.ui.screens.roleselect
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,16 +43,15 @@ import com.ratulhossen.tiffinbox.ui.theme.brandGradient
 enum class UserRole { CUSTOMER, CHEF }
 
 /**
- * "Who are you?" - brand header, two photo cards, a perks panel that
- * explains the chosen role, and a "Continue as ..." button pinned at the
- * bottom. Motion is limited to one entrance (content rises in once) and
+ * "Who are you?" - brand header, two photo cards with a clear selected
+ * state, and the Continue button pinned at the bottom. Motion is limited to one entrance (content rises in once) and
  * the selection response itself - nothing loops.
  */
 @Composable
 fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
     var selected by remember { mutableStateOf<UserRole?>(null) }
 
-    // One-time entrance: header, cards, then panel fade/rise in, staggered.
+    // One-time entrance: header, then cards fade/rise in, staggered.
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, tween(900, easing = FastOutSlowInEasing)) }
     fun Modifier.rise(order: Int): Modifier = graphicsLayer {
@@ -78,7 +73,7 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
                 .verticalScroll(rememberScrollState())
         ) {
             BrandHeader(Modifier.rise(0))
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             Column(Modifier.rise(0)) {
                 Text(
@@ -103,7 +98,6 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
             ) {
                 RoleCard(
                     photo = R.drawable.role_customer,
-                    tag = stringResource(R.string.role_customer_tag),
                     title = stringResource(R.string.role_customer_title),
                     description = stringResource(R.string.role_customer_desc),
                     selected = selected == UserRole.CUSTOMER,
@@ -113,7 +107,6 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
                 )
                 RoleCard(
                     photo = R.drawable.role_chef,
-                    tag = stringResource(R.string.role_chef_tag),
                     title = stringResource(R.string.role_chef_title),
                     description = stringResource(R.string.role_chef_desc),
                     selected = selected == UserRole.CHEF,
@@ -122,9 +115,6 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
                     modifier = Modifier.weight(1f)
                 )
             }
-            Spacer(modifier = Modifier.height(18.dp))
-
-            PerksPanel(selected, Modifier.rise(2))
             Spacer(modifier = Modifier.height(12.dp))
         }
 
@@ -133,14 +123,7 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
             enabled = selected != null,
             modifier = Modifier.fillMaxWidth().height(56.dp)
         ) {
-            Text(
-                when (selected) {
-                    UserRole.CUSTOMER -> stringResource(R.string.role_continue_as_customer)
-                    UserRole.CHEF -> stringResource(R.string.role_continue_as_chef)
-                    null -> stringResource(R.string.role_select_pick_first)
-                },
-                fontWeight = FontWeight.SemiBold
-            )
+            Text(stringResource(R.string.role_select_continue_button), fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -157,21 +140,13 @@ private fun BrandHeader(modifier: Modifier = Modifier) {
             contentAlignment = Alignment.Center
         ) { Text("🍱", fontSize = 22.sp) }
         Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(stringResource(R.string.app_name), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(
-                stringResource(R.string.splash_tagline),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Text(stringResource(R.string.app_name), fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 private fun RoleCard(
     @DrawableRes photo: Int,
-    tag: String,
     title: String,
     description: String,
     selected: Boolean,
@@ -195,19 +170,6 @@ private fun RoleCard(
             resId = photo,
             modifier = Modifier.fillMaxSize(),
             scrim = bottomScrim(0.9f)
-        )
-        // Small label chip top-left ("Order food" / "Sell food").
-        Text(
-            tag,
-            color = Color.White,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(10.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.35f))
-                .padding(horizontal = 10.dp, vertical = 4.dp)
         )
         // Selection badge: empty ring when not chosen, brand-filled tick when chosen.
         Box(
@@ -245,65 +207,5 @@ private fun RoleCard(
         if (selected) {
             Box(Modifier.matchParentSize().border(3.dp, brandGradient(), shape))
         }
-    }
-}
-
-/** What the chosen role gets - or a gentle hint before anything is picked. */
-@Composable
-private fun PerksPanel(selected: UserRole?, modifier: Modifier = Modifier) {
-    Surface(
-        shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-        tonalElevation = 1.dp,
-        modifier = modifier.fillMaxWidth()
-    ) {
-        AnimatedContent(
-            targetState = selected,
-            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(150)) },
-            label = "rolePerks"
-        ) { role ->
-            Column(modifier = Modifier.padding(16.dp)) {
-                when (role) {
-                    null -> Text(
-                        stringResource(R.string.role_select_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    UserRole.CUSTOMER -> {
-                        PanelTitle(stringResource(R.string.role_customer_perks_title))
-                        Perk("📍", stringResource(R.string.role_customer_perk_1))
-                        Perk("💳", stringResource(R.string.role_customer_perk_2))
-                        Perk("⚡", stringResource(R.string.role_customer_perk_3))
-                    }
-                    UserRole.CHEF -> {
-                        PanelTitle(stringResource(R.string.role_chef_perks_title))
-                        Perk("🍳", stringResource(R.string.role_chef_perk_1))
-                        Perk("💰", stringResource(R.string.role_chef_perk_2))
-                        Perk("🛡️", stringResource(R.string.role_chef_perk_3))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PanelTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-    Spacer(modifier = Modifier.height(6.dp))
-}
-
-@Composable
-private fun Perk(emoji: String, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) { Text(emoji, fontSize = 15.sp) }
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }

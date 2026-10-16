@@ -175,20 +175,6 @@
     <string name="role_chef_title">আমি একজন Home Chef</string>
     <string name="role_chef_desc">আমার রান্না বিক্রি করে আয় করতে চাই</string>
     <string name="role_select_continue_button">Continue</string>
-    <string name="role_customer_tag">খাবার অর্ডার</string>
-    <string name="role_chef_tag">খাবার বিক্রি</string>
-    <string name="role_select_hint">👆 উপরের একটা কার্ডে ট্যাপ করুন - কোনটা আপনার জন্য, তা দেখে নিন।</string>
-    <string name="role_select_pick_first">একটা অপশন বেছে নিন</string>
-    <string name="role_continue_as_customer">Customer হিসেবে এগিয়ে যান</string>
-    <string name="role_continue_as_chef">Home Chef হিসেবে এগিয়ে যান</string>
-    <string name="role_customer_perks_title">Customer হিসেবে যা পাবেন</string>
-    <string name="role_customer_perk_1">৩ কিমির মধ্যে কাছের home chef-দের খাবার</string>
-    <string name="role_customer_perk_2">bKash, Nagad বা Cash on Delivery-তে পেমেন্ট</string>
-    <string name="role_customer_perk_3">প্রতি অর্ডারে TiffinBox Points ও rank ডিসকাউন্ট</string>
-    <string name="role_chef_perks_title">Home Chef হিসেবে যা পাবেন</string>
-    <string name="role_chef_perk_1">নিজের kitchen থেকে নিজের মেনু ও দামে বিক্রি</string>
-    <string name="role_chef_perk_2">bKash / Nagad-এ সরাসরি পেমেন্ট</string>
-    <string name="role_chef_perk_3">Admin যাচাই করার পর আপনার kitchen লাইভ হবে</string>
 
     <!-- SplashScreen -->
     <string name="splash_tagline">Home-Cooked Food, One Tap Away</string>
