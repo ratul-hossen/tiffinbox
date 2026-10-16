@@ -1025,6 +1025,25 @@ either restores it or permanently deletes it.
     didn't ask for that one and admin-web's Subscriptions page has no
     delete button to begin with. Route it through `softDelete()` the
     same way if that's ever added.
+- **Chats delete (2026-10-16)** — the Recycle Bin pass had missed
+  `ChatsPage.tsx` entirely: it had no delete button at all, so no chat
+  thread could ever be removed. Old junk/test conversations (e.g. a
+  pre-demo-seed test chef) stayed in the list forever, since "Remove all
+  demo data" only cascades chats whose `chefId` is an `isDemo: true` chef.
+  Each thread now has a **Delete** button in its header, going through a
+  new `softDeleteChat()` in `lib/recycleBin.ts`.
+  **Why it isn't just `softDelete("chats", ...)`:** deleting a Firestore
+  document does not touch its subcollections, so that would orphan every
+  message in `chats/{id}/messages` — invisible but still stored, and
+  unreachable once the Recycle Bin entry is purged. `softDeleteChat()`
+  snapshots the messages into the entry under a reserved `__messages` key,
+  then deletes them with the thread (chunked at Firestore's 500-op
+  `writeBatch` limit); `restoreFromRecycleBin()` strips that key back out
+  and re-creates the subcollection, so Restore returns the whole
+  conversation rather than an empty thread. **No `firestore.rules` change
+  was needed** — the existing `chats/{chatId}` block already grants admins
+  `write` (create/update/delete) and the `messages` block already allows
+  admin `create` + `delete`, which covers both delete and restore.
 
 ## File map for things mentioned above
 

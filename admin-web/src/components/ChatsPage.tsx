@@ -8,10 +8,11 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
-import { MessageCircle, Send, ShieldCheck } from "lucide-react";
+import { MessageCircle, Send, ShieldCheck, Trash2 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import { logActivity } from "../lib/activityLog";
+import { softDeleteChat } from "../lib/recycleBin";
 import { formatDateTime } from "../lib/format";
 import type { ChatMessage, ChatThread } from "../types";
 
@@ -36,6 +37,7 @@ export default function ChatsPage({ search }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -91,6 +93,23 @@ export default function ChatsPage({ search }: Props) {
     }
   }
 
+  async function handleDelete() {
+    if (!selectedId || !selectedThread) return;
+    const name = selectedThread.chefName || "this conversation";
+    if (!confirm(`Delete the chat with ${name}? It'll move to the Recycle Bin, not disappear forever.`)) return;
+
+    setDeleting(true);
+    try {
+      await softDeleteChat(selectedId, selectedThread, name);
+      await logActivity("admin_chat_deleted", "chats", selectedId, { chefName: selectedThread.chefName ?? null });
+      setSelectedId(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to delete the chat.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (loading) return <p className="text-sm text-apple-secondary">Loading chats…</p>;
   if (error) return <p className="text-sm text-apple-red">Error: {error}</p>;
 
@@ -137,12 +156,23 @@ export default function ChatsPage({ search }: Props) {
           </div>
         ) : (
           <>
-            <div className="px-5 py-3 border-b border-apple-border">
-              <p className="text-sm font-semibold text-apple-text">{selectedThread.chefName || "Chef"}</p>
-              <p className="text-xs text-apple-secondary">
-                Customer {(selectedThread.customerId ?? "").slice(0, 10)}… · Chef{" "}
-                {(selectedThread.chefId ?? "").slice(0, 10)}…
-              </p>
+            <div className="px-5 py-3 border-b border-apple-border flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-apple-text">{selectedThread.chefName || "Chef"}</p>
+                <p className="text-xs text-apple-secondary">
+                  Customer {(selectedThread.customerId ?? "").slice(0, 10)}… · Chef{" "}
+                  {(selectedThread.chefId ?? "").slice(0, 10)}…
+                </p>
+              </div>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Delete this conversation (moves to the Recycle Bin)"
+                className="shrink-0 text-apple-red hover:bg-apple-red/10 disabled:opacity-50 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-150 inline-flex items-center gap-1.5"
+              >
+                <Trash2 size={14} />
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
