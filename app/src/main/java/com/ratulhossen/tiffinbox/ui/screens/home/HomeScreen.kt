@@ -1,5 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.screens.home
 
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
 import androidx.compose.foundation.background
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -80,14 +82,25 @@ fun HomeScreen(
         val allMeals = FirestoreCatalogRepository.getAllMeals()
         catalogMeals = allMeals
         if (allMeals.isNotEmpty()) {
+            // Real offer counts (active coupons) for the model's numOffers
+            // feature, plus a light personal boost from the customer's own
+            // order history: chefs they've ordered from again, and categories
+            // they've ordered before. The trained model stays the main signal.
+            val offerCounts = FirestoreCouponRepository.getActiveOfferCounts()
+            val platformOffers = offerCounts[""] ?: 0
+            val (chefOrderCounts, orderedMealIds) = FirestoreOrderRepository.getMyOrderSignals()
+            val orderedCategories = allMeals.filter { it.id in orderedMealIds }.map { it.category }.toSet()
             aiRecommendedMeals = allMeals
                 .sortedByDescending { meal ->
-                    MlRecommendModel.predict(
+                    val modelScore = MlRecommendModel.predict(
                         avgPrice = meal.price.toDouble(),
                         vegFraction = if (meal.isVeg) 1.0 else 0.0,
-                        numOffers = 0.0,
+                        numOffers = ((offerCounts[meal.chefId] ?: 0) + platformOffers).toDouble(),
                         popularity = meal.availableQuantity.toDouble()
                     )
+                    val chefAffinity = 0.15 * ((chefOrderCounts[meal.chefId] ?: 0).coerceAtMost(3) / 3.0)
+                    val categoryAffinity = if (meal.category in orderedCategories) 0.08 else 0.0
+                    modelScore + chefAffinity + categoryAffinity
                 }
                 .take(10)
         }

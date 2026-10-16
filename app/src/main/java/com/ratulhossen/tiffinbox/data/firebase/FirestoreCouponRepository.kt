@@ -100,6 +100,25 @@ object FirestoreCouponRepository {
         }
     }
 
+    /**
+     * Number of currently usable offers per chefId (platform-wide coupons,
+     * chefId "", are returned under the "" key). Feeds the AI recommendation
+     * model's numOffers input, which it was trained with but the app had no
+     * real data for until coupons existed.
+     */
+    suspend fun getActiveOfferCounts(): Map<String, Int> {
+        return try {
+            val now = System.currentTimeMillis()
+            db.collection("coupons").whereEqualTo("isActive", true).get().await()
+                .documents.map { it.toCoupon() }
+                .filter { it.validFrom <= now && !it.isExpired && !it.isUsedUp }
+                .groupingBy { it.chefId }
+                .eachCount()
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
     suspend fun getChefCoupons(chefId: String): List<CouponUi> {
         return try {
             db.collection("coupons").whereEqualTo("chefId", chefId).get().await()

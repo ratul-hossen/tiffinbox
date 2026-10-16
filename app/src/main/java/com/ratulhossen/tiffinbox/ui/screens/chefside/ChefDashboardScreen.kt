@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Edit
 import android.graphics.BitmapFactory
@@ -192,7 +193,13 @@ fun ChefDashboardScreen(
                 IconButton(onClick = onOpenNotifications) {
                     Icon(Icons.Filled.Notifications, contentDescription = stringResource(R.string.notifications_title))
                 }
-                TextButton(onClick = onLogout) { Text(stringResource(R.string.action_logout)) }
+                IconButton(onClick = onLogout) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = stringResource(R.string.action_logout),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
 

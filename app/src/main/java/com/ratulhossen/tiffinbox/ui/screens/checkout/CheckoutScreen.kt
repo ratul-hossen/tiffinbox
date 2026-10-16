@@ -397,6 +397,11 @@ private fun SummaryRow(label: String, amount: Int, bold: Boolean = false) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
-        Text(stringResource(R.string.price_tag, amount), fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
+        // Negative amounts are discounts: show "-৳50" in the accent color, not "৳-50".
+        Text(
+            if (amount < 0) "-" + stringResource(R.string.price_tag, -amount) else stringResource(R.string.price_tag, amount),
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            color = if (amount < 0) MaterialTheme.colorScheme.primary else LocalContentColor.current
+        )
     }
 }

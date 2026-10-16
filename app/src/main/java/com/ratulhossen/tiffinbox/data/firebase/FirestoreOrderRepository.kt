@@ -325,6 +325,32 @@ object FirestoreOrderRepository {
         }
     }
 
+    /**
+     * Personalization signal for the AI recommendations on Home: how many
+     * non-cancelled orders this customer has placed per chef, plus every
+     * mealId they've ordered. Empty for a new or signed-out user.
+     */
+    suspend fun getMyOrderSignals(): Pair<Map<String, Int>, Set<String>> {
+        return try {
+            val customerId = FirebaseAuthRepository.currentUser?.uid ?: return emptyMap<String, Int>() to emptySet()
+            val docs = FirebaseFirestore.getInstance()
+                .collection("orders")
+                .whereEqualTo("customerId", customerId)
+                .limit(100)
+                .get()
+                .await()
+                .documents
+                .filter { it.getString("status") != "Cancelled" }
+            val chefCounts = docs.mapNotNull { it.getString("chefId") }.groupingBy { it }.eachCount()
+            val mealIds = docs.flatMap { doc ->
+                (doc.get("items") as? List<*>)?.mapNotNull { (it as? Map<*, *>)?.get("mealId") as? String }.orEmpty()
+            }.toSet()
+            chefCounts to mealIds
+        } catch (e: Exception) {
+            emptyMap<String, Int>() to emptySet()
+        }
+    }
+
     fun updateOrderStatus(orderId: String, status: String, customerId: String? = null) {
         try {
             FirebaseFirestore.getInstance().collection("orders").document(orderId).update("status", status)

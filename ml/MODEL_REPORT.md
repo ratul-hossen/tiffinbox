@@ -184,3 +184,16 @@ cp ml/export/*.json app/src/main/assets/ml/
 ```
 
 See [`ml/data/SOURCE.md`](data/SOURCE.md) for more detail.
+
+## In-app update (2026-10-16): real offer data + light personalization
+
+- `num_offers_f` used to be fed a constant 0 in the app because TiffinBox
+  had no offers. Now that coupons exist, the app passes the real number of
+  active coupons usable at each chef (chef's own + platform-wide), so this
+  trained feature finally carries signal on-device.
+- The final ranking on Home adds a small, hand-set personal boost on top of
+  the model's probability: up to +0.15 for chefs the customer has ordered
+  from before (saturating at 3 orders) and +0.08 for meal categories they've
+  ordered before. These are rule-based nudges, not learned weights, so the
+  F1 scores above (which measure the model alone) are unchanged.
+

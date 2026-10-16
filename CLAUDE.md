@@ -544,6 +544,13 @@ constraint (see "Known billing constraint" above).
   see `ml/data/SOURCE.md` for exact reproduction steps; the shipped model
   artifacts the app actually reads live in `app/src/main/assets/ml/` and
   **are** committed.
+- **2026-10-16 update:** the model's `numOffers` input now gets the real
+  count of active coupons usable at each chef
+  (`FirestoreCouponRepository.getActiveOfferCounts()`, was a constant 0),
+  and Home adds a small rule-based personal boost (+0.15 max for chefs the
+  customer ordered from, +0.08 for categories they ordered) from
+  `FirestoreOrderRepository.getMyOrderSignals()`. Documented in
+  `ml/MODEL_REPORT.md`; F1 scores unchanged (they measure the model alone).
 - **Scope note:** this covers exactly the 2 features the owner asked for
   (recommendation + NL search) — not a general ML platform. Don't expand
   it with more trained models without a fresh explicit ask.

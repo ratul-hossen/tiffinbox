@@ -42,9 +42,9 @@ object MlRecommendModel {
 
     /**
      * [avgPrice] average price (BDT) of the chef's meals, [vegFraction] share
-     * of their meals that are veg (0..1), [numOffers] always 0 today (no
-     * offers feature in TiffinBox yet - kept so the weight vector lines up
-     * with training), [popularity] the chef's totalOrders.
+     * of their meals that are veg (0..1), [numOffers] the number of
+     * currently active coupons usable at that chef (its own + platform-wide,
+     * see FirestoreCouponRepository.getActiveOfferCounts), [popularity] the chef's totalOrders.
      *
      * Returns a 0..1 "recommend" probability, or a neutral 0.5 if the model
      * asset failed to load.
