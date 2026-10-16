@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 /** Shared scaffold for the static Settings sub-pages (Payment Methods, Help & Support, Terms, Privacy). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,8 +23,11 @@ fun StaticInfoScreen(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

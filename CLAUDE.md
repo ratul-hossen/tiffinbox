@@ -396,6 +396,20 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   surface with tinted active pill. Cards: bigger images, softer shadows,
   larger radii (Shape.kt).
 
+## Animated gradient backdrop everywhere (2026-10-16)
+
+Owner felt plain white screens looked dull and asked for an animated,
+colorful background "everywhere it fits". `ui/components/AnimatedGradientBackground.kt`
+draws three large, soft radial-gradient "light blobs" in the current
+palette's brand gradient colors (+ tertiary), slowly drifting (18s loop,
+draw-phase only, no recomposition). Mounted once at the root in
+`MainActivity.TiffinBoxApp()` (replacing the old plain root `Surface`), so
+it follows the selected theme and light/dark mode. Every `Scaffold` (except
+the WhatsApp-style `ChatScreen`, which keeps its own wallpaper) now has
+`containerColor = Color.Transparent` and its `TopAppBar` uses a transparent
+container, so the backdrop shows behind all screens; cards stay opaque for
+readability. New Scaffold screens should follow the same pattern.
+
 ## Real photos across the app (2026-10-16)
 
 Owner generated ~21 images with Nano Banana from prompts written in chat

@@ -29,6 +29,8 @@ import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.label
 import kotlin.math.roundToInt
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +63,11 @@ fun SubscribeScreen(
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.subscribe_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

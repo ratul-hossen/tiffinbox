@@ -25,6 +25,8 @@ import com.ratulhossen.tiffinbox.domain.RecommendationEngine
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.util.NEARBY_RADIUS_KM
 import com.ratulhossen.tiffinbox.util.withRealDistances
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 private enum class ChefSort {
     RECOMMENDED,
@@ -83,8 +85,11 @@ fun ChefListScreen(
     }
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.chef_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

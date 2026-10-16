@@ -34,6 +34,8 @@ import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.ui.components.RatingRow
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,8 +67,11 @@ fun ChefDetailScreen(
     val chef = chefState!!
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(chef.kitchenName) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

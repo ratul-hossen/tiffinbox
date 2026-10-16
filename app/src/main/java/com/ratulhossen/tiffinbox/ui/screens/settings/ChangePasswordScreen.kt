@@ -19,6 +19,8 @@ import com.ratulhossen.tiffinbox.data.firebase.AuthResult
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import kotlinx.coroutines.launch
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,8 +39,11 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
     val successText = stringResource(R.string.change_password_success)
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.change_password_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

@@ -22,6 +22,8 @@ import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import com.ratulhossen.tiffinbox.ui.components.FullBleedPhoto
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,8 +38,11 @@ fun SelfServiceRequestScreen(onBack: () -> Unit, onRequestCreated: (requestId: S
     val requiredMessage = stringResource(R.string.self_service_fields_required)
 
     Scaffold(
+        // Transparent so the app-wide AnimatedGradientBackground shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(stringResource(R.string.self_service_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
