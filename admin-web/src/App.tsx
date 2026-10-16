@@ -13,6 +13,7 @@ import {
   Navigation,
   Package,
   ShieldCheck,
+  SlidersHorizontal,
   Soup,
   Star,
   Repeat,
@@ -46,6 +47,7 @@ import ChatsPage from "./components/ChatsPage";
 import DeliveryPartnersPage from "./components/DeliveryPartnersPage";
 import DeliveryApplicationsPage from "./components/DeliveryApplicationsPage";
 import RecycleBinPage from "./components/RecycleBinPage";
+import AppSettingsPage from "./components/AppSettingsPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -64,7 +66,8 @@ type Tab =
   | "chats"
   | "deliveryPartners"
   | "deliveryApplications"
-  | "recycleBin";
+  | "recycleBin"
+  | "appSettings";
 
 interface TabMeta {
   key: Tab;
@@ -202,6 +205,13 @@ const TABS: TabMeta[] = [
     group: "System",
     searchPlaceholder: "Search recycle bin…",
     description: "Deleted chefs, meals, reviews and more - restore or delete forever.",
+  },
+  {
+    key: "appSettings",
+    label: "App Settings",
+    icon: SlidersHorizontal,
+    group: "System",
+    description: "App-wide settings, such as how far away a kitchen can be and still be recommended.",
   },
 ];
 
@@ -387,6 +397,7 @@ export default function App() {
           {tab === "deliveryApplications" && <DeliveryApplicationsPage search={search} />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
           {tab === "recycleBin" && <RecycleBinPage search={search} isSuperAdmin={isSuperAdmin} />}
+          {tab === "appSettings" && <AppSettingsPage />}
         </main>
       </div>
     </div>

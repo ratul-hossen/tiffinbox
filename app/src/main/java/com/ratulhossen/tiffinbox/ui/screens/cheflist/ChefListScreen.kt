@@ -17,6 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
+import com.ratulhossen.tiffinbox.domain.RecommendationContext
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
@@ -51,6 +56,7 @@ fun ChefListScreen(
 ) {
     var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
     var hasRealDistances by remember { mutableStateOf(false) }
+    var recContext by remember { mutableStateOf(RecommendationContext()) }
     var sort by remember {
         mutableStateOf(
             when (initialSort) {
@@ -66,6 +72,13 @@ fun ChefListScreen(
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
         val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        recContext = RecommendationContext(
+            hasRealDistances = myLocation != null,
+            radiusKm = FirestoreAppConfigRepository.recommendRadiusKm(),
+            reviewStats = FirestoreReviewRepository.getChefReviewStats(),
+            myOrderCounts = FirestoreOrderRepository.getMyOrderSignals().first,
+            offerCounts = FirestoreCouponRepository.getActiveOfferCounts()
+        )
         if (myLocation != null) {
             chefs = firestoreChefs.withRealDistances(myLocation)
             hasRealDistances = true
@@ -74,9 +87,9 @@ fun ChefListScreen(
         }
     }
 
-    val sortedChefs = remember(chefs, sort, hasRealDistances) {
+    val sortedChefs = remember(chefs, sort, hasRealDistances, recContext) {
         when (sort) {
-            ChefSort.RECOMMENDED -> RecommendationEngine.recommend(chefs.recommendable(hasRealDistances))
+            ChefSort.RECOMMENDED -> RecommendationEngine.recommend(chefs.recommendable(hasRealDistances, recContext.radiusKm), recContext)
             ChefSort.NEARBY -> {
                 val sorted = chefs.sortedBy { it.distanceKm }
                 if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted

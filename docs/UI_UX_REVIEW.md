@@ -34,7 +34,7 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | H1 | Header অনেক লম্বা (দুই সারি + greeting + ১২৮dp orbit + search) | প্রথম screen-এর প্রায় অর্ধেক header, তার নিচে বড় banner। খাবার বা chef দেখতে scroll করতে হয়। | Orbit ১১২dp, spacing কমানো। | ✅ Fixed |
 | H2 | Header-এর গোল button ৪৪dp | Android-এর touch target guideline ৪৮dp। | ৪৮dp করা। | ✅ Fixed |
 | H3 | "See all" ভরাট লাল pill | প্রতিটা section-এ একটা করে ভারী লাল button, চোখ খাবার থেকে সরে যায়। Primary action মনে হয়, অথচ secondary। | Primary রঙের হালকা text link + ছোট arrow। | ✅ Fixed |
-| H4 | Header gradient-এর রং ঘুরে ঘুরে লাল থেকে কমলায় যায় | এক screenshot-এ লাল, আরেকটায় কমলা। Brand রং স্থির মনে হয় না। | রং-বদল শুধু theme-এর দুই brand রঙের মধ্যে রাখা, বা বন্ধ করা। | 🕓 Later |
+| H4 | Header gradient-এর রং ঘুরে ঘুরে লাল থেকে কমলায় যায় | এক screenshot-এ লাল, আরেকটায় কমলা। Brand রং স্থির মনে হয় না। | রং-বদল শুধু লাল → গাঢ় লাল → প্রায়-কালো লাল। Background-এর amber-বাদামি আভাও সরানো। | ✅ Fixed |
 | H5 | "Today's pick" banner আর "AI Recommended" একই meal দুবার দেখায় | Duplicate content, জায়গা নষ্ট। | Banner-এ থাকা meal নিচের list থেকে বাদ দেওয়া। | 🕓 Later |
 | H6 | Profile button শুধু একটা generic person icon | ব্যক্তিগত মনে হয় না। | User-এর নামের প্রথম অক্ষর দেখানো। | 🕓 Later |
 | H7 | Points chip-এ "🍙 ⚡0" | নতুন user বোঝে না এটা কী। | ০ point হলে ছোট করে দেখানো বা label দেওয়া। | ❓ Owner |
@@ -97,6 +97,6 @@ Orbit-টা কেন ভালো লাগে: এটা "ঘুরে, থ�
 
 ## পরের ধাপ
 
-1. 🕓 Later-এর কাজগুলো এই ক্রমে: H5 → M4 → H4 → G2 → H6 → C3 → G3।
+1. 🕓 Later-এর কাজগুলো এই ক্রমে: H5 → M4 → G2 → H6 → C3 → G3।
 2. ❓ Owner-এর ৫টা সিদ্ধান্ত (H7, H8, C2, M5, R1) পেলে সেগুলো করা হবে।
 3. নতুন build-এর screenshot পেলে এই review আবার update করা হবে।

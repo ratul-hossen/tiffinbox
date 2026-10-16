@@ -43,15 +43,18 @@ import kotlin.math.sin
 
 /**
  * Home header background that slowly drifts through the current theme's
- * colours (brand gradient -> tertiary -> secondary -> back), like the
+ * brand colours (bright -> deep -> near-black shade -> back), like the
  * colour-changing header in the reference video. The animated value is only
  * read while drawing, so this redraws without recomposing the header.
  */
 @Composable
 fun Modifier.shiftingBrandBackground(): Modifier {
     val g = LocalBrandGradient.current
-    val scheme = MaterialTheme.colorScheme
-    val stops = listOf(g.start, g.end, scheme.tertiary, scheme.secondary, g.start)
+    // Only the theme's own brand colours and a deep shade of them: for Black &
+    // Red that is red -> deep red -> near-black red, never orange/amber (the
+    // old tertiary/secondary stops made the header turn orange).
+    val deep = lerp(g.end, Color.Black, 0.55f)
+    val stops = listOf(g.start, g.end, deep, g.end, g.start)
     val transition = rememberInfiniteTransition(label = "headerColors")
     val phase = transition.animateFloat(
         initialValue = 0f,

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import com.ratulhossen.tiffinbox.ui.theme.LocalBrandGradient
 import kotlin.math.cos
@@ -18,7 +19,7 @@ import kotlin.math.sin
 
 /**
  * App-wide backdrop: the theme's background color with three large, soft
- * "light blobs" in the current palette's brand colors (an Apple-wallpaper-
+ * "light blobs" in the current palette's brand colors only (an Apple-wallpaper-
  * style mesh gradient, now static). Each blob is a radial
  * gradient fading to transparent, so it reads as blurred without needing
  * Modifier.blur (API 31+ only).
@@ -38,7 +39,9 @@ fun AnimatedGradientBackground(
     val blobAlpha = if (isDark) 0.38f else 0.26f
     val colorA = gradient.start.copy(alpha = blobAlpha)
     val colorB = gradient.end.copy(alpha = blobAlpha)
-    val colorC = MaterialTheme.colorScheme.tertiary.copy(alpha = blobAlpha * 0.8f)
+    // Third blob stays inside the brand pair (it used tertiary, which turned the
+    // bottom of every Black & Red screen a muddy amber-brown).
+    val colorC = lerp(gradient.start, gradient.end, 0.5f).copy(alpha = blobAlpha * 0.8f)
 
     // Static on purpose (2026-10-16): a moving backdrop behind every screen
     // competed with the real, purposeful motion (Home header, Lottie), so the

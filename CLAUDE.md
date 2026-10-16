@@ -662,6 +662,24 @@ and the `role_customer` photo unchanged.
   customer has a saved location ("Nearby" stays 3 km). Owner tests from
   Malaysia against Bangladesh kitchens - to test, set a Dhaka address as
   the default saved address.
+- **Radius is admin-set (owner, 2026-10-16):** admin-web **App Settings**
+  page (`AppSettingsPage.tsx`, System group) writes
+  `app_config/settings.recommendRadiusKm` (1-50 km, presets 2/5/10/15,
+  logged to the activity log); the app reads it via
+  `FirestoreAppConfigRepository.recommendRadiusKm()` (cached per run,
+  default 10 km). New rules block `app_config` (read all, write admin).
+- **Recommender v2** (`domain/RecommendationEngine.kt`, owner: distance is a
+  plus, not everything): 0.25 rating + 0.20 delivery (customers' on-time
+  stars) - both Bayesian-smoothed from the public `reviews` collection via
+  `FirestoreReviewRepository.getChefReviewStats()` (5-min memory cache) -
+  + 0.20 proximity + 0.10 review volume + 0.10 order volume + 0.10 repeat
+  orders + 0.05 active offer, x0.7 when not available today. AI meal picks =
+  ML score + 0.15 kitchen quality + 0.10 proximity + the existing personal
+  boosts. Reading all reviews is fine at this scale; if it grows, have
+  admin-web write per-chef aggregates instead.
+- **Colours:** the Home header drift and the root backdrop now use only the
+  theme's brand pair + a deep shade (no tertiary), so Black & Red stays
+  red/black (it used to turn orange / amber-brown).
 
 ## UI/UX self-review (2026-10-16)
 

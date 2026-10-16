@@ -57,6 +57,38 @@ object FirestoreReviewRepository {
     }
 
     /** Most recent reviews for a chef (client-side sorted to avoid a composite index). */
+    /**
+     * Per-kitchen review averages for the recommender (overall rating and the
+     * customers' on-time / delivery rating), from the public `reviews`
+     * collection. Kept in memory for a few minutes so Home and the chef list
+     * don't re-read every review on each visit.
+     */
+    suspend fun getChefReviewStats(): Map<String, ChefReviewStats> {
+        statsCache?.let { (at, stats) -> if (System.currentTimeMillis() - at < STATS_TTL_MS) return stats }
+        return try {
+            val stats = FirebaseFirestore.getInstance().collection("reviews").get().await().documents
+                .groupBy { it.getString("chefId").orEmpty() }
+                .filterKeys { it.isNotBlank() }
+                .mapValues { (_, docs) ->
+                    val overall = docs.mapNotNull { it.getDouble("overallRating")?.takeIf { r -> r > 0 } }
+                    val onTime = docs.mapNotNull { it.getDouble("onTimeRating")?.takeIf { r -> r > 0 } }
+                    ChefReviewStats(
+                        count = docs.size,
+                        avgOverall = overall.average().takeIf { !it.isNaN() } ?: 0.0,
+                        avgOnTime = onTime.average().takeIf { !it.isNaN() } ?: 0.0,
+                        onTimeCount = onTime.size
+                    )
+                }
+            statsCache = System.currentTimeMillis() to stats
+            stats
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    private const val STATS_TTL_MS = 5 * 60 * 1000L
+    @Volatile private var statsCache: Pair<Long, Map<String, ChefReviewStats>>? = null
+
     suspend fun getReviewsForChef(chefId: String, limit: Int = 20): List<ReviewUi> {
         return try {
             val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
@@ -84,3 +116,11 @@ object FirestoreReviewRepository {
         }
     }
 }
+
+/** Review averages for one kitchen; see FirestoreReviewRepository.getChefReviewStats(). */
+data class ChefReviewStats(
+    val count: Int,
+    val avgOverall: Double,
+    val avgOnTime: Double,
+    val onTimeCount: Int
+)

@@ -1,52 +1,98 @@
 package com.ratulhossen.tiffinbox.domain
 
+import com.ratulhossen.tiffinbox.data.firebase.ChefReviewStats
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.util.RECOMMEND_RADIUS_KM
+import kotlin.math.ln
 
 /**
- * Hybrid scoring engine matching the formula documented in README.md:
+ * Everything the recommender knows about the customer and the kitchens,
+ * gathered once per screen load (all free Firestore reads, no server).
+ */
+data class RecommendationContext(
+    val hasRealDistances: Boolean = false,
+    val radiusKm: Double = RECOMMEND_RADIUS_KM,
+    /** Per-kitchen review averages (overall + on-time/delivery), by chefId. */
+    val reviewStats: Map<String, ChefReviewStats> = emptyMap(),
+    /** How many times this customer ordered from each kitchen, by chefId. */
+    val myOrderCounts: Map<String, Int> = emptyMap(),
+    /** Active coupons per kitchen ("" = platform-wide), by chefId. */
+    val offerCounts: Map<String, Int> = emptyMap()
+)
+
+/**
+ * Kitchen ranking for "Recommended for you" and the chef list's Recommended
+ * sort. Distance is a plus, not the whole story (owner, 2026-10-16):
  *
- *   score = 0.30 * proximity_score
- *         + 0.25 * chef_rating
- *         + 0.20 * budget_match
- *         + 0.15 * dietary_match
- *         + 0.10 * repeat_order_bonus
+ *   score = 0.25 rating        (customers' overall stars, Bayesian-smoothed)
+ *         + 0.20 delivery      (customers' on-time stars, Bayesian-smoothed)
+ *         + 0.20 proximity     (closer within the recommend radius = better)
+ *         + 0.10 review volume (more reviews = more trustworthy rating)
+ *         + 0.10 order volume  (completed orders on the kitchen)
+ *         + 0.10 repeat orders (kitchens this customer already liked)
+ *         + 0.05 offers        (an active coupon there)
  *
- * budget_match, dietary_match and repeat_order_bonus need per-user context
- * (past orders, stated preferences) that the app doesn't collect yet, so
- * they default to a neutral 0.5 / 0.0 rather than faking personalization.
- * Once order history and dietary filters are wired to a real user profile,
- * swap those defaults for the real signals.
+ * then x0.7 when the kitchen isn't taking orders today. Bayesian smoothing
+ * (prior 3.5 stars worth 3 reviews) stops a brand-new kitchen with one
+ * 5-star review from outranking one with fifty 4.7-star reviews, while a
+ * kitchen with no reviews yet still gets a fair, neutral score.
  */
 object RecommendationEngine {
 
-    private const val PROXIMITY_WEIGHT = 0.30
     private const val RATING_WEIGHT = 0.25
-    private const val BUDGET_WEIGHT = 0.20
-    private const val DIETARY_WEIGHT = 0.15
-    private const val REPEAT_ORDER_WEIGHT = 0.10
+    private const val DELIVERY_WEIGHT = 0.20
+    private const val PROXIMITY_WEIGHT = 0.20
+    private const val REVIEW_VOLUME_WEIGHT = 0.10
+    private const val ORDER_VOLUME_WEIGHT = 0.10
+    private const val REPEAT_WEIGHT = 0.10
+    private const val OFFER_WEIGHT = 0.05
+    private const val UNAVAILABLE_TODAY_FACTOR = 0.7
 
-    private const val NEUTRAL_BUDGET_MATCH = 0.5
-    private const val NEUTRAL_DIETARY_MATCH = 0.5
-    private const val DEFAULT_REPEAT_ORDER_BONUS = 0.0
+    private const val PRIOR_STARS = 3.5
+    private const val PRIOR_WEIGHT = 3.0
 
-    fun score(chef: ChefUi, maxDistanceKm: Double): Double {
-        val proximityScore = if (maxDistanceKm > 0) {
-            (1.0 - (chef.distanceKm / maxDistanceKm)).coerceIn(0.0, 1.0)
-        } else {
-            1.0
-        }
-        val ratingScore = (chef.overallRating / 5.0).coerceIn(0.0, 1.0)
-
-        return (PROXIMITY_WEIGHT * proximityScore) +
-            (RATING_WEIGHT * ratingScore) +
-            (BUDGET_WEIGHT * NEUTRAL_BUDGET_MATCH) +
-            (DIETARY_WEIGHT * NEUTRAL_DIETARY_MATCH) +
-            (REPEAT_ORDER_WEIGHT * DEFAULT_REPEAT_ORDER_BONUS)
+    /** Stars (0..5) pulled toward [PRIOR_STARS] when there are few reviews, as 0..1. */
+    private fun smoothedStars(avg: Double, count: Int): Double {
+        val n = if (avg > 0) count.toDouble() else 0.0
+        return ((PRIOR_STARS * PRIOR_WEIGHT + avg * n) / (PRIOR_WEIGHT + n) / 5.0).coerceIn(0.0, 1.0)
     }
 
-    /** Chefs ranked best-match-first for a "Recommended for you" style section. */
-    fun recommend(chefs: List<ChefUi>): List<ChefUi> {
-        val maxDistance = chefs.maxOfOrNull { it.distanceKm } ?: 0.0
-        return chefs.sortedByDescending { score(it, maxDistance) }
+    private fun logShare(value: Int, max: Int): Double =
+        if (max <= 0) 0.0 else (ln(1.0 + value) / ln(1.0 + max)).coerceIn(0.0, 1.0)
+
+    /** 1 at the customer's door, 0 at the edge of the radius; neutral without a location. */
+    fun proximity(distanceKm: Double, ctx: RecommendationContext): Double =
+        if (!ctx.hasRealDistances || ctx.radiusKm <= 0) 0.5
+        else (1.0 - distanceKm / ctx.radiusKm).coerceIn(0.0, 1.0)
+
+    /** Food + delivery quality only (0..1), also used to boost AI meal picks. */
+    fun quality(chef: ChefUi, ctx: RecommendationContext): Double {
+        val stats = ctx.reviewStats[chef.id]
+        // No reviews collected yet: fall back to the kitchen's own stored
+        // rating (demo kitchens) counted as a single review.
+        val rating = if (stats != null && stats.avgOverall > 0) smoothedStars(stats.avgOverall, stats.count)
+        else smoothedStars(chef.overallRating, if (chef.overallRating > 0) 1 else 0)
+        val delivery = if (stats != null && stats.avgOnTime > 0) smoothedStars(stats.avgOnTime, stats.onTimeCount)
+        else smoothedStars(chef.onTime, if (chef.onTime > 0) 1 else 0)
+        return (RATING_WEIGHT * rating + DELIVERY_WEIGHT * delivery) / (RATING_WEIGHT + DELIVERY_WEIGHT)
+    }
+
+    fun score(chef: ChefUi, ctx: RecommendationContext, maxReviews: Int, maxOrders: Int): Double {
+        val stats = ctx.reviewStats[chef.id]
+        val qualityPart = (RATING_WEIGHT + DELIVERY_WEIGHT) * quality(chef, ctx)
+        val total = qualityPart +
+            PROXIMITY_WEIGHT * proximity(chef.distanceKm, ctx) +
+            REVIEW_VOLUME_WEIGHT * logShare(stats?.count ?: 0, maxReviews) +
+            ORDER_VOLUME_WEIGHT * logShare(chef.totalOrders, maxOrders) +
+            REPEAT_WEIGHT * ((ctx.myOrderCounts[chef.id] ?: 0).coerceAtMost(3) / 3.0) +
+            OFFER_WEIGHT * (if ((ctx.offerCounts[chef.id] ?: 0) > 0) 1.0 else 0.0)
+        return if (chef.isAvailableToday) total else total * UNAVAILABLE_TODAY_FACTOR
+    }
+
+    /** Kitchens ranked best-match-first. */
+    fun recommend(chefs: List<ChefUi>, ctx: RecommendationContext = RecommendationContext()): List<ChefUi> {
+        val maxReviews = chefs.maxOfOrNull { ctx.reviewStats[it.id]?.count ?: 0 } ?: 0
+        val maxOrders = chefs.maxOfOrNull { it.totalOrders } ?: 0
+        return chefs.sortedByDescending { score(it, ctx, maxReviews, maxOrders) }
     }
 }

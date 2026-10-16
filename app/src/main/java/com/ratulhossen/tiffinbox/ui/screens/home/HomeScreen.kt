@@ -50,6 +50,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.async
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
+import com.ratulhossen.tiffinbox.domain.RecommendationContext
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
@@ -117,46 +122,66 @@ fun HomeScreen(
         if (FirebaseAuthRepository.currentUser != null) rewards = FirestoreOrderRepository.getMyRewards()
     }
 
+    // Signals the recommender uses (review averages, delivery ratings, the
+    // admin-set radius, my orders, offers); filled by the load below.
+    var recContext by remember { mutableStateOf(RecommendationContext()) }
+
     LaunchedEffect(Unit) {
-        // "AI Recommended For You" - ranked by MlRecommendModel.kt, a logistic
-        // regression trained offline on a public Swiggy restaurant dataset
-        // (see ml/ at the repo root), run entirely on-device from the meal's
-        // own price/isVeg/availableQuantity - no server involved.
         val allMeals = FirestoreCatalogRepository.getAllMeals()
         catalogMeals = allMeals
+
+        val firestoreChefs = FirestoreCatalogRepository.getChefs()
+        if (firestoreChefs.isEmpty()) return@LaunchedEffect
+        val uid = FirebaseAuthRepository.currentUser?.uid
+        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        val loadedChefs = if (myLocation != null) firestoreChefs.withRealDistances(myLocation) else firestoreChefs
+
+        // The remaining signals are independent reads - fetch them together.
+        val ctx = coroutineScope {
+            val offers = async { FirestoreCouponRepository.getActiveOfferCounts() }
+            val signals = async { FirestoreOrderRepository.getMyOrderSignals() }
+            val radius = async { FirestoreAppConfigRepository.recommendRadiusKm() }
+            val reviews = async { FirestoreReviewRepository.getChefReviewStats() }
+            RecommendationContext(
+                hasRealDistances = myLocation != null,
+                radiusKm = radius.await(),
+                reviewStats = reviews.await(),
+                myOrderCounts = signals.await().first,
+                offerCounts = offers.await()
+            ) to signals.await().second
+        }
+        val (recCtx, orderedMealIds) = ctx
+
         if (allMeals.isNotEmpty()) {
-            // Real offer counts (active coupons) for the model's numOffers
-            // feature, plus a light personal boost from the customer's own
-            // order history: chefs they've ordered from again, and categories
-            // they've ordered before. The trained model stays the main signal.
-            val offerCounts = FirestoreCouponRepository.getActiveOfferCounts()
-            val platformOffers = offerCounts[""] ?: 0
-            val (chefOrderCounts, orderedMealIds) = FirestoreOrderRepository.getMyOrderSignals()
+            // "AI Recommended For You": the main signal is MlRecommendModel.kt,
+            // a logistic regression trained offline on a public Swiggy dataset
+            // (see ml/), run on-device from the meal's price/veg/offers/
+            // popularity. On top of it: the kitchen's quality (customers'
+            // rating + delivery stars), how close it is, kitchens the customer
+            // ordered from again, and categories they ordered before.
+            val chefById = loadedChefs.associateBy { it.id }
+            val platformOffers = recCtx.offerCounts[""] ?: 0
             val orderedCategories = allMeals.filter { it.id in orderedMealIds }.map { it.category }.toSet()
             aiRecommendedMeals = allMeals
                 .sortedByDescending { meal ->
                     val modelScore = MlRecommendModel.predict(
                         avgPrice = meal.price.toDouble(),
                         vegFraction = if (meal.isVeg) 1.0 else 0.0,
-                        numOffers = ((offerCounts[meal.chefId] ?: 0) + platformOffers).toDouble(),
+                        numOffers = ((recCtx.offerCounts[meal.chefId] ?: 0) + platformOffers).toDouble(),
                         popularity = meal.availableQuantity.toDouble()
                     )
-                    val chefAffinity = 0.15 * ((chefOrderCounts[meal.chefId] ?: 0).coerceAtMost(3) / 3.0)
+                    val chef = chefById[meal.chefId]
+                    val kitchenQuality = chef?.let { 0.15 * RecommendationEngine.quality(it, recCtx) } ?: 0.0
+                    val closeness = chef?.let { 0.10 * RecommendationEngine.proximity(it.distanceKm, recCtx) } ?: 0.0
+                    val chefAffinity = 0.15 * ((recCtx.myOrderCounts[meal.chefId] ?: 0).coerceAtMost(3) / 3.0)
                     val categoryAffinity = if (meal.category in orderedCategories) 0.08 else 0.0
-                    modelScore + chefAffinity + categoryAffinity
+                    modelScore + kitchenQuality + closeness + chefAffinity + categoryAffinity
                 }
         }
 
-        val firestoreChefs = FirestoreCatalogRepository.getChefs()
-        if (firestoreChefs.isEmpty()) return@LaunchedEffect
-        val uid = FirebaseAuthRepository.currentUser?.uid
-        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
-        if (myLocation != null) {
-            chefs = firestoreChefs.withRealDistances(myLocation)
-            hasRealDistances = true
-        } else {
-            chefs = firestoreChefs
-        }
+        recContext = recCtx
+        chefs = loadedChefs
+        hasRealDistances = myLocation != null
     }
 
     // Category tiles filter both the meals shown and the chef rows: only
@@ -168,13 +193,13 @@ fun HomeScreen(
         if (selectedCategory == null) chefs
         else categoryMeals.map { it.chefId }.toSet().let { ids -> chefs.filter { it.id in ids } }
     }
-    val recommendedChefs = remember(visibleChefs, hasRealDistances) {
-        RecommendationEngine.recommend(visibleChefs.recommendable(hasRealDistances))
+    val recommendedChefs = remember(visibleChefs, hasRealDistances, recContext) {
+        RecommendationEngine.recommend(visibleChefs.recommendable(hasRealDistances, recContext.radiusKm), recContext)
     }
     // Kitchens close enough to recommend from (see RECOMMEND_RADIUS_KM). Empty
     // until the chefs load, so far-away meals never flash in first.
-    val recommendableChefIds = remember(chefs, hasRealDistances) {
-        chefs.recommendable(hasRealDistances).map { it.id }.toSet()
+    val recommendableChefIds = remember(chefs, hasRealDistances, recContext) {
+        chefs.recommendable(hasRealDistances, recContext.radiusKm).map { it.id }.toSet()
     }
     val aiMealsShown = remember(aiRecommendedMeals, recommendableChefIds) {
         aiRecommendedMeals.filter { it.chefId in recommendableChefIds }.take(10)

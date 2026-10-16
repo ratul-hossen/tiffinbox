@@ -339,5 +339,13 @@ service cloud.firestore {
     match /recycle_bin/{entryId} {
       allow read, create, update, delete: if isAdmin();
     }
+
+    // App-wide settings set from admin-web's App Settings page (e.g.
+    // recommendRadiusKm). Everyone may read (the app needs it before login
+    // too); only admins write.
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
