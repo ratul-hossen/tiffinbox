@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.splash
 
+import com.ratulhossen.tiffinbox.ui.components.FloatingFoodParticles
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -49,6 +50,7 @@ fun SplashScreen(onFinished: suspend () -> Unit) {
                 listOf(Color.Black.copy(alpha = 0.55f), Color.Black.copy(alpha = 0.15f))
             )
         )
+        FloatingFoodParticles(modifier = Modifier.fillMaxSize(), durationMillis = 9_000)
         Column(
             modifier = Modifier.fillMaxSize().alpha(contentAlpha.value),
             horizontalAlignment = Alignment.CenterHorizontally,

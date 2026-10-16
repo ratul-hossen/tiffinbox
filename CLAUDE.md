@@ -551,6 +551,19 @@ From the owner's (and a friend's) feedback + a reference food-app video.
   characters, logos or names (copyright/trademark; Play Store takedown
   risk). Owner generates the images; keep the same `drawable-nodpi`
   filenames so they drop in.
+- **2026-10-16 follow-up:** the owner kept `splash_bg`, `onboarding_1`,
+  `role_customer` (realistic) as-is and shared 9 anime images in Drive.
+  8 of them depict actual One Piece / Naruto characters or symbols (Luffy,
+  Naruto, Hinata, Sakura, Tsunade, Konoha leaf, Straw Hat flag) and were
+  **deliberately not added** to the app (IP risk, explained to the owner);
+  only the character-free "Steaming Chicken Biryani Feast" replaced
+  `hero_food.jpg` (720px, also the FoodOrbit centre). Regenerate the rest
+  with original characters before swapping them in.
+- **"Dynamic like the video":** `FullBleedPhoto` now does a slow Ken Burns
+  zoom/drift by default (`animated = true`, draw-phase only) everywhere it
+  is used (splash, onboarding, role select, login, location, chef banner),
+  and `FloatingFoodParticles` (AnimatedHeader.kt) drifts spices / leaves /
+  sparkles up over Splash and Onboarding.
 
 ## Animated gradient backdrop everywhere (2026-10-16)
 

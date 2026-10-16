@@ -1,5 +1,14 @@
 package com.ratulhossen.tiffinbox.ui.components
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,15 +47,35 @@ fun FullBleedPhoto(
     @DrawableRes resId: Int,
     modifier: Modifier = Modifier,
     alignment: Alignment = Alignment.Center,
-    scrim: Brush? = null
+    scrim: Brush? = null,
+    /** Slow "Ken Burns" zoom + drift so still illustrations feel alive (draw-phase only). */
+    animated: Boolean = true
 ) {
-    Box(modifier = modifier) {
+    val drift = rememberInfiniteTransition(label = "kenBurns")
+    val t = drift.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(14_000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "kenBurnsT"
+    )
+    Box(modifier = modifier.clipToBounds()) {
         Image(
             painter = painterResource(resId),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = alignment,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    if (animated) {
+                        val p = FastOutSlowInEasing.transform(t.value)
+                        val zoom = 1.04f + 0.08f * p
+                        scaleX = zoom
+                        scaleY = zoom
+                        translationX = (p - 0.5f) * size.width * 0.04f
+                        translationY = (0.5f - p) * size.height * 0.02f
+                    }
+                }
         )
         if (scrim != null) {
             Box(modifier = Modifier.fillMaxSize().background(scrim))

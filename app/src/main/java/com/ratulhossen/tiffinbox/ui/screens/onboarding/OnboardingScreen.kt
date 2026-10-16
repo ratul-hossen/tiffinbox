@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.onboarding
 
+import com.ratulhossen.tiffinbox.ui.components.FloatingFoodParticles
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -67,6 +68,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
                     alignment = Alignment.TopCenter,
                     scrim = bottomScrim(0.92f)
                 )
+                FloatingFoodParticles(modifier = Modifier.fillMaxSize())
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
