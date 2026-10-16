@@ -1,0 +1,37 @@
+<!--
+  TiffinBox launcher mark: a stacked tiffin carrier (dabba) - the object the
+  whole product is named after, and simple enough to stay readable at 48dp.
+
+  Adaptive-icon foreground: drawn on the standard 108x108 canvas, with every
+  part kept inside the 66dp-diameter safe circle (centre 54,54, radius 33)
+  so no launcher shape crops it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Bail handle -->
+    <path
+        android:pathData="M45,43 C45,28 63,28 63,43"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- Top tier -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,43 L66,43 Q69,43 69,46 L69,51 Q69,54 66,54 L42,54 Q39,54 39,51 L39,46 Q39,43 42,43 Z" />
+
+    <!-- Middle tier -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,57 L66,57 Q69,57 69,60 L69,65 Q69,68 66,68 L42,68 Q39,68 39,65 L39,60 Q39,57 42,57 Z" />
+
+    <!-- Bottom tier -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,71 L66,71 Q69,71 69,74 L69,79 Q69,82 66,82 L42,82 Q39,82 39,79 L39,74 Q39,71 42,71 Z" />
+</vector>
