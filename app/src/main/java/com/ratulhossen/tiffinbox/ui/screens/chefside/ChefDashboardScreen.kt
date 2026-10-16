@@ -1,5 +1,9 @@
 package com.ratulhossen.tiffinbox.ui.screens.chefside
 
+import com.ratulhossen.tiffinbox.data.model.MealUi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import android.widget.Toast
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Edit
@@ -77,6 +81,9 @@ fun ChefDashboardScreen(
     var deliveryMode by remember { mutableStateOf("self") }
     var deliveryUntil by remember { mutableStateOf(0L) }
     var kitchenPhotoBase64 by remember { mutableStateOf("") }
+    // The chef's own full menu (incl. switched-off meals) - feeds the
+    // "complete your kitchen" suggestions below.
+    var myMeals by remember { mutableStateOf<List<MealUi>?>(null) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
     var videos by remember { mutableStateOf<List<ChefVideoUi>>(emptyList()) }
     var videoUrl by remember { mutableStateOf("") }
@@ -90,11 +97,15 @@ fun ChefDashboardScreen(
         if (uri != null) {
             isUploadingPhoto = true
             scope.launch {
-                val base64 = ImageCompressor.compressToBase64(context, uri)
-                if (base64 != null) {
-                    kitchenPhotoBase64 = base64
-                    FirestoreChefRepository.updatePhoto(chefId, base64)
-                }
+                // 16:9 cover crop, EXIF rotation fixed - same frame customers see.
+                val base64 = ImageCompressor.compressKitchenPhoto(context, uri)
+                val ok = base64 != null && FirestoreChefRepository.updatePhoto(chefId, base64)
+                if (ok) kitchenPhotoBase64 = base64!!
+                Toast.makeText(
+                    context,
+                    context.getString(if (ok) R.string.menu_photo_saved else R.string.menu_photo_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
                 isUploadingPhoto = false
             }
         }
@@ -109,6 +120,8 @@ fun ChefDashboardScreen(
         deliveryMode = freshChef?.deliveryMode ?: "self"
         deliveryUntil = freshChef?.deliveryUntil ?: 0L
         kitchenPhotoBase64 = chef?.photoBase64 ?: ""
+        available = chef?.isAvailableToday ?: true
+        myMeals = FirestoreCatalogRepository.getMealsForChef(chefId, includeUnavailable = true)
         videos = chef?.videos ?: emptyList()
         isApproved = chef?.isVerified ?: false
         isRejected = chef?.approvalStatus == "rejected"
@@ -219,14 +232,29 @@ fun ChefDashboardScreen(
                 .shadow(10.dp, MaterialTheme.shapes.large)
                 .clip(MaterialTheme.shapes.large)
         ) {
-            FullBleedPhoto(
-                resId = R.drawable.chef_dashboard_banner,
-                modifier = Modifier.fillMaxSize(),
-                alignment = Alignment.CenterEnd,
-                scrim = Brush.horizontalGradient(
-                    listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+            if (kitchenPhotoBase64.isNotBlank()) {
+                // The chef's own kitchen photo replaces the stock banner.
+                Base64Thumbnail(
+                    base64 = kitchenPhotoBase64,
+                    emoji = "🍳",
+                    modifier = Modifier.fillMaxSize(),
+                    shape = MaterialTheme.shapes.large
                 )
-            )
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Brush.horizontalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
+                )
+            } else {
+                FullBleedPhoto(
+                    resId = R.drawable.chef_dashboard_banner,
+                    modifier = Modifier.fillMaxSize(),
+                    alignment = Alignment.CenterEnd,
+                    scrim = Brush.horizontalGradient(
+                        listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+                    )
+                )
+            }
             Text(
                 kitchenName ?: stringResource(R.string.chef_dashboard_kitchen_name),
                 color = Color.White,
@@ -238,6 +266,22 @@ fun ChefDashboardScreen(
                     .fillMaxWidth(0.6f)
             )
         }
+        val pickKitchenPhoto = {
+            pickKitchenPhotoLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+        myMeals?.let { meals ->
+            Spacer(modifier = Modifier.height(16.dp))
+            KitchenSetupCard(
+                hasKitchenPhoto = kitchenPhotoBase64.isNotBlank(),
+                mealCount = meals.size,
+                mealsWithPhoto = meals.count { it.photoBase64.isNotBlank() },
+                hasVideo = videos.isNotEmpty(),
+                hasTodaySpecial = meals.any { it.isTodaySpecial },
+                onAddKitchenPhoto = pickKitchenPhoto,
+                onOpenMenu = onManageMenu
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -245,30 +289,48 @@ fun ChefDashboardScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(stringResource(R.string.chef_dashboard_kitchen_photo_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.kitchen_photo_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Same 16:9 frame as the customer-facing kitchen cover.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(ImageCompressor.KITCHEN_ASPECT)
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable(enabled = !isUploadingPhoto) { pickKitchenPhoto() }
+                ) {
                     Base64Thumbnail(
                         base64 = kitchenPhotoBase64,
                         emoji = "🍳",
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.fillMaxSize(),
+                        shape = MaterialTheme.shapes.medium,
+                        emojiFontSize = 44.sp
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    OutlinedButton(
-                        enabled = !isUploadingPhoto,
-                        onClick = {
-                            pickKitchenPhotoLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        }
-                    ) {
-                        if (isUploadingPhoto) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Filled.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(R.string.chef_dashboard_kitchen_photo_button))
-                        }
+                    if (isUploadingPhoto) {
+                        Box(
+                            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) { CircularProgressIndicator(color = Color.White) }
                     }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    enabled = !isUploadingPhoto,
+                    onClick = pickKitchenPhoto,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        stringResource(
+                            if (kitchenPhotoBase64.isBlank()) R.string.chef_dashboard_kitchen_photo_button
+                            else R.string.kitchen_photo_change
+                        )
+                    )
                 }
             }
         }
@@ -286,7 +348,15 @@ fun ChefDashboardScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(stringResource(R.string.chef_dashboard_available_toggle), style = MaterialTheme.typography.titleMedium)
-                Switch(checked = available, onCheckedChange = { available = it })
+                Switch(checked = available, onCheckedChange = { on ->
+                    available = on
+                    scope.launch {
+                        if (!FirestoreChefRepository.updateAvailableToday(chefId, on)) {
+                            available = !on
+                            Toast.makeText(context, context.getString(R.string.menu_save_failed), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                })
             }
         }
 
@@ -544,3 +614,75 @@ fun ChefDashboardScreen(
     }
 }
 
+/**
+ * "Complete your kitchen" checklist. Photos and videos are optional, so
+ * this only suggests - but kitchens with photos look far more trustworthy
+ * to customers. Hidden once everything is done.
+ */
+@Composable
+private fun KitchenSetupCard(
+    hasKitchenPhoto: Boolean,
+    mealCount: Int,
+    mealsWithPhoto: Int,
+    hasVideo: Boolean,
+    hasTodaySpecial: Boolean,
+    onAddKitchenPhoto: () -> Unit,
+    onOpenMenu: () -> Unit
+) {
+    val steps = listOf(
+        Triple(hasKitchenPhoto, stringResource(R.string.setup_step_kitchen_photo), onAddKitchenPhoto),
+        Triple(mealCount > 0, stringResource(R.string.setup_step_menu), onOpenMenu),
+        Triple(
+            mealCount > 0 && mealsWithPhoto == mealCount,
+            stringResource(R.string.setup_step_meal_photos, mealsWithPhoto, mealCount),
+            onOpenMenu
+        ),
+        Triple(hasTodaySpecial, stringResource(R.string.setup_step_special), onOpenMenu),
+        Triple(hasVideo, stringResource(R.string.setup_step_video), {})
+    )
+    val done = steps.count { it.first }
+    if (done == steps.size) return
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.setup_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.setup_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            LinearProgressIndicator(
+                progress = { done / steps.size.toFloat() },
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(MaterialTheme.shapes.small)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            steps.forEach { (isDone, label, action) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable(enabled = !isDone, onClick = action)
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(if (isDone) "✅" else "⬜", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (!isDone) {
+                        Text("→", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}

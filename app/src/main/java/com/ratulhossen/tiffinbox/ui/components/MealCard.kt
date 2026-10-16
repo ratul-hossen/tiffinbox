@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.model.MealUi
+import com.ratulhossen.tiffinbox.util.ImageCompressor
 
 @Composable
 fun MealCard(
@@ -56,10 +57,21 @@ fun MealCard(
             Base64Thumbnail(
                 base64 = meal.photoBase64,
                 emoji = meal.emoji,
-                modifier = Modifier.size(84.dp)
+                // Same 4:3 frame food photos are cropped to on upload.
+                modifier = Modifier
+                    .width(108.dp)
+                    .aspectRatio(ImageCompressor.MEAL_ASPECT)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
+                if (meal.isTodaySpecial) {
+                    Text(
+                        stringResource(R.string.home_hero_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
                 Text(
                     meal.name,
                     style = MaterialTheme.typography.titleMedium,

@@ -488,6 +488,33 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   approval, delivery mode/until, bKash/Nagad, type, experience, menu size;
   full order list (orders received for chefs).
 
+## Chef photos, Menu Manager, Today's Special (2026-10-16)
+
+- **Photo pipeline** (`util/ImageCompressor.kt`): applies the EXIF rotation
+  (camera photos used to show sideways), decodes with `inSampleSize` (no OOM
+  on 12MP photos), and centre-crops to a fixed frame - `compressMealPhoto()`
+  4:3 / 800px / ~160KB, `compressKitchenPhoto()` 16:9 / 1280px / ~240KB.
+  Display uses the same frames (`MEAL_ASPECT` / `KITCHEN_ASPECT`) in
+  MealCard, MealDetail (now actually shows the photo - it only showed the
+  emoji before), ChefDetail cover and the dashboard. `Base64Thumbnail`
+  decodes off the main thread with an LRU cache.
+- **Menu Manager rewrite**: add / edit / delete meals, add or change a photo
+  on any existing meal straight from the list, availability switch actually
+  saved (`isAvailable`, customers no longer see switched-off meals),
+  `addMeal()` now returns the real doc id (the list used a fake id before).
+  Photos stay optional; meals without one get a "📷 add a photo" nudge.
+- **Chef dashboard**: kitchen photo becomes the banner; large 16:9 preview;
+  "Available today" switch is now saved; a "Set up your kitchen" checklist
+  (kitchen photo, menu, meal photos, today's special, video) - suggestions
+  only, hidden once complete.
+- **Today's Special**: chef stars up to 2 meals in Menu Manager
+  (`meals.specialDate` = today, "yyyy-MM-dd" - lapses at midnight with no
+  job). Home's banner is now a swipeable row of today's specials from listed
+  chefs (nearest first, real photos, tap opens the meal); with none marked
+  it shows the top AI picks with photos as "Today's pick", else the stock
+  banner. Specials are badged on MealCard / MealDetail and listed first on
+  ChefDetail.
+
 ## Animated gradient backdrop everywhere (2026-10-16)
 
 Owner felt plain white screens looked dull and asked for an animated,

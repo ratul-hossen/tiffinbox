@@ -1,5 +1,10 @@
 package com.ratulhossen.tiffinbox.ui.screens.meal
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.RectangleShape
+import com.ratulhossen.tiffinbox.util.ImageCompressor
+import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -113,15 +118,37 @@ fun MealDetailScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
+            // The chef's food photo in the same 4:3 frame it was cropped to on
+            // upload; meals without one keep the emoji placeholder.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
+                    .aspectRatio(ImageCompressor.MEAL_ASPECT)
             ) {
-                Text(meal.emoji, fontSize = 72.sp)
+                Base64Thumbnail(
+                    base64 = meal.photoBase64,
+                    emoji = meal.emoji,
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RectangleShape,
+                    emojiFontSize = 72.sp
+                )
+                if (meal.isTodaySpecial) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.home_hero_badge),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(meal.name, style = MaterialTheme.typography.headlineSmall)

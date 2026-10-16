@@ -69,8 +69,20 @@ data class MealUi(
     val availableQuantity: Int,
     val portionSize: String,
     /** Compressed food photo, base64 (see ImageCompressor.kt); blank falls back to [emoji]. */
-    val photoBase64: String = ""
-)
+    val photoBase64: String = "",
+    /** Chef's on/off switch in Menu Manager; switched-off meals are hidden from customers. */
+    val isAvailable: Boolean = true,
+    /** "yyyy-MM-dd" the chef marked this as Today's Special (blank = not special). */
+    val specialDate: String = ""
+) {
+    /** True only on the day the chef marked it - it resets by itself the next day. */
+    val isTodaySpecial: Boolean get() = specialDate.isNotBlank() && specialDate == todayKey()
+
+    companion object {
+        fun todayKey(): String =
+            java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+    }
+}
 
 data class CartItemUi(
     val meal: MealUi,

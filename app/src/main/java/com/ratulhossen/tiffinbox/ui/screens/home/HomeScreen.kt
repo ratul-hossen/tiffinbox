@@ -1,5 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.screens.home
 
+import androidx.compose.ui.graphics.RectangleShape
+import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
 import androidx.compose.foundation.background
@@ -138,6 +140,25 @@ fun HomeScreen(
         else categoryMeals.map { it.chefId }.toSet().let { ids -> chefs.filter { it.id in ids } }
     }
     val recommendedChefs = remember(visibleChefs) { RecommendationEngine.recommend(visibleChefs) }
+    // Chefs marked these as Today's Special in Menu Manager (it lapses at
+    // midnight by itself). Only from chefs listed to this customer, nearest
+    // first. If nobody marked one today, fall back to the top AI picks with
+    // a real photo so the banner is never an empty promise.
+    val todaySpecials = remember(catalogMeals, chefs) {
+        val chefDistance = chefs.associate { it.id to it.distanceKm }
+        catalogMeals
+            .filter { it.isTodaySpecial && it.chefId in chefDistance && it.availableQuantity > 0 }
+            .sortedBy { chefDistance[it.chefId] ?: Double.MAX_VALUE }
+            .take(8)
+    }
+    val heroIsSpecial = todaySpecials.isNotEmpty()
+    val heroMeals = remember(todaySpecials, aiRecommendedMeals, chefs) {
+        val listedChefIds = chefs.map { it.id }.toSet()
+        todaySpecials.ifEmpty {
+            aiRecommendedMeals.filter { it.photoBase64.isNotBlank() && it.chefId in listedChefIds }.take(5)
+        }
+    }
+
     val nearbyChefs = remember(visibleChefs, hasRealDistances) {
         val sorted = visibleChefs.sortedBy { it.distanceKm }
         if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
@@ -255,59 +276,78 @@ fun HomeScreen(
             visible = revealed,
             enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 3 }
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth()
-                    .height(170.dp)
-                    .shadow(12.dp, MaterialTheme.shapes.large)
-                    .clip(MaterialTheme.shapes.large)
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.hero_food),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alignment = Alignment.CenterEnd,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
-                            )
-                        )
-                )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(20.dp)
-                        .fillMaxWidth(0.7f)
+            if (heroMeals.isNotEmpty()) {
+                // Today's Special: meals chefs marked in Menu Manager today
+                // (nearest first); otherwise the top AI picks that have a photo.
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                        Text(
-                            stringResource(R.string.home_hero_badge),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    items(heroMeals, key = { it.id }) { meal ->
+                        TodaySpecialCard(
+                            meal = meal,
+                            chefName = chefs.find { it.id == meal.chefId }?.kitchenName.orEmpty(),
+                            badge = stringResource(if (heroIsSpecial) R.string.home_hero_badge else R.string.home_hero_badge_pick),
+                            modifier = Modifier.fillParentMaxWidth(if (heroMeals.size == 1) 1f else 0.86f),
+                            onClick = { onMealClick(meal.id) }
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        stringResource(R.string.home_hero_title),
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 26.sp
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .shadow(12.dp, MaterialTheme.shapes.large)
+                        .clip(MaterialTheme.shapes.large)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.hero_food),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.CenterEnd,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.home_hero_subtitle),
-                        color = Color.White.copy(alpha = 0.85f),
-                        style = MaterialTheme.typography.bodySmall
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
+                                )
+                            )
                     )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(20.dp)
+                            .fillMaxWidth(0.7f)
+                    ) {
+                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+                            Text(
+                                stringResource(R.string.home_hero_badge_generic),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.home_hero_title),
+                            color = Color.White,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 26.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            stringResource(R.string.home_hero_subtitle),
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }
@@ -491,4 +531,72 @@ private fun categoryPhoto(category: String): Int = when (category) {
     "Snack" -> R.drawable.cat_snack
     "Dessert" -> R.drawable.cat_dessert
     else -> R.drawable.cat_lunch
+}
+
+/** One Today's Special banner card: the chef's food photo (or the stock hero photo), name, kitchen, price. */
+@Composable
+private fun TodaySpecialCard(
+    meal: MealUi,
+    chefName: String,
+    badge: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .height(180.dp)
+            .shadow(12.dp, MaterialTheme.shapes.large)
+            .clip(MaterialTheme.shapes.large)
+            .clickable(onClick = onClick)
+    ) {
+        if (meal.photoBase64.isNotBlank()) {
+            Base64Thumbnail(
+                base64 = meal.photoBase64,
+                emoji = meal.emoji,
+                modifier = Modifier.fillMaxSize(),
+                shape = RectangleShape
+            )
+        } else {
+            Image(
+                painter = painterResource(R.drawable.hero_food),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.CenterEnd,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))))
+        )
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.align(Alignment.TopStart).padding(14.dp)
+        ) {
+            Text(
+                badge,
+                color = MaterialTheme.colorScheme.onPrimary,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
+        }
+        Column(modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+            Text(
+                meal.name,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                listOf(chefName, "৳${meal.price}").filter { it.isNotBlank() }.joinToString(" · "),
+                color = Color.White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
 }

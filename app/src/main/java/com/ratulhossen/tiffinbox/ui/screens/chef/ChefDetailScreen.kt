@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.chef
 
+import com.ratulhossen.tiffinbox.util.ImageCompressor
 import com.ratulhossen.tiffinbox.data.firebase.ReviewUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
 import android.content.Intent
@@ -61,7 +62,8 @@ fun ChefDetailScreen(
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chefState = it }
         val firestoreMeals = FirestoreCatalogRepository.getMealsForChef(chefId)
-        if (firestoreMeals.isNotEmpty()) meals = firestoreMeals
+        // Today's specials first.
+        if (firestoreMeals.isNotEmpty()) meals = firestoreMeals.sortedByDescending { it.isTodaySpecial }
         isLoading = false
     }
 
@@ -98,9 +100,13 @@ fun ChefDetailScreen(
                 Base64Thumbnail(
                     base64 = chef.photoBase64,
                     emoji = chef.emoji,
+                    // 16:9 - the frame kitchen photos are cropped to on upload.
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp),
+                        .then(
+                            if (chef.photoBase64.isBlank()) Modifier.height(140.dp)
+                            else Modifier.aspectRatio(ImageCompressor.KITCHEN_ASPECT)
+                        ),
                     shape = RectangleShape,
                     emojiFontSize = 56.sp
                 )

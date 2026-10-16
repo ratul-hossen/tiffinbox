@@ -123,14 +123,28 @@ object FirestoreChefRepository {
     }
 
     /** [base64] is a pre-compressed photo (see ImageCompressor.kt) - no Firebase Storage involved. */
-    fun updatePhoto(uid: String, base64: String) {
-        try {
+    suspend fun updatePhoto(uid: String, base64: String): Boolean {
+        return try {
             db.collection("chefs").document(uid).set(
                 hashMapOf("photoBase64" to base64),
                 SetOptions.merge()
-            )
+            ).await()
+            true
         } catch (e: Exception) {
-            // Firebase not configured yet, or offline — safe to ignore.
+            false
+        }
+    }
+
+    /** Dashboard "Available today" switch - unavailable kitchens are shown as closed to customers. */
+    suspend fun updateAvailableToday(uid: String, available: Boolean): Boolean {
+        return try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf("isAvailableToday" to available),
+                SetOptions.merge()
+            ).await()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
