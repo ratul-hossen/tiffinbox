@@ -71,14 +71,42 @@ object FirestoreChefRepository {
     }
 
     /** A verified location is mandatory for every chef (required right after signup). */
-    fun updateLocation(uid: String, latitude: Double, longitude: Double) {
+    fun updateLocation(uid: String, latitude: Double, longitude: Double, address: String = "") {
         try {
             db.collection("chefs").document(uid).set(
-                hashMapOf("latitude" to latitude, "longitude" to longitude),
+                hashMapOf("latitude" to latitude, "longitude" to longitude, "address" to address),
                 SetOptions.merge()
             )
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
+        }
+    }
+
+    /** Edit Profile save for chefs - contact/payment numbers and kitchen name on chefs/{uid}. */
+    suspend fun updateContactInfo(
+        uid: String,
+        ownerName: String,
+        kitchenName: String,
+        phoneNumber: String,
+        whatsappNumber: String,
+        bkashNumber: String,
+        nagadNumber: String
+    ): Boolean {
+        return try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf(
+                    "ownerName" to ownerName,
+                    "kitchenName" to kitchenName,
+                    "phoneNumber" to phoneNumber,
+                    "whatsappNumber" to whatsappNumber,
+                    "bkashNumber" to bkashNumber,
+                    "nagadNumber" to nagadNumber
+                ),
+                SetOptions.merge()
+            ).await()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 

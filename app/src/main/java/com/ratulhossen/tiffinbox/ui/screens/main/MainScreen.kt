@@ -46,6 +46,7 @@ fun MainScreen(
     onPaymentMethodsClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onSelfServiceClick: () -> Unit = {},
+    onEditProfileClick: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -144,7 +145,10 @@ fun MainScreen(
                     onSettingsClick = onSettingsClick,
                     onPaymentMethodClick = onPaymentMethodsClick,
                     onNotificationsClick = onNotificationsClick,
-                    onSelfServiceClick = onSelfServiceClick
+                    onSelfServiceClick = onSelfServiceClick,
+                    onEditProfileClick = onEditProfileClick,
+                    onMyOrdersClick = { selectedTab = 2 },
+                    onFavoritesClick = { selectedTab = 3 }
                 )
             }
         }

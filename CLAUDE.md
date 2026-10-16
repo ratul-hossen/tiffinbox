@@ -396,6 +396,31 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   surface with tinted active pill. Cards: bigger images, softer shadows,
   larger radii (Shape.kt).
 
+## Location fix, WhatsApp-same-as-phone, Edit Profile (2026-10-16)
+
+- **Location detection** (`data/location/LocationRepository.kt`):
+  `detectCurrentLocation()` returns `LocationResult` with a
+  `LocationFailure` reason (NO_PERMISSION / LOCATION_OFF / NO_FIX). Asks for
+  FINE + COARSE together (Android 12+ "approximate" used to count as denied),
+  checks the device Location toggle (shows an "Open location settings"
+  button), tries a fresh fix (high accuracy, 15s timeout) then the fused
+  last-known then any platform provider's last-known. Saves a
+  reverse-geocoded readable `address` next to lat/lng on `users/{uid}` /
+  `chefs/{uid}`. On an emulator, a location must be set in Extended
+  Controls → Location or no fix ever arrives.
+- **WhatsApp same as phone:** `ui/components/ContactFields.kt`
+  `PhoneAndWhatsappFields` (checkbox ticked by default hides the WhatsApp
+  field) + `effectiveWhatsapp()`; used in both signup paths (chef stepper:
+  phone + WhatsApp both on step 1 now) and Edit Profile.
+- **Edit Profile** (`ui/screens/profile/EditProfileScreen.kt`, route
+  `edit_profile`): name, phone/WhatsApp, read-only email, location card with
+  "Change location" (route `location_edit/{uid}/{role}` = same
+  LocationSetupScreen but pops back); chefs also edit kitchen name +
+  bKash/Nagad. Same validator as signup. Reached from Profile (header tap,
+  new first menu item, and the previously-dead "Address Management") and
+  a pencil icon on ChefDashboard's header. Profile's dead "My Orders" /
+  "Favorites" items now switch to those tabs.
+
 ## Animated gradient backdrop everywhere (2026-10-16)
 
 Owner felt plain white screens looked dull and asked for an animated,

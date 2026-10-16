@@ -120,6 +120,15 @@ object FirebaseAuthRepository {
         }
     }
 
+    /** Keeps the Firebase Auth display name (shown on Profile) in sync with Edit Profile. */
+    suspend fun updateDisplayName(name: String) {
+        try {
+            currentUser?.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(name).build())?.await()
+        } catch (e: Exception) {
+            // Non-fatal: the Firestore name is still saved.
+        }
+    }
+
     fun signOut() {
         try {
             auth.signOut()
