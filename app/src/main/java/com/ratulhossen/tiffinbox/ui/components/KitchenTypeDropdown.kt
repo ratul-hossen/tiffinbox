@@ -3,8 +3,8 @@ package com.ratulhossen.tiffinbox.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
@@ -26,9 +26,10 @@ import com.ratulhossen.tiffinbox.R
  * Type field. Deliberately built from plain Box + DropdownMenu rather than
  * Material3's ExposedDropdownMenuBox/ExposedDropdownMenu family - that
  * family's API has shifted across this project's compose-bom version
- * (ExposedDropdownMenu and later exposedDropdownSize both failed to
- * resolve), so this sticks to the oldest, most stable widgets instead of
- * chasing a moving target.
+ * (ExposedDropdownMenu, then exposedDropdownSize, then even
+ * BoxScope.matchParentSize() all failed to resolve in turn), so this
+ * sticks to the plainest widgets/modifiers (fillMaxWidth/fillMaxSize)
+ * instead of chasing a moving target.
  */
 @Composable
 fun KitchenTypeDropdown(
@@ -54,10 +55,13 @@ fun KitchenTypeDropdown(
         )
         // A transparent overlay captures the click - the text field itself
         // stays readOnly/non-focusable so no keyboard pops up, and this is
-        // the only part that needs to react to taps.
+        // the only part that needs to react to taps. fillMaxSize() (not
+        // Box's usual matchParentSize(), which also failed to resolve in
+        // this project's Foundation version) still fills the Box, since
+        // the OutlinedTextField sibling already drives the Box's own size.
         Box(
             modifier = Modifier
-                .matchParentSize()
+                .fillMaxSize()
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
