@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 enum class UserRole { CUSTOMER, CHEF }
 
@@ -59,7 +60,7 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
         )
 
         Spacer(modifier = Modifier.height(32.dp))
-        Button(
+        TiffinButton(
             onClick = { selected?.let(onRoleSelected) },
             enabled = selected != null,
             modifier = Modifier.fillMaxWidth().height(52.dp)

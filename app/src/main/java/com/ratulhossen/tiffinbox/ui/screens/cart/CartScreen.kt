@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +47,7 @@ fun CartScreen(
                         Divider(modifier = Modifier.padding(vertical = 6.dp))
                         SummaryRow(stringResource(R.string.cart_summary_total), CartStore.total, bold = true)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(
+                        TiffinButton(
                             onClick = onCheckout,
                             modifier = Modifier
                                 .fillMaxWidth()

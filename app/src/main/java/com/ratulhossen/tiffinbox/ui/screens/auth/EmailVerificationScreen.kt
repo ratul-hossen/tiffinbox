@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 /**
  * Blocks an email/password account until its address is confirmed via the
@@ -83,7 +84,7 @@ fun EmailVerificationScreen(onVerified: () -> Unit, onLogout: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
+        TiffinButton(
             onClick = {
                 isChecking = true
                 statusMessage = null

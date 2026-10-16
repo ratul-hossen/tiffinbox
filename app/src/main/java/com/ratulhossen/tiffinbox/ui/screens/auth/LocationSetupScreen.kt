@@ -26,6 +26,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.data.location.LocationRepository
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @Composable
 fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) {
@@ -95,7 +96,7 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
         )
         Spacer(modifier = Modifier.height(28.dp))
 
-        Button(
+        TiffinButton(
             onClick = {
                 errorMessage = null
                 isDetecting = true

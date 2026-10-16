@@ -28,6 +28,7 @@ import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.label
 import kotlin.math.roundToInt
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,7 +158,7 @@ fun SubscribeScreen(
             }
 
             Spacer(modifier = Modifier.weight(1f))
-            Button(
+            TiffinButton(
                 onClick = {
                     FirestoreSubscriptionRepository.subscribe(
                         chefId = chefId,

@@ -44,6 +44,7 @@ import com.ratulhossen.tiffinbox.ui.components.EarningsChart
 import com.ratulhossen.tiffinbox.ui.components.StatTile
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @Composable
 fun ChefDashboardScreen(
@@ -291,7 +292,7 @@ fun ChefDashboardScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Button(
+                TiffinButton(
                     onClick = {
                         if (videoUrl.isNotBlank()) {
                             FirestoreChefRepository.addVideo(chefId, videoUrl, videoCaption)
@@ -445,7 +446,7 @@ fun ChefDashboardScreen(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { respondToOrder(order.id, "Accepted") }) {
+                        TiffinButton(onClick = { respondToOrder(order.id, "Accepted") }) {
                             Text(stringResource(R.string.chef_dashboard_accept_button))
                         }
                         OutlinedButton(onClick = { respondToOrder(order.id, "Cancelled") }) {

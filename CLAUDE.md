@@ -357,6 +357,28 @@ multiple times already — always use the free-tier equivalents above) or
 to silently dropping the admin-provisioned-only delivery-partner design
 in favor of the reference screenshots' public self-signup role.
 
+## Visual refresh: 5 themes, gradient buttons, Apple-style polish (2026-10-16)
+
+Owner (frustrated the app still looked "basic/boring", wanted Apple-smooth,
+colorful, image-rich, multiple user-selectable themes, new buttons):
+- **Themes** (`ui/theme/`): `ThemePalette` = BLACK_RED (default),
+  SUNSET_ORANGE, OCEAN_BLUE, CLASSIC_GREEN, DYNAMIC (Material You wallpaper
+  colors on Android 12+, falls back to Black&Red). Separate `ThemeMode`
+  SYSTEM/LIGHT/DARK. Both persisted in `ThemePreferences`. Each palette is a
+  `BrandColors` (Color.kt) on shared iOS-style neutrals; its two gradient
+  colors are exposed via `LocalBrandGradient` / `brandGradient()`.
+  Never rename enum entries (persisted by name).
+- **`TiffinButton`** (`ui/components/TiffinButton.kt`): gradient pill +
+  colored glow + springy press - a drop-in for Material `Button(onClick,
+  modifier, enabled) {}`; every screen's primary `Button` was switched to it.
+- Home: gradient header (location/greeting/profile/search), hero banner
+  photo `res/drawable-nodpi/hero_food.jpg` (placeholder - owner may replace
+  it with a Nano Banana-generated image; keep the same filename), round
+  emoji category tiles, animated reveal, empty state. Settings: swatch-card
+  theme picker + segmented mode picker. Bottom bar: rounded floating
+  surface with tinted active pill. Cards: bigger images, softer shadows,
+  larger radii (Shape.kt).
+
 ## On-device ML: recommendation engine + natural-language search (2026-10)
 
 Owner's explicit ask (paraphrased from Bengali): real AI integration, not an

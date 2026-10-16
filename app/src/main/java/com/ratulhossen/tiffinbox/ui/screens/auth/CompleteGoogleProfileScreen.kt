@@ -25,6 +25,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 /**
  * Shown right after a brand-new Google sign-up (an existing account signing
@@ -193,7 +194,7 @@ fun CompleteGoogleProfileScreen(uid: String, role: String, onCompleted: () -> Un
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
+        TiffinButton(
             onClick = { submit() },
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth().height(52.dp)

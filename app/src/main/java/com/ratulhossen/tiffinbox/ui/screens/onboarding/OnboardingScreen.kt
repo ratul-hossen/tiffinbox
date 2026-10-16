@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 private data class OnboardingPage(val emoji: String, val title: String, val description: String)
 
@@ -101,7 +102,7 @@ fun OnboardingScreen(onFinished: () -> Unit) {
             }
         }
 
-        Button(
+        TiffinButton(
             onClick = {
                 if (pagerState.currentPage < pages.lastIndex) {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }

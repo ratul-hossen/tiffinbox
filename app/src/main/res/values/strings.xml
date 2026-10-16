@@ -121,6 +121,11 @@
     <string name="home_section_recommended">আপনার জন্য Recommended</string>
     <string name="home_section_ai_recommended">✨ AI Recommended For You</string>
     <string name="home_section_nearby">কাছাকাছি Home Chef</string>
+    <string name="home_hero_badge">🔥 আজকের স্পেশাল</string>
+    <string name="home_hero_title">ঘরের রান্না, সরাসরি আপনার দরজায়</string>
+    <string name="home_hero_subtitle">কাছের হোম শেফদের তাজা খাবার অর্ডার করুন</string>
+    <string name="home_empty_title">এখনো কোনো chef নেই</string>
+    <string name="home_empty_subtitle">আপনার এলাকায় chef যোগ হলেই এখানে দেখাবে</string>
     <string name="home_see_all">সব দেখুন</string>
 
     <!-- SearchScreen -->
@@ -253,6 +258,14 @@
     <string name="settings_theme_title">থিম</string>
     <string name="settings_theme_subtitle">অ্যাপের রঙ পছন্দ করুন</string>
     <string name="settings_theme_black_red">Black &amp; Red</string>
+    <string name="settings_theme_sunset">Sunset Orange</string>
+    <string name="settings_theme_ocean">Ocean Blue</string>
+    <string name="settings_theme_dynamic">Dynamic (ওয়ালপেপার থেকে)</string>
+    <string name="settings_theme_dynamic_note">Android 12+ এ ফোনের ওয়ালপেপারের রং নেয়</string>
+    <string name="settings_mode_title">মোড</string>
+    <string name="settings_mode_system">সিস্টেম</string>
+    <string name="settings_mode_light">লাইট</string>
+    <string name="settings_mode_dark">ডার্ক</string>
     <string name="settings_theme_classic_green">Classic Green</string>
     <string name="settings_menu_change_password">পাসওয়ার্ড পরিবর্তন করুন</string>
     <string name="settings_menu_payment_methods">পেমেন্ট মেথড</string>

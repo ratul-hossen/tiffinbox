@@ -27,6 +27,7 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.ui.components.QuantityStepper
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +82,7 @@ fun MealDetailScreen(
                         canIncrease = quantity < meal.availableQuantity
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Button(
+                    TiffinButton(
                         onClick = {
                             CartStore.add(meal, quantity)
                             onAddedToCart()

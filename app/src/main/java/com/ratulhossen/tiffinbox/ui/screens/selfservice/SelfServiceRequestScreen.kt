@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSelfServiceRepository
 import kotlinx.coroutines.launch
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +95,7 @@ fun SelfServiceRequestScreen(onBack: () -> Unit, onRequestCreated: (requestId: S
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Button(
+            TiffinButton(
                 onClick = {
                     errorMessage = null
                     if (pickupAddress.isBlank() || dropAddress.isBlank()) {
