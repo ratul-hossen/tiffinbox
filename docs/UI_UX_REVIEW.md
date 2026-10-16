@@ -35,7 +35,7 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | H2 | Header-এর গোল button ৪৪dp | Android-এর touch target guideline ৪৮dp। | ৪৮dp করা। | ✅ Fixed |
 | H3 | "See all" ভরাট লাল pill | প্রতিটা section-এ একটা করে ভারী লাল button, চোখ খাবার থেকে সরে যায়। Primary action মনে হয়, অথচ secondary। | Primary রঙের হালকা text link + ছোট arrow। | ✅ Fixed |
 | H4 | Header gradient-এর রং ঘুরে ঘুরে লাল থেকে কমলায় যায় | এক screenshot-এ লাল, আরেকটায় কমলা। Brand রং স্থির মনে হয় না। | রং-বদল শুধু লাল → গাঢ় লাল → প্রায়-কালো লাল। Background-এর amber-বাদামি আভাও সরানো। | ✅ Fixed |
-| H5 | "Today's pick" banner আর "AI Recommended" একই meal দুবার দেখায় | Duplicate content, জায়গা নষ্ট। | Banner-এ থাকা meal নিচের list থেকে বাদ দেওয়া। | 🕓 Later |
+| H5 | "Today's pick" banner আর "AI Recommended" একই meal দুবার দেখায় | Duplicate content, জায়গা নষ্ট। | Banner-এ থাকা meal নিচের list থেকে বাদ দেওয়া। | ✅ Fixed |
 | H6 | Profile button শুধু একটা generic person icon | ব্যক্তিগত মনে হয় না। | User-এর নামের প্রথম অক্ষর দেখানো। | 🕓 Later |
 | H7 | Points chip-এ "🍙 ⚡0" | নতুন user বোঝে না এটা কী। | ০ point হলে ছোট করে দেখানো বা label দেওয়া। | ❓ Owner |
 | H8 | Chat icon সবুজ, header লাল/কমলা | সবুজ-লাল একসাথে খিটখিটে লাগে। তবে WhatsApp-এর মতো সবুজ রাখা আগের সিদ্ধান্ত। | এখনকার মতো রাখা। Owner চাইলে সাদা icon + ছোট সবুজ dot। | ❓ Owner |
@@ -45,7 +45,7 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | # | সমস্যা | কেন সমস্যা | সমাধান | Status |
 |---|---|---|---|---|
 | C1 | Distance "2635.8 km" | দশমিকসহ বড় সংখ্যা পড়তে কষ্ট, ভাঙা data মনে হয়। | ১০ km-এর বেশি হলে পূর্ণ সংখ্যা, হাজারে comma ("2,636 km")। | ✅ Fixed |
-| C2 | নতুন chef-এর rating "0.0 (0)" | ০ star মানে খারাপ chef মনে হয়, আসলে review-ই হয়নি। | Review না থাকলে "New" badge। | ❓ Owner (নতুন লেখা) |
+| C2 | নতুন chef-এর rating "0.0 (0)" | ০ star মানে খারাপ chef মনে হয়, আসলে review-ই হয়নি। | Review না থাকলে "New" / "নতুন" badge (card, Chef Detail, Meal Details)। | ✅ Fixed |
 | C4 | "Recommended" অংশে ২,৬০০ km দূরের kitchen-ও আসত | যে deliver করতে পারবে না তাকে recommend করলে user-এর বিশ্বাস কমে। | সব recommendation (chef, AI meal, Today's banner, chef list) শুধু ১০ km-এর মধ্যে। | ✅ Fixed (owner-এর সিদ্ধান্ত) |
 | C3 | Kitchen photo না থাকলে বড় gradient box-এ একটা emoji | Card-এর ৬০% জায়গা খালি লাগে। | Chef-কে photo দেওয়ার nudge আগেই আছে। Placeholder-এ সূক্ষ্ম pattern দেওয়া যায়। | 🕓 Later |
 
@@ -56,7 +56,7 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | M1 | Dietary / Allergen chip-গুলো চাপা যায় (ripple) কিন্তু কিছু হয় না | Button-এর মতো দেখায়, ভুল affordance। | Click ছাড়া সাধারণ pill। | ✅ Fixed |
 | M2 | Allergen না থাকলেও খালি section বা "None" chip | কোনো তথ্য নেই, জায়গা নষ্ট। | Allergen না থাকলে পুরো section লুকানো। | ✅ Fixed |
 | M3 | "5 plates left today" লাল লেখা | লাল রং error-এর মতো দেখায়। | সাধারণত tertiary (amber) রং, ৩ বা তার কম থাকলে লাল। | ✅ Fixed |
-| M4 | কোন chef-এর রান্না, rating কত, তা এই page-এ নেই | Order-এর আগে সবচেয়ে জরুরি তথ্যের একটা। | নামের নিচে kitchen নাম + rating, tap করলে Chef Detail। | 🕓 Later |
+| M4 | কোন chef-এর রান্না, rating কত, তা এই page-এ নেই | Order-এর আগে সবচেয়ে জরুরি তথ্যের একটা। | নামের নিচে "Cooked by" row: kitchen-এর ছবি, নাম, rating বা New; চাপলে Chef Detail। | ✅ Fixed |
 | M5 | Description-এ পুরোনো default "নতুন যোগ করা মিল" | পুরোনো build-এর data। Code-এ আর আসে না। | Chef Menu Manager থেকে বদলাতে পারে। | ❓ Owner (data) |
 
 ## Role Selection
@@ -71,7 +71,7 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | # | সমস্যা | কেন সমস্যা | সমাধান | Status |
 |---|---|---|---|---|
 | G1 | Cart-এ meal-এর ছবি | Emoji-র বদলে এখন আসল ছবি। | — | ভালো |
-| G2 | পুরো app গাঢ় লাল/বাদামি background-এ গাঢ় card | Card আর background-এর পার্থক্য কম, সব একরকম লাগে। | Card-এ একটু হালকা surface বা সূক্ষ্ম border। Light mode-ও যাচাই করা দরকার। | 🕓 Later |
+| G2 | পুরো app গাঢ় লাল/বাদামি background-এ গাঢ় card | Card আর background-এর পার্থক্য কম, সব একরকম লাগে। | Card-এ সূক্ষ্ম hairline border (`cardEdge()`), আর background-এর রঙিন আভা হালকা করা। | ✅ Fixed |
 | G3 | Emoji লেখার ভেতরে ("🍙 ⚡0", "✨ Today's pick") | TalkBack emoji-র নাম পড়ে শোনায়। | Emoji-গুলোকে আলাদা, screen reader থেকে লুকানো element করা। | 🕓 Later |
 
 ## Motion: Home-এর plate orbit অন্য কোথাও (owner-এর অনুরোধ)
@@ -97,6 +97,6 @@ Orbit-টা কেন ভালো লাগে: এটা "ঘুরে, থ�
 
 ## পরের ধাপ
 
-1. 🕓 Later-এর কাজগুলো এই ক্রমে: H5 → M4 → G2 → H6 → C3 → G3।
+1. 🕓 Later-এর কাজগুলো এই ক্রমে: H6 → C3 → G3।
 2. ❓ Owner-এর ৫টা সিদ্ধান্ত (H7, H8, C2, M5, R1) পেলে সেগুলো করা হবে।
 3. নতুন build-এর screenshot পেলে এই review আবার update করা হবে।

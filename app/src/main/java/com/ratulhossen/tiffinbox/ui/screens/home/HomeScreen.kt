@@ -225,6 +225,13 @@ fun HomeScreen(
         }
     }
 
+    // The AI row below skips whatever the banner above already shows, so the
+    // same meal never appears twice on Home.
+    val aiListMeals = remember(aiMealsShown, heroMeals) {
+        val inBanner = heroMeals.map { it.id }.toSet()
+        aiMealsShown.filter { it.id !in inBanner }
+    }
+
     val nearbyChefs = remember(visibleChefs, hasRealDistances) {
         val sorted = visibleChefs.sortedBy { it.distanceKm }
         if (hasRealDistances) sorted.filter { it.distanceKm <= NEARBY_RADIUS_KM } else sorted
@@ -605,7 +612,7 @@ fun HomeScreen(
             }
         }
 
-        if (aiMealsShown.isNotEmpty()) {
+        if (aiListMeals.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))
             Text(
                 stringResource(R.string.home_section_ai_recommended),
@@ -617,7 +624,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(aiMealsShown, key = { it.id }) { meal ->
+                items(aiListMeals, key = { it.id }) { meal ->
                     MealCard(
                         meal = meal,
                         modifier = Modifier.width(220.dp),

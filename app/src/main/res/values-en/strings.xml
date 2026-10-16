@@ -210,6 +210,9 @@
     <!-- ChefDetailScreen -->
     <string name="chef_detail_owner_by">by %1$s</string>
     <string name="chef_rating_summary">%1$s  (%2$s orders)  •  %3$s km away</string>
+    <string name="chef_new_badge">New</string>
+    <string name="chef_distance_away">%1$s km away</string>
+    <string name="meal_by_kitchen">Cooked by</string>
     <string name="chef_detail_view_subscription_button">View Weekly / Monthly Subscription</string>
     <string name="chef_detail_rating_breakdown_title">Rating Breakdown</string>
     <string name="chef_detail_videos_title">Videos</string>

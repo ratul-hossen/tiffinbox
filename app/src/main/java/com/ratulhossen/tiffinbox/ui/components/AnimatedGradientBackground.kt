@@ -36,7 +36,8 @@ fun AnimatedGradientBackground(
 ) {
     val gradient = LocalBrandGradient.current
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val blobAlpha = if (isDark) 0.38f else 0.26f
+    // Kept soft so cards (with their cardEdge() hairline) clearly sit on top of it.
+    val blobAlpha = if (isDark) 0.28f else 0.22f
     val colorA = gradient.start.copy(alpha = blobAlpha)
     val colorB = gradient.end.copy(alpha = blobAlpha)
     // Third blob stays inside the brand pair (it used tertiary, which turned the

@@ -59,6 +59,7 @@ fun ChefCard(
             ),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = cardEdge(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column {
@@ -155,17 +156,22 @@ fun ChefCard(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Star,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                    if (isNewKitchen(chef)) {
+                        // No rating yet: "New" instead of a misleading "0.0 (0)".
+                        NewKitchenBadge()
+                    } else {
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         stringResource(R.string.chef_card_distance_km, formatDistanceKm(chef.distanceKm)),
@@ -204,3 +210,24 @@ fun ChefCard(
 internal fun formatDistanceKm(km: Double): String =
     if (km < 10) String.format(java.util.Locale.US, "%.1f", km)
     else String.format(java.util.Locale.US, "%,d", kotlin.math.round(km).toLong())
+
+/** A kitchen nobody has rated yet. */
+fun isNewKitchen(chef: ChefUi): Boolean = chef.overallRating <= 0.0
+
+/** Small brand pill shown instead of a rating for kitchens with no reviews yet. */
+@Composable
+fun NewKitchenBadge(modifier: Modifier = Modifier) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+    ) {
+        Text(
+            stringResource(R.string.chef_new_badge),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
+    }
+}

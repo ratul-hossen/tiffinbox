@@ -1,6 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.chef
 
 import com.ratulhossen.tiffinbox.ui.components.formatDistanceKm
+import com.ratulhossen.tiffinbox.ui.components.isNewKitchen
+import com.ratulhossen.tiffinbox.ui.components.NewKitchenBadge
 import com.ratulhossen.tiffinbox.util.ImageCompressor
 import com.ratulhossen.tiffinbox.data.firebase.ReviewUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
@@ -161,21 +163,27 @@ fun ChefDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            stringResource(
-                                R.string.chef_rating_summary,
-                                chef.overallRating.toString(),
-                                chef.totalOrders.toString(),
-                                formatDistanceKm(chef.distanceKm)
+                        if (isNewKitchen(chef)) {
+                            NewKitchenBadge()
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.chef_distance_away, formatDistanceKm(chef.distanceKm)))
+                        } else {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(16.dp)
                             )
-                        )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                stringResource(
+                                    R.string.chef_rating_summary,
+                                    chef.overallRating.toString(),
+                                    chef.totalOrders.toString(),
+                                    formatDistanceKm(chef.distanceKm)
+                                )
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(chef.bio, style = MaterialTheme.typography.bodyMedium)

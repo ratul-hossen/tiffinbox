@@ -26,6 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.NewKitchenBadge
+import com.ratulhossen.tiffinbox.ui.components.isNewKitchen
+import com.ratulhossen.tiffinbox.ui.components.cardEdge
+import com.ratulhossen.tiffinbox.data.model.ChefUi
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
 import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
 import com.ratulhossen.tiffinbox.data.CartStore
 import com.ratulhossen.tiffinbox.data.SampleData
@@ -45,7 +51,8 @@ import androidx.compose.material3.TopAppBarDefaults
 fun MealDetailScreen(
     mealId: String,
     onBack: () -> Unit,
-    onAddedToCart: () -> Unit
+    onAddedToCart: () -> Unit,
+    onChefClick: (String) -> Unit = {}
 ) {
     var mealState by remember(mealId) { mutableStateOf<MealUi?>(SampleData.mealById(mealId)) }
     var isLoading by remember(mealId) { mutableStateOf(mealState == null) }
@@ -64,6 +71,9 @@ fun MealDetailScreen(
         return
     }
     val meal = mealState!!
+    // Who cooks it and how they're rated - the key thing to know before ordering.
+    var chef by remember(meal.chefId) { mutableStateOf<ChefUi?>(null) }
+    LaunchedEffect(meal.chefId) { chef = FirestoreCatalogRepository.getChef(meal.chefId) }
     // The header/photo runs behind the status bar - keep its icons white.
     LightStatusBarIcons()
     var quantity by remember(mealId) { mutableIntStateOf(1) }
@@ -172,6 +182,10 @@ fun MealDetailScreen(
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(meal.name, style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(6.dp))
+                chef?.let { c ->
+                    ChefByline(chef = c, onClick = { onChefClick(c.id) })
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
                 Text(
                     stringResource(R.string.meal_price_portion, meal.price, meal.portionSize),
                     style = MaterialTheme.typography.titleMedium,
@@ -241,6 +255,65 @@ private fun InfoPillRow(labels: List<String>) {
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                 )
             }
+        }
+    }
+}
+
+/** "Cooked by" row: kitchen photo, name and rating (or "New"); opens the kitchen. */
+@Composable
+private fun ChefByline(chef: ChefUi, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        border = cardEdge(),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Base64Thumbnail(
+                base64 = chef.photoBase64,
+                emoji = chef.emoji,
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                emojiFontSize = 22.sp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.meal_by_kitchen),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    chef.kitchenName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+            }
+            if (isNewKitchen(chef)) {
+                NewKitchenBadge()
+            } else {
+                Icon(
+                    Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    stringResource(R.string.chef_card_rating_orders, chef.overallRating.toString(), chef.totalOrders.toString()),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

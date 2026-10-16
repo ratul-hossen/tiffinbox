@@ -48,6 +48,7 @@ fun MealCard(
             ),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = cardEdge(),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(

@@ -426,7 +426,8 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             MealDetailScreen(
                 mealId = mealId,
                 onBack = { navController.popBackStack() },
-                onAddedToCart = { navController.navigate(Routes.CART) }
+                onAddedToCart = { navController.navigate(Routes.CART) },
+                onChefClick = { chefId -> navController.navigate(Routes.chefDetail(chefId)) }
             )
         }
 

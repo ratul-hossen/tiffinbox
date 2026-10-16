@@ -686,6 +686,13 @@ and the `role_customer` photo unchanged.
   `LightStatusBarIcons()` (ui/components/StatusBarIcons.kt) keeps the status
   bar icons white on Home and Meal Details (both draw behind the status bar;
   in light mode the icons were dark on red/dark).
+- **Review follow-ups (owner said do them):** unrated kitchens show a
+  "New" badge (`isNewKitchen()` / `NewKitchenBadge()` in ChefCard.kt) on chef
+  cards, Chef Detail and Meal Details instead of "0.0 (0)"; Home's AI row
+  skips meals already in the banner (`aiListMeals`); Meal Details has a
+  "Cooked by" row (kitchen photo, name, rating/New, opens Chef Detail -
+  `onChefClick`); content cards get a hairline `cardEdge()` border and the
+  backdrop blobs are softer (dark 0.28 / light 0.22) so cards separate.
 
 ## UI/UX self-review (2026-10-16)
 
