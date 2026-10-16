@@ -98,9 +98,17 @@ export default function OrderDetail({ order, chefName, onClose, onRemove }: Prop
               <div className="font-medium truncate">{order.paymentTransactionId}</div>
             </div>
           )}
-          <div className="bg-apple-bg rounded-xl px-3 py-2 col-span-2">
+          <div className="bg-apple-bg rounded-xl px-3 py-2">
             <div className="text-xs text-apple-secondary">Placed at</div>
             <div className="font-medium">{formatDateTime(order.placedAt)}</div>
+          </div>
+          <div className="bg-apple-bg rounded-xl px-3 py-2">
+            <div className="text-xs text-apple-secondary">Estimated delivery</div>
+            <div className="font-medium">
+              {order.estimatedDeliveryMinutes && order.placedAt
+                ? `~${order.estimatedDeliveryMinutes} min (by ${new Date(order.placedAt + order.estimatedDeliveryMinutes * 60000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })})`
+                : "–"}
+            </div>
           </div>
         </div>
 
@@ -170,6 +178,24 @@ export default function OrderDetail({ order, chefName, onClose, onRemove }: Prop
             <span className="text-apple-secondary">Platform fee</span>
             <span>{formatCurrency(order.platformFee ?? 0)}</span>
           </div>
+          {(order.discount ?? 0) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-apple-secondary">Coupon {order.couponCode}</span>
+              <span>-{formatCurrency(order.discount ?? 0)}</span>
+            </div>
+          )}
+          {(order.rankDiscount ?? 0) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-apple-secondary">Rewards rank discount</span>
+              <span>-{formatCurrency(order.rankDiscount ?? 0)}</span>
+            </div>
+          )}
+          {(order.pointsRedeemed ?? 0) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-apple-secondary">Points used ({order.pointsRedeemed})</span>
+              <span>-{formatCurrency(Math.floor((order.pointsRedeemed ?? 0) / 10))}</span>
+            </div>
+          )}
           <div className="flex justify-between text-base font-semibold border-t border-apple-border pt-2 mt-1">
             <span>Total</span>
             <span>{formatCurrency(order.totalPrice ?? 0)}</span>

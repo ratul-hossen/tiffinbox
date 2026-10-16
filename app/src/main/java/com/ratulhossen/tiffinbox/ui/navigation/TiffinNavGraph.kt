@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.navigation
 
+import com.ratulhossen.tiffinbox.ui.screens.rewards.RewardsScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefCouponsScreen
 import com.ratulhossen.tiffinbox.ui.screens.profile.EditProfileScreen
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -216,6 +217,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
                 onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
                 onEditProfileClick = { navController.navigate(Routes.EDIT_PROFILE) },
+                onRewardsClick = { navController.navigate(Routes.REWARDS) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }
@@ -301,6 +303,10 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onOpenCoupons = { navController.navigate(Routes.CHEF_COUPONS) },
                 onOpenDeliveryOption = { navController.navigate(Routes.DELIVERY_OPTION) }
             )
+        }
+
+        composable(Routes.REWARDS) {
+            RewardsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.DELIVERY_OPTION) {

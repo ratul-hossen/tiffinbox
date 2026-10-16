@@ -129,11 +129,28 @@ data class PastOrderUi(
     val placedOn: String,
     val chefId: String = "",
     /** "customer" / "auto_expired" / "chef" / "admin" when [status] is CANCELLED; blank otherwise. */
-    val cancelReason: String = ""
+    val cancelReason: String = "",
+    val placedAtMillis: Long = 0L,
+    /** Estimated minutes from placing to delivery (0 = older order without an estimate). */
+    val estimatedDeliveryMinutes: Int = 0,
+    /** TiffinBox Points this order earned (only once Delivered). */
+    val pointsEarned: Int = 0
 ) {
-    /** A customer may cancel only while the chef hasn't accepted yet. */
-    val canCancel: Boolean get() = status == OrderStage.PLACED
+    /** Milliseconds left in the customer's cancel window (0 = can't cancel any more). */
+    fun cancelMillisLeft(now: Long = System.currentTimeMillis()): Long =
+        if (status != OrderStage.PLACED || placedAtMillis <= 0) 0L
+        else (placedAtMillis + CUSTOMER_CANCEL_WINDOW_MS - now).coerceAtLeast(0L)
+
+    /** A customer may cancel only within 5 minutes of placing, and only before the chef accepts. */
+    val canCancel: Boolean get() = cancelMillisLeft() > 0
+
+    /** Estimated delivery time as epoch millis, or 0 when unknown. */
+    val estimatedDeliveryAt: Long
+        get() = if (estimatedDeliveryMinutes > 0 && placedAtMillis > 0) placedAtMillis + estimatedDeliveryMinutes * 60_000L else 0L
 }
+
+/** Customers can cancel an order for this long after placing it. */
+const val CUSTOMER_CANCEL_WINDOW_MS = 5L * 60 * 1000
 
 /** [days] is the package's total duration, matching the "Package Type: 7/10/15/30 Days" reference screen. */
 enum class SubscriptionPlan(val days: Int) {

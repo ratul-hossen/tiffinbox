@@ -151,6 +151,9 @@ export interface Order {
   cancelledAt?: number;
   couponCode?: string;
   discount?: number; // amount taken off by couponCode
+  pointsRedeemed?: number; // TiffinBox Points spent (10 points = ৳1)
+  rankDiscount?: number; // taka off from the customer's rewards rank
+  estimatedDeliveryMinutes?: number;
 }
 
 export interface Review {

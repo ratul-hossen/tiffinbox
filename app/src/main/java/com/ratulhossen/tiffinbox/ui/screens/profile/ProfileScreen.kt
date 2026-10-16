@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.profile
 
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Edit
@@ -44,7 +45,8 @@ fun ProfileScreen(
     onNotificationsClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
     onMyOrdersClick: () -> Unit = {},
-    onFavoritesClick: () -> Unit = {}
+    onFavoritesClick: () -> Unit = {},
+    onRewardsClick: () -> Unit = {}
 ) {
     val fallbackName = stringResource(R.string.profile_demo_user_name)
     val user = FirebaseAuthRepository.currentUser
@@ -52,6 +54,7 @@ fun ProfileScreen(
     val subtitle = user?.email ?: stringResource(R.string.profile_demo_phone)
 
     val menuItems = listOf(
+        ProfileMenuItem(Icons.Filled.EmojiEvents, stringResource(R.string.rewards_menu), onRewardsClick),
         ProfileMenuItem(Icons.Filled.Edit, stringResource(R.string.edit_profile_menu), onEditProfileClick),
         ProfileMenuItem(Icons.Filled.Receipt, stringResource(R.string.profile_menu_my_orders), onMyOrdersClick),
         ProfileMenuItem(Icons.Filled.DateRange, stringResource(R.string.profile_menu_my_subscriptions), onSubscriptionsClick),

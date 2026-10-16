@@ -515,6 +515,43 @@ colorful, image-rich, multiple user-selectable themes, new buttons):
   banner. Specials are badged on MealCard / MealDetail and listed first on
   ChefDetail.
 
+## Points & ranks, delivery ETA, 5-min cancel, animated header (2026-10-16)
+
+From the owner's (and a friend's) feedback + a reference food-app video.
+- **TiffinBox Points** (`domain/Rewards.kt`): 1 point per ৳10 of a
+  *Delivered* order; 10 points = ৳1 off at checkout (max 20% of the food
+  subtotal). The balance is **derived from the customer's own orders**
+  (`FirestoreOrderRepository.getMyRewards()`: earned on Delivered minus
+  `pointsRedeemed` on non-cancelled orders), never stored as an editable
+  number, so it can't be inflated without Cloud Functions; cancelled orders
+  refund automatically. Ranks by lifetime points (original anime-flavoured
+  titles, no third-party IP): Rookie Eater 0 → Food Ninja 100 (2% off) →
+  Snack Pirate 300 (4%) → Flavor Samurai 700 (6%) → Legendary Glutton 1500
+  (8% + free delivery), rank discount capped ৳60. Checkout shows rank, the
+  "use points" switch and the points this order will earn; orders store
+  `pointsRedeemed` / `rankDiscount` (deliveryFee 0 when free). Game-style
+  `RewardsScreen` (route `rewards`; Profile menu + the ⚡ points chip in the
+  Home header): bouncing rank badge, XP bar, rank ladder, how it works.
+- **Delivery ETA**: `Rewards.estimatedDeliveryMinutes(distanceKm)` = 20 min
+  prep + 4 min/km + 5, rounded to 5 (haversine kitchen→customer, no Maps).
+  Shown at checkout, stored as `estimatedDeliveryMinutes`, shown as "by
+  h:mm" on in-progress orders and in admin-web's order drawer.
+- **5-minute cancel window**: `CUSTOMER_CANCEL_WINDOW_MS`; Orders shows a
+  live countdown on the Cancel button; `cancelOrderByCustomer()` re-checks in
+  its transaction and `firestore.rules` enforces it (`cancelReason ==
+  "customer"` only < 5.5 min after `placedAt`; `"auto_expired"` only > 12h).
+- **Animated Home header** (`ui/components/AnimatedHeader.kt`):
+  `shiftingBrandBackground()` drifts through the theme colours (draw-phase
+  only) and `FoodOrbit` spins food photos around a central plate, like the
+  reference video.
+- **Planned art direction (owner, 2026-10-16):** replace the realistic
+  "AI-looking" photos with **anime / cartoon** art with a One Piece +
+  Naruto *vibe* (pirate-adventure + ninja energy) for a university-student
+  audience - but **original characters only**; never use those series'
+  characters, logos or names (copyright/trademark; Play Store takedown
+  risk). Owner generates the images; keep the same `drawable-nodpi`
+  filenames so they drop in.
+
 ## Animated gradient backdrop everywhere (2026-10-16)
 
 Owner felt plain white screens looked dull and asked for an animated,

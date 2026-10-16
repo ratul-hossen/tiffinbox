@@ -1,5 +1,8 @@
 package com.ratulhossen.tiffinbox.ui.screens.home
 
+import com.ratulhossen.tiffinbox.domain.RewardsStatus
+import com.ratulhossen.tiffinbox.ui.components.shiftingBrandBackground
+import com.ratulhossen.tiffinbox.ui.components.FoodOrbit
 import androidx.compose.ui.graphics.RectangleShape
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
@@ -69,7 +72,8 @@ fun HomeScreen(
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onSeeAllClick: (String) -> Unit,
-    onLocationClick: () -> Unit = {}
+    onLocationClick: () -> Unit = {},
+    onRewardsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf<String?>(null) }
@@ -83,6 +87,10 @@ fun HomeScreen(
     // The customer's own saved (default) address - the same point used for
     // the distance math below, so the header and "nearby" always agree.
     var myAddress by remember { mutableStateOf<String?>(null) }
+    var rewards by remember { mutableStateOf<RewardsStatus?>(null) }
+    LaunchedEffect(Unit) {
+        if (FirebaseAuthRepository.currentUser != null) rewards = FirestoreOrderRepository.getMyRewards()
+    }
 
     LaunchedEffect(Unit) {
         // "AI Recommended For You" - ranked by MlRecommendModel.kt, a logistic
@@ -175,12 +183,13 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp)
     ) {
-        // Gradient header: location, greeting, profile, search.
+        // Header: location, points, profile, greeting + orbiting food
+        // plates, search - on a slowly colour-shifting theme gradient.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                .background(brandGradient())
+                .shiftingBrandBackground()
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 22.dp)
         ) {
             Column {
@@ -215,15 +224,25 @@ fun HomeScreen(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            stringResource(R.string.home_greeting),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    rewards?.let { r ->
+                        // Points chip -> Rewards screen.
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.22f),
+                            modifier = Modifier.clickable(onClick = onRewardsClick)
+                        ) {
+                            Text(
+                                "${r.rank.emoji} ⚡${r.balance}",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
                     Box(
                         modifier = Modifier
                             .size(46.dp)
@@ -241,7 +260,37 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.home_greeting),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            lineHeight = 28.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            stringResource(R.string.home_header_tagline),
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    FoodOrbit(
+                        center = R.drawable.hero_food,
+                        satellites = listOf(
+                            R.drawable.cat_breakfast,
+                            R.drawable.cat_lunch,
+                            R.drawable.cat_snack,
+                            R.drawable.cat_dinner,
+                            R.drawable.cat_dessert
+                        ),
+                        size = 128.dp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     onClick = onSearchClick,
                     shape = CircleShape,

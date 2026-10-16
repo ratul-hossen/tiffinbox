@@ -285,8 +285,8 @@
     <string name="orders_cancel_button">Cancel order</string>
     <string name="orders_cancel_keep_button">Keep it</string>
     <string name="orders_cancel_confirm_title">Cancel this order?</string>
-    <string name="orders_cancel_confirm_body">The chef hasn\'t accepted it yet, so it can still be cancelled.</string>
-    <string name="orders_cancel_failed">Couldn\'t cancel - the chef may have already accepted it</string>
+    <string name="orders_cancel_confirm_body">You\'re still within 5 minutes of ordering, so it can be cancelled now.</string>
+    <string name="orders_cancel_failed">Couldn\'t cancel — the 5 minutes are up or the chef already accepted it</string>
     <string name="orders_waiting_hint">Auto-cancels if the chef doesn\'t accept within 12 hours</string>
     <string name="orders_cancel_reason_expired">Auto-cancelled: the chef didn\'t accept within 12 hours</string>
     <string name="orders_cancel_reason_customer">You cancelled this order</string>
@@ -548,4 +548,35 @@
     <string name="setup_step_meal_photos">Add photos to all meals (%1$d / %2$d)</string>
     <string name="setup_step_special">Pick today\'s special</string>
     <string name="setup_step_video">Post a cooking video (below)</string>
+    <string name="home_header_tagline">What\'s for today? Fresh home cooking nearby 🍛</string>
+    <string name="rewards_menu">My points &amp; rank</string>
+    <string name="rewards_title">TiffinBox Points</string>
+    <string name="rewards_level_badge">LEVEL %1$d</string>
+    <string name="rewards_level_title">Lv.%1$d · %2$s</string>
+    <string name="rewards_balance">⚡ %1$d points</string>
+    <string name="rewards_to_next">%1$d more points to level up → %2$s %3$s</string>
+    <string name="rewards_max_rank">🏆 You\'ve reached the top rank!</string>
+    <string name="rewards_stats">%1$d points earned in total · %2$d delivered orders</string>
+    <string name="rewards_ladder_title">Rank ladder</string>
+    <string name="rewards_needs_points">%1$d+ points</string>
+    <string name="rewards_perk_discount">%1$d%% off every order</string>
+    <string name="rewards_perk_free_delivery">free delivery</string>
+    <string name="rewards_you">You</string>
+    <string name="rewards_how_title">How it works</string>
+    <string name="rewards_how_earn">1 point for every ৳%1$d of a delivered order</string>
+    <string name="rewards_how_spend">At checkout, %1$d points = ৳1 off (up to %2$d%% of the food price)</string>
+    <string name="rewards_how_rank">More points, higher rank — bigger discounts, and free delivery at the top rank</string>
+    <string name="rewards_how_cancel">Points spent on a cancelled order come back automatically</string>
+    <string name="checkout_rank_line">%1$s %2$s · ⚡ %3$d points</string>
+    <string name="checkout_use_points">Use %1$d points for ৳%2$d off</string>
+    <string name="checkout_points_not_enough">You need at least %1$d points to spend them</string>
+    <string name="checkout_points_will_earn">You\'ll earn +%1$d points when this is delivered</string>
+    <string name="checkout_eta">⏱ Estimated delivery: ~%1$d min (by %2$s)</string>
+    <string name="checkout_free_delivery_row">🐉 Rank bonus: free delivery</string>
+    <string name="checkout_rank_discount_row">%1$s rank discount (%2$d%%)</string>
+    <string name="checkout_points_row">⚡ %1$d points used</string>
+    <string name="orders_points_earned">⚡ +%1$d points earned</string>
+    <string name="orders_eta">⏱ Estimated delivery by %1$s</string>
+    <string name="orders_cancel_window_hint">You can cancel within 5 minutes of ordering</string>
+    <string name="orders_cancel_with_timer">Cancel (%1$d:%2$02d)</string>
 </resources>
