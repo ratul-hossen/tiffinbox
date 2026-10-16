@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Order } from "../types";
@@ -105,6 +105,31 @@ export default function OrdersPage({ search }: Props) {
     }
   }
 
+  /** Removes one order: snapshot to the Recycle Bin, then delete. */
+  async function removeOrder(order: Order) {
+    await softDelete("orders", order.id, order, `Order ${order.id.slice(0, 8)}…`);
+    await logActivity("Removed order (moved to recycle bin)", "orders", order.id, { status: order.status ?? "" });
+  }
+
+  const cancelledOrders = useMemo(() => orders.filter((o) => o.status === "Cancelled"), [orders]);
+
+  /** One click to clear every already-cancelled order into the Recycle Bin. */
+  async function removeAllCancelled() {
+    if (cancelledOrders.length === 0) return;
+    if (!confirm(`Move all ${cancelledOrders.length} cancelled order(s) to the Recycle Bin?`)) return;
+    setBusyId("__bulk__");
+    try {
+      for (const o of cancelledOrders) await removeOrder(o);
+    } catch (err) {
+      alert(
+        (err instanceof Error ? err.message : "Failed to remove orders.") +
+          "\n\nIf this says 'Missing or insufficient permissions', publish the latest firestore.rules in Firebase Console.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function exportCsv() {
     const header = ["Order ID", "Chef", "Customer ID", "Items", "Total", "Status", "Placed At"];
     const rows = filtered.map((o) => [
@@ -155,6 +180,15 @@ export default function OrdersPage({ search }: Props) {
               </option>
             ))}
           </select>
+          {cancelledOrders.length > 0 && (
+            <button
+              onClick={removeAllCancelled}
+              disabled={busyId === "__bulk__"}
+              className="flex items-center gap-1.5 text-sm border border-apple-red/40 text-apple-red hover:bg-apple-red/10 rounded-lg px-3 py-1.5 font-medium disabled:opacity-50 transition-colors duration-150"
+            >
+              <Trash2 size={14} /> {busyId === "__bulk__" ? "Removing…" : `Remove cancelled (${cancelledOrders.length})`}
+            </button>
+          )}
           <button
             onClick={exportCsv}
             className="flex items-center gap-1.5 text-sm bg-apple-blue hover:bg-apple-blue-dark text-white rounded-lg px-3 py-1.5 font-medium transition-colors duration-150"
@@ -229,7 +263,12 @@ export default function OrdersPage({ search }: Props) {
         )}
       </div>
 
-      <OrderDetail order={detailOrder} chefName={chefName(detailOrder?.chefId)} onClose={() => setDetailOrderId(null)} />
+      <OrderDetail
+        order={detailOrder}
+        chefName={chefName(detailOrder?.chefId)}
+        onClose={() => setDetailOrderId(null)}
+        onRemove={removeOrder}
+      />
     </div>
   );
 }

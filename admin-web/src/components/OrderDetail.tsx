@@ -1,4 +1,5 @@
-import { Check, X } from "lucide-react";
+import { useState } from "react";
+import { Check, Trash2, X } from "lucide-react";
 import DetailDrawer from "./ui/DetailDrawer";
 import Badge from "./ui/Badge";
 import type { Order } from "../types";
@@ -9,6 +10,8 @@ interface Props {
   order: Order | null;
   chefName: string;
   onClose: () => void;
+  /** Moves the order to the Recycle Bin (OrdersPage). */
+  onRemove?: (order: Order) => Promise<void>;
 }
 
 function StatusTimeline({ status }: { status?: string }) {
@@ -60,7 +63,8 @@ function StatusTimeline({ status }: { status?: string }) {
   );
 }
 
-export default function OrderDetail({ order, chefName, onClose }: Props) {
+export default function OrderDetail({ order, chefName, onClose, onRemove }: Props) {
+  const [removing, setRemoving] = useState(false);
   if (!order) return null;
   const items = order.items ?? [];
 
@@ -177,6 +181,30 @@ export default function OrderDetail({ order, chefName, onClose }: Props) {
             {order.status ?? "Placed"}
           </Badge>
         </div>
+
+        {onRemove && (
+          <button
+            disabled={removing}
+            onClick={async () => {
+              if (!confirm("Remove this order? It'll move to the Recycle Bin (restorable from there) and stop counting in revenue.")) return;
+              setRemoving(true);
+              try {
+                await onRemove(order);
+                onClose();
+              } catch (err) {
+                alert(
+                  (err instanceof Error ? err.message : "Failed to remove order.") +
+                    "\n\nIf this says 'Missing or insufficient permissions', publish the latest firestore.rules in Firebase Console.",
+                );
+              } finally {
+                setRemoving(false);
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-apple-red/40 text-apple-red hover:bg-apple-red/10 py-2.5 text-sm font-medium disabled:opacity-50 transition-colors duration-150"
+          >
+            <Trash2 size={15} /> {removing ? "Removing…" : "Remove order"}
+          </button>
+        )}
       </div>
     </DetailDrawer>
   );
