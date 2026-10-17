@@ -303,10 +303,16 @@ service cloud.firestore {
     // Added for the admin-web panel; lets the owning customer and admins
     // manage it (admins can also force-cancel from admin-web).
     match /subscriptions/{subscriptionId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow read: if isAdmin() || (isSignedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.chefId == request.auth.uid
+      ));
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow update, delete: if isAdmin() ||
-        (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow update: if isAdmin() || (isSignedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.chefId == request.auth.uid
+      ));
+      allow delete: if isAdmin();
     }
 
     // admin_activity_log/{logId} — append-only audit trail written by

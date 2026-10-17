@@ -22,19 +22,20 @@ export default function SubscriptionsPage({ search }: Props) {
       if (activeFilter === "active" && !s.isActive) return false;
       if (activeFilter === "inactive" && s.isActive) return false;
       if (q) {
-        const haystack = `${s.chefName ?? ""} ${s.chefId ?? ""} ${s.customerName ?? ""} ${s.customerPhone ?? ""} ${s.deliveryAddress ?? ""} ${s.paymentTransactionId ?? ""} ${s.id}`.toLowerCase();
+        const haystack = `${s.chefName ?? ""} ${s.chefId ?? ""} ${s.customerName ?? ""} ${s.customerPhone ?? ""} ${s.deliveryAddress ?? ""} ${s.paymentMethod ?? ""} ${s.paymentTransactionId ?? ""} ${s.plan ?? ""} ${s.id}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
   }, [subscriptions, activeFilter, search]);
 
-  async function forceCancel(subId: string) {
-    if (!confirm("Force-cancel this subscription?")) return;
+  async function toggleStatus(subId: string, makeActive: boolean) {
+    const actionLabel = makeActive ? "Reactivate" : "Force-cancel";
+    if (!confirm(`${actionLabel} this subscription?`)) return;
     setBusyId(subId);
     try {
-      await updateDoc(doc(db, "subscriptions", subId), { isActive: false });
-      await logActivity("Force-cancelled subscription", "subscriptions", subId);
+      await updateDoc(doc(db, "subscriptions", subId), { isActive: makeActive });
+      await logActivity(`${actionLabel}led subscription`, "subscriptions", subId);
     } finally {
       setBusyId(null);
     }
@@ -100,15 +101,13 @@ export default function SubscriptionsPage({ search }: Props) {
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
-                  {sub.isActive && (
-                    <button
-                      onClick={() => forceCancel(sub.id)}
-                      disabled={busyId === sub.id}
-                      className="text-xs text-apple-red hover:opacity-80 transition-opacity duration-150"
-                    >
-                      Force-cancel
-                    </button>
-                  )}
+                  <button
+                    onClick={() => toggleStatus(sub.id, !sub.isActive)}
+                    disabled={busyId === sub.id}
+                    className={`text-xs hover:opacity-80 transition-opacity duration-150 ${sub.isActive ? "text-apple-red" : "text-apple-blue font-medium"}`}
+                  >
+                    {sub.isActive ? "Cancel" : "Reactivate"}
+                  </button>
                 </td>
               </tr>
             ))}
