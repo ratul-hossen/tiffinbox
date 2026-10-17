@@ -108,7 +108,7 @@ fun HomeScreen(
     val context = LocalContext.current
     // The header/photo runs behind the status bar - keep its icons white.
     LightStatusBarIcons()
-    var selectedCategory by remember { mutableStateOf<String?>(defaultCategoryForCurrentHour()) }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
     var chefs by remember { mutableStateOf(FirestoreCatalogRepository.getCachedChefs()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     var catalogMeals by remember { mutableStateOf(FirestoreCatalogRepository.getCachedMeals()) }
@@ -676,6 +676,11 @@ fun HomeScreen(
             }
         }
 
+        // Weekly / monthly plans, highlighted for students.
+        if (chefs.isNotEmpty() && !nothingNearby) {
+            Spacer(modifier = Modifier.height(20.dp))
+            MealPlanPromoCard(onClick = onMealPlansClick, modifier = Modifier.padding(horizontal = 20.dp))
+        }
 
         if (recommendedChefs.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -921,16 +926,6 @@ private object HomeAddressCache {
 
     fun write(context: android.content.Context, uid: String, address: String) {
         context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putString(uid, address).apply()
-    }
-}
-
-private fun defaultCategoryForCurrentHour(): String {
-    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-    return when (hour) {
-        in 5..10 -> "Breakfast"
-        in 11..15 -> "Lunch"
-        in 16..18 -> "Snack"
-        else -> "Dinner"
     }
 }
 
