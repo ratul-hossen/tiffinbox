@@ -8,8 +8,10 @@ import kotlinx.coroutines.tasks.await
 
 /**
  * App-wide settings the admin sets in admin-web's App Settings page
- * (`app_config/settings`). Read once per app run and kept in memory; any
- * failure or missing value falls back to the built-in default.
+ * (`app_config/settings`). Cached in memory for [CACHE_TTL_MS] and then
+ * re-read, so an admin's change reaches a running app without a restart; any
+ * failure or missing value falls back to the last good value or the built-in
+ * default.
  */
 object FirestoreAppConfigRepository {
 
@@ -23,10 +25,22 @@ object FirestoreAppConfigRepository {
         val fewPlatesThreshold: Int = AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD
     )
 
+    /**
+     * How long a loaded config is reused before the next read refreshes it.
+     * Without Cloud Functions the app can't be pushed a change, so an admin's
+     * new fee or radius takes at most this long to reach a running app
+     * instead of waiting for a restart. One small document read per screen
+     * that asks after the window - cheap enough on the free Spark plan.
+     */
+    const val CACHE_TTL_MS = 5L * 60 * 1000
+
     @Volatile private var cached: AppConfig? = null
+    @Volatile private var cachedAt = 0L
+
+    private fun fresh(at: Long) = at > 0 && System.currentTimeMillis() - at < CACHE_TTL_MS
 
     suspend fun config(): AppConfig {
-        cached?.let { return it }
+        cached?.let { if (fresh(cachedAt)) return it }
         return try {
             val doc = FirebaseFirestore.getInstance().collection("app_config").document("settings").get().await()
             val defaults = DeliveryPricing()
@@ -46,12 +60,15 @@ object FirestoreAppConfigRepository {
                     ?: AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD
             ).also {
                 cached = it
+                cachedAt = System.currentTimeMillis()
                 AppConfigStore.platformFee = it.platformFee
                 AppConfigStore.preOrderMaxPlates = it.preOrderMaxPlates
                 AppConfigStore.fewPlatesThreshold = it.fewPlatesThreshold
             }
         } catch (e: Exception) {
-            AppConfig()
+            // Offline or unreadable: keep serving the last good config (or the
+            // defaults) rather than flip-flopping the prices mid-session.
+            cached ?: AppConfig()
         }
     }
 
@@ -72,7 +89,7 @@ object FirestoreAppConfigRepository {
      * single Firestore read.
      */
     suspend fun activeSurcharges(): List<DeliverySurcharge> {
-        cachedSurcharges?.let { return it }
+        cachedSurcharges?.let { if (fresh(surchargesCachedAt)) return it }
         return try {
             val now = System.currentTimeMillis()
             FirebaseFirestore.getInstance().collection("delivery_surcharges").get().await().documents
@@ -90,11 +107,15 @@ object FirestoreAppConfigRepository {
                         isActive = doc.getBoolean("isActive") ?: true
                     ).takeIf { it.isLiveAt(now) }
                 }
-                .also { cachedSurcharges = it }
+                .also {
+                    cachedSurcharges = it
+                    surchargesCachedAt = System.currentTimeMillis()
+                }
         } catch (e: Exception) {
-            emptyList()
+            cachedSurcharges ?: emptyList()
         }
     }
 
     @Volatile private var cachedSurcharges: List<DeliverySurcharge>? = null
+    @Volatile private var surchargesCachedAt = 0L
 }

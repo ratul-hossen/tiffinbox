@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -144,10 +145,18 @@ private fun RankHero(s: RewardsStatus) {
     // After that everything rests - no endless motion.
     val ranks = Rewards.RANKS
     val currentIndex = ranks.indexOfFirst { it.level == s.rank.level }.coerceAtLeast(0)
-    val angle = remember { Animatable(orbitFrontAngle(0, ranks.size)) }
-    val pop = remember { Animatable(0.6f) }
-    var landed by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    // Replaying the whole climb on every visit gets tiring, so it runs on the
+    // first visit and whenever the rank has gone up since (UI_UX_REVIEW M-R1).
+    val celebrate = remember(s.rank.level) { RankAnimationCache.shouldCelebrate(context, s.rank.level) }
+    val angle = remember {
+        Animatable(orbitFrontAngle(if (celebrate) 0 else currentIndex, ranks.size))
+    }
+    val pop = remember { Animatable(if (celebrate) 0.6f else 1f) }
+    var landed by remember { mutableStateOf(!celebrate) }
     LaunchedEffect(currentIndex) {
+        RankAnimationCache.remember(context, s.rank.level)
+        if (!celebrate) return@LaunchedEffect
         delay(350)
         for (i in 1..currentIndex) {
             angle.animateTo(orbitFrontAngle(i, ranks.size), tween(650, easing = FastOutSlowInEasing))
@@ -174,7 +183,7 @@ private fun RankHero(s: RewardsStatus) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Box(contentAlignment = Alignment.Center) {
-                if (landed) {
+                if (celebrate && landed) {
                     TiffinLottie(res = R.raw.lottie_star_burst, loop = false, modifier = Modifier.size(230.dp))
                 }
                 OrbitRing(
@@ -238,5 +247,22 @@ private fun RankHero(s: RewardsStatus) {
                 style = MaterialTheme.typography.labelSmall
             )
         }
+    }
+}
+
+/**
+ * The highest rank level whose climb animation has already been shown on this
+ * phone. Plain SharedPreferences, same approach as ThemePreferences.
+ */
+private object RankAnimationCache {
+    private const val PREFS = "tiffinbox_rewards"
+    private const val KEY_LEVEL = "celebrated_rank_level"
+
+    fun shouldCelebrate(context: android.content.Context, level: Int): Boolean =
+        level > context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getInt(KEY_LEVEL, 0)
+
+    fun remember(context: android.content.Context, level: Int) {
+        val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+        if (level > prefs.getInt(KEY_LEVEL, 0)) prefs.edit().putInt(KEY_LEVEL, level).apply()
     }
 }

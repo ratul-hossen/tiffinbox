@@ -37,8 +37,8 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | H4 | Header gradient-এর রং ঘুরে ঘুরে লাল থেকে কমলায় যায় | এক screenshot-এ লাল, আরেকটায় কমলা। Brand রং স্থির মনে হয় না। | রং-বদল শুধু লাল → গাঢ় লাল → প্রায়-কালো লাল। Background-এর amber-বাদামি আভাও সরানো। | ✅ Fixed |
 | H5 | "Today's pick" banner আর "AI Recommended" একই meal দুবার দেখায় | Duplicate content, জায়গা নষ্ট। | Banner-এ থাকা meal নিচের list থেকে বাদ দেওয়া। | ✅ Fixed |
 | H6 | Profile button শুধু একটা generic person icon | ব্যক্তিগত মনে হয় না। | User-এর নামের প্রথম অক্ষর দেখানো। | ✅ Fixed |
-| H7 | Points chip-এ "🍙 ⚡0" | নতুন user বোঝে না এটা কী। | ০ point হলে ছোট করে দেখানো বা label দেওয়া। | ❓ Owner |
-| H8 | Chat icon সবুজ, header লাল/কমলা | সবুজ-লাল একসাথে খিটখিটে লাগে। তবে WhatsApp-এর মতো সবুজ রাখা আগের সিদ্ধান্ত। | এখনকার মতো রাখা। Owner চাইলে সাদা icon + ছোট সবুজ dot। | ❓ Owner |
+| H7 | Points chip-এ "🍙 ⚡0" | নতুন user বোঝে না এটা কী। | ০ point হলে ছোট করে দেখানো বা label দেওয়া। | ✅ এখনকার মতোই (owner, 2026-10-17) |
+| H8 | Chat icon সবুজ, header লাল/কমলা | সবুজ-লাল একসাথে খিটখিটে লাগে। তবে WhatsApp-এর মতো সবুজ রাখা আগের সিদ্ধান্ত। | Icon সাদা, কোণায় ছোট সবুজ dot — chat-এর সবুজ পরিচয় থাকে, লাল header-এর সাথেও মানায়। | ✅ Fixed (owner, 2026-10-17) |
 
 ## Chef card (Home / list)
 
@@ -57,13 +57,13 @@ data (rating, distance) নতুন বা দূরের chef-এর বে�
 | M2 | Allergen না থাকলেও খালি section বা "None" chip | কোনো তথ্য নেই, জায়গা নষ্ট। | Allergen না থাকলে পুরো section লুকানো। | ✅ Fixed |
 | M3 | "5 plates left today" লাল লেখা | লাল রং error-এর মতো দেখায়। | সাধারণত tertiary (amber) রং, ৩ বা তার কম থাকলে লাল। | ✅ Fixed |
 | M4 | কোন chef-এর রান্না, rating কত, তা এই page-এ নেই | Order-এর আগে সবচেয়ে জরুরি তথ্যের একটা। | নামের নিচে "Cooked by" row: kitchen-এর ছবি, নাম, rating বা New; চাপলে Chef Detail। | ✅ Fixed |
-| M5 | Description-এ পুরোনো default "নতুন যোগ করা মিল" | পুরোনো build-এর data। Code-এ আর আসে না। | Chef Menu Manager থেকে বদলাতে পারে। | ❓ Owner (data) |
+| M5 | Description-এ পুরোনো default "নতুন যোগ করা মিল" | পুরোনো build-এর data। Code-এ আর আসে না। | Chef Menu Manager থেকে বদলাতে পারে — code-এর কাজ নেই। | ✅ Code-এ কিছু করার নেই |
 
 ## Role Selection
 
 | # | সমস্যা | কেন সমস্যা | সমাধান | Status |
 |---|---|---|---|---|
-| R1 | Subtitle "You can change this later" সত্যি না | App-এ role বদলানোর কোনো উপায় নেই। `firestore.rules`-ও user-কে নিজের role বদলাতে দেয় না। ভুল প্রতিশ্রুতি trust নষ্ট করে। | লেখা বদলানো বা subtitle সরানো। | ❓ Owner (লেখা) |
+| R1 | Subtitle "You can change this later" সত্যি না | App-এ role বদলানোর কোনো উপায় নেই। `firestore.rules`-ও user-কে নিজের role বদলাতে দেয় না। ভুল প্রতিশ্রুতি trust নষ্ট করে। | Subtitle পুরো সরানো হয়েছে (string দুই locale থেকেই মুছে দেওয়া)। | ✅ Fixed (owner, 2026-10-17) |
 | R2 | Selection ring + বাকিটা dim | পরিষ্কার, ভালো কাজ করছে। | — | ভালো |
 
 ## Cart / সাধারণ
@@ -92,11 +92,17 @@ Orbit-টা কেন ভালো লাগে: এটা "ঘুরে, থ�
 **নিজের যাচাই (Rewards orbit):** দরকার আছে, কারণ আগে badge একা একটা emoji ছিল আর ladder নিচে
 আলাদা list-এ। এখন screen-এর শুরুতেই চোখে পড়ে, পরের rank কোনটা আর কত দূরে। সময় সীমিত:
 সর্বোচ্চ rank-এর জন্য ৪ ধাপ × ~০.৮ সেকেন্ড ≈ ৩.৫ সেকেন্ড, তারপর সব থেমে যায়। ঝুঁকি হলো,
-বারবার Rewards খুললে প্রতিবার পুরো ঘোরা দেখতে হয়। ব্যবহারে বিরক্ত লাগলে পরের ধাপে শুধু প্রথমবার
-বা rank বাড়ার পর পুরো animation দেখানো হবে (🕓 Later, M-R1)।
+বারবার Rewards খুললে প্রতিবার পুরো ঘোরা দেখতে হয়।
+
+**M-R1 ✅ Fixed (owner, 2026-10-17):** পুরো climb animation এখন শুধু প্রথমবার আর rank
+বাড়লে চলে। অন্য সময় ring সরাসরি আপনার rank-এ থেমে থাকে, star burst-ও হয় না। শেষ
+দেখা rank level ফোনে SharedPreferences-এ রাখা (`RankAnimationCache`,
+RewardsScreen.kt)।
 
 ## পরের ধাপ
 
-1. 🕓 Later-এর কাজগুলো এই ক্রমে: H6 → C3 → G3।
-2. ❓ Owner-এর ৪টা সিদ্ধান্ত (H7, H8, M5, R1) পেলে সেগুলো করা হবে।
-3. নতুন build-এর screenshot পেলে এই review আবার update করা হবে।
+2026-10-17: এই tracker-এর সব আইটেম শেষ। H6 / C3 / G3 আগেই হয়েছিল, M-R1 এখন হয়েছে,
+আর owner-এর ৪টা সিদ্ধান্ত (H7, H8, M5, R1) নিয়ে উপরের ঘরগুলো update করা হয়েছে।
+
+বাকি একটাই: এর কোনো পরিবর্তনই emulator-এ চালিয়ে দেখা হয়নি (এখানে Android SDK নেই)।
+নতুন build-এর screenshot পেলে এই review আবার update করা হবে।

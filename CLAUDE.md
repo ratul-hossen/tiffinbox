@@ -279,7 +279,7 @@ literally.
    videos). `ChefDetailScreen` shows a public "Videos" section — tapping
    an entry opens the link externally via `Intent.ACTION_VIEW` (no
    embedded WebView; simplest option, per the plan).
-4. **[ ] Onboarding/signup visual restructuring (task #64)** — restructure
+4. **[x] Onboarding/signup visual restructuring (task #64) — DONE.** — restructure
    the existing single-screen chef signup form (`LoginScreen.kt` signup
    mode) into a 3-step stepper: **Step 1 Personal Info** (name, email,
    password) → **Step 2 Kitchen Info** (kitchen name, new `kitchenType`
@@ -296,7 +296,7 @@ literally.
    fix already applied for WhatsApp/bKash/location in that path. Customer
    signup stays single-screen (reference emphasizes multi-step for Seller
    only).
-5. **[ ] Package system enhancement (task #63)** — `SubscriptionPlan`
+5. **[x] Package system enhancement (task #63) — DONE.** — `SubscriptionPlan`
    gets day-count-based entries (`DAYS_7`, `DAYS_10`, `DAYS_15`,
    `DAYS_30`) alongside the legacy `WEEKLY`/`MONTHLY` (kept, never
    removed — existing subscribers' stored plan name must keep resolving).
@@ -1045,6 +1045,55 @@ either restores it or permanently deletes it.
   `write` (create/update/delete) and the `messages` block already allows
   admin `create` + `delete`, which covers both delete and restore.
 
+## Delivery pricing: admin cap, chef's own charge, area surcharges (2026-10-17)
+
+Owner's rule: **the admin fixes a maximum, the chef chooses anything up to it**
+(including free). Three layers, all free-tier:
+
+- **App Settings** (`app_config/settings`, admin-web `AppSettingsPage.tsx`)
+  holds the platform-wide numbers: `deliveryBaseFee` / `deliveryIncludedKm` /
+  `deliveryPerKmFee`, plus `deliveryMaxFee` (global ceiling on a
+  self-delivering kitchen, 0 = no cap), `platformFee`, `preOrderMaxPlates`
+  and `fewPlatesThreshold`. Those last three used to be hardcoded Kotlin
+  constants; they now live in `data/AppConfigStore.kt` (Compose state) and are
+  filled by `FirestoreAppConfigRepository`.
+- **Per-kitchen cap**: `chefs/{uid}.maxDeliveryFee`, set by the admin in
+  `ChefDetail.tsx` ("Delivery charge cap"). It beats the global one. It is in
+  `chefLockedFields()`, so a chef cannot raise their own ceiling.
+- **Chef's own rates**: `selfDeliveryBaseFee` / `selfDeliveryPerKmFee` /
+  `selfDeliveryIncludedKm` on their chef doc, set in `DeliveryOptionScreen`'s
+  "Delivery charge" card. Blank = charge exactly what the app would; **0 in
+  both fee boxes = free delivery**; the form refuses a base fee above the cap
+  and `DeliveryQuotes.quote()` clamps the total anyway.
+- **Area surcharges**: `delivery_surcharges/{id}` (admin-web
+  `DeliverySurchargesPage.tsx`, Operations group) - a centre point + radius
+  (picked on an OpenStreetMap map via `ui/LocationPicker.tsx`, Leaflet, no API
+  key), flat ৳ or a multiplier, with an optional start/end time. Applied
+  **only to TiffinBox-delivered orders** - when the chef delivers, the fee is
+  their income, so TiffinBox doesn't surge on top of it.
+- **Config freshness**: `FirestoreAppConfigRepository` caches for
+  `CACHE_TTL_MS` (5 min) instead of once per app run, so an admin's change
+  reaches a running app without a restart. A failed read keeps the last good
+  value rather than snapping back to defaults.
+- **Rules**: `delivery_surcharges` is public-read / admin-write;
+  `maxDeliveryFee` is admin-only; `orders` create now also runs
+  `orderMoneySane()` - wide bounds on deliveryFee / platformFee / discounts /
+  total. It is **not** a recomputation (rules can't do haversine and there are
+  no Cloud Functions), just a floor/ceiling so a tampered client can't write a
+  negative or absurd total.
+
+## Unit tests (2026-10-17)
+
+First tests in the project: `app/src/test/java/.../domain/DeliveryQuotesTest.kt`
+and `RewardsTest.kt` - plain JVM JUnit (the `junit:junit:4.13.2`
+`testImplementation` was already in `app/build.gradle.kts`; there was simply no
+`src/test` folder). They cover the money maths that decides what a customer
+pays: fee per started km, the admin cap, free delivery, surcharge on top of the
+cap, point earning/redeeming caps, rank discounts and the ETA. Run with
+`./gradlew :app:testDebugUnitTest`. **They have never been executed** - this
+sandbox has no Android SDK, so the owner should run them once locally; the
+expected numbers were cross-checked against a port of the same formulas.
+
 ## File map for things mentioned above
 
 - `app/src/main/java/com/ratulhossen/tiffinbox/ui/theme/Color.kt`,
@@ -1070,6 +1119,13 @@ either restores it or permanently deletes it.
 - `firestore.rules` — source of truth for security rules; **not
   auto-deployed** — any change here must be manually re-pasted into
   Firebase Console → Firestore Database → Rules by the owner.
+- `app/src/main/java/com/ratulhossen/tiffinbox/data/AppConfigStore.kt`,
+  `data/firebase/FirestoreAppConfigRepository.kt` — admin-tunable numbers.
+- `app/src/main/java/com/ratulhossen/tiffinbox/data/DeliveryQuoter.kt`,
+  `domain/DeliveryQuote.kt` — delivery fee, cap and surcharge maths.
+- `admin-web/src/components/DeliverySurchargesPage.tsx`,
+  `src/components/ui/LocationPicker.tsx` — area surcharges + the OSM picker.
+- `app/src/test/java/com/ratulhossen/tiffinbox/domain/` — the unit tests.
 
 ## Delivery fee, map, verification, meal plans, polish (2026-10-16)
 

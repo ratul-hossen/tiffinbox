@@ -303,12 +303,24 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f)
                     )
                     HeaderCircleButton(onClick = onChatClick) {
-                        Icon(
-                            Icons.Filled.Chat,
-                            contentDescription = stringResource(R.string.content_description_chat),
-                            tint = Color(0xFF25D366),
-                            modifier = Modifier.size(22.dp)
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Filled.Chat,
+                                contentDescription = stringResource(R.string.content_description_chat),
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            // Keeps chat's familiar green without a green icon
+                            // fighting the red header (UI_UX_REVIEW H8).
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 3.dp, y = (-2).dp)
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF25D366))
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     HeaderCircleButton(onClick = onCartClick) {

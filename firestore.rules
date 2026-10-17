@@ -202,10 +202,30 @@ service cloud.firestore {
     function isOrderChef() {
       return get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid;
     }
+    // The fees and discounts on an order are computed on the client
+    // (DeliveryQuoter, Rewards, coupons) because there are no Cloud Functions
+    // to recompute them here, and rules can't do the distance maths. These are
+    // sanity bounds, not a recomputation: they stop a tampered client writing
+    // a negative total or a free-delivery-for-everyone fee, and nothing more.
+    // Deliberately wide so a legitimate order never gets rejected - for
+    // example right after an admin changes the fee in App Settings, while
+    // some phones still hold the previous value.
+    function orderMoneySane() {
+      let d = request.resource.data;
+      return d.get("deliveryFee", 0) is number && d.get("deliveryFee", 0) >= 0 &&
+        d.get("deliveryFee", 0) <= 2000 &&
+        d.get("platformFee", 0) is number && d.get("platformFee", 0) >= 0 &&
+        d.get("platformFee", 0) <= 500 &&
+        d.get("discount", 0) >= 0 &&
+        d.get("pointsRedeemed", 0) >= 0 &&
+        d.get("rankDiscount", 0) >= 0 && d.get("rankDiscount", 0) <= 60 &&
+        d.get("totalPrice", 0) is number && d.get("totalPrice", 0) >= 0;
+    }
     match /orders/{orderId} {
       allow create: if isAdmin() || (isSignedIn() &&
         request.resource.data.customerId == request.auth.uid &&
-        request.resource.data.status == "Placed");
+        request.resource.data.status == "Placed" &&
+        orderMoneySane());
       allow read: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
         isOrderChef() ||

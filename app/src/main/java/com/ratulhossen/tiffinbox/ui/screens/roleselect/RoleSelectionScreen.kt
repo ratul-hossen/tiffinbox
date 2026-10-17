@@ -82,12 +82,6 @@ fun RoleSelectionScreen(onRoleSelected: (UserRole) -> Unit) {
                     lineHeight = 34.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    stringResource(R.string.role_select_subtitle),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
             }
             Spacer(modifier = Modifier.height(22.dp))
 

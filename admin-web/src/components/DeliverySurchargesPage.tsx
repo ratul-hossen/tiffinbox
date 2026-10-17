@@ -8,6 +8,7 @@ import { softDelete } from "../lib/recycleBin";
 import { formatDateTime } from "../lib/format";
 import type { DeliverySurcharge } from "../types";
 import Badge, { type BadgeTone } from "./ui/Badge";
+import LocationPicker from "./ui/LocationPicker";
 
 interface Props {
   search: string;
@@ -233,6 +234,13 @@ export default function DeliverySurchargesPage({ search }: Props) {
           onChange={(e) => setDraft({ ...draft, areaName: e.target.value })}
         />
       </label>
+
+      <LocationPicker
+        latitude={Number.isFinite(Number(draft.latitude)) && draft.latitude !== "" ? Number(draft.latitude) : null}
+        longitude={Number.isFinite(Number(draft.longitude)) && draft.longitude !== "" ? Number(draft.longitude) : null}
+        radiusKm={Number(draft.radiusKm) || 0}
+        onPick={(lat, lng) => setDraft({ ...draft, latitude: String(lat), longitude: String(lng) })}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="block text-xs text-apple-secondary">
