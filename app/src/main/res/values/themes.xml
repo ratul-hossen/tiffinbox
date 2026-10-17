@@ -1,3 +1,11 @@
 <resources>
-    <style name="Theme.TiffinBox" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      Dark window background on purpose: it is what shows for the instant
+      before Compose draws, and the first thing Compose draws is the dark
+      SplashScreen. A light window background flashed white there.
+      Android 12+ additionally styles the system splash - see values-v31.
+    -->
+    <style name="Theme.TiffinBox" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
 </resources>

@@ -1,0 +1,9 @@
+<resources>
+    <!--
+      The near-black the app's own SplashScreen sits on (Color.Black under the
+      splash_bg photo's dark scrim). Used for the window background and, on
+      Android 12+, the system splash, so startup is one continuous dark screen
+      instead of a white flash.
+    -->
+    <color name="splash_background">#000000</color>
+</resources>
