@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import androidx.compose.material.icons.filled.Map
 import com.ratulhossen.tiffinbox.ui.components.DistanceFilterChips
-import com.ratulhossen.tiffinbox.domain.DeliveryQuotes
-import com.ratulhossen.tiffinbox.domain.DeliveryPricing
+import com.ratulhossen.tiffinbox.data.DeliveryContext
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCouponRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreReviewRepository
@@ -74,10 +74,10 @@ fun ChefListScreen(
 
     // Distance filter (only once the customer's location is known); "Nearby" starts at 3 km.
     var maxKm by remember { mutableStateOf(if (initialSort == "nearby") NEARBY_RADIUS_KM else null) }
-    var deliveryPricing by remember { mutableStateOf<DeliveryPricing?>(null) }
+    var deliveryContext by remember { mutableStateOf<DeliveryContext?>(null) }
 
     LaunchedEffect(Unit) {
-        deliveryPricing = FirestoreAppConfigRepository.deliveryPricing()
+        deliveryContext = DeliveryQuoter.context()
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
@@ -165,7 +165,7 @@ fun ChefListScreen(
                         ChefCard(
                             chef = chef,
                             modifier = Modifier.fillMaxWidth(),
-                            delivery = deliveryPricing?.takeIf { hasRealDistances }?.let { DeliveryQuotes.quote(chef.distanceKm, it) },
+                            delivery = deliveryContext?.takeIf { hasRealDistances }?.let { DeliveryQuoter.quote(chef, chef.distanceKm, it) },
                             onClick = { onChefClick(chef.id) }
                         )
                     }

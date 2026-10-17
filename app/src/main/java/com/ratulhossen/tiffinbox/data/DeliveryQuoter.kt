@@ -13,6 +13,19 @@ import com.ratulhossen.tiffinbox.domain.DeliverySurcharge
 import com.ratulhossen.tiffinbox.util.haversineKm
 
 /**
+ * What [DeliveryQuoter] needs to quote a kitchen, loaded once. A list of
+ * kitchens can't await a Firestore read per card, so it loads this and then
+ * quotes every card from it synchronously.
+ */
+data class DeliveryContext(
+    val appPricing: DeliveryPricing = DeliveryPricing(),
+    /** App Settings' ceiling on a self-delivering kitchen; 0 = no cap. */
+    val globalMaxFee: Int = 0,
+    /** The area surcharge covering this customer right now, if any. */
+    val surcharge: DeliverySurcharge? = null
+)
+
+/**
  * Delivery fee + time for one kitchen, from the customer's saved location
  * (straight-line haversine, no Maps) and whichever pricing applies. The same
  * numbers are shown on Chef Detail, Meal Details, Cart and Checkout.
@@ -61,11 +74,28 @@ object DeliveryQuoter {
             )
         }
 
-    suspend fun quote(chef: ChefUi): DeliveryQuote {
-        val appPricing = FirestoreAppConfigRepository.deliveryPricing()
-        val pricing = pricingFor(chef, appPricing, FirestoreAppConfigRepository.globalMaxDeliveryFee())
-        return DeliveryQuotes.quote(distanceKm(chef), pricing, surchargeFor(chef))
-    }
+    /** The rates, cap and surcharge in play for this customer, read once. */
+    suspend fun context(): DeliveryContext = DeliveryContext(
+        appPricing = FirestoreAppConfigRepository.deliveryPricing(),
+        globalMaxFee = FirestoreAppConfigRepository.globalMaxDeliveryFee(),
+        surcharge = myLocation()?.let { surchargeAt(it) }
+    )
+
+    /**
+     * One kitchen's quote from an already-loaded [context] - no IO, so it is
+     * safe to call per card while drawing a list. [distanceKm] is the distance
+     * the list already worked out (`withRealDistances`), null when unknown.
+     */
+    fun quote(chef: ChefUi, distanceKm: Double?, context: DeliveryContext): DeliveryQuote =
+        DeliveryQuotes.quote(
+            distanceKm,
+            pricingFor(chef, context.appPricing, context.globalMaxFee),
+            // Self delivery is the chef's own income, so no TiffinBox surge.
+            context.surcharge?.takeIf { chef.deliveryMode == "tiffinbox" }
+        )
+
+    suspend fun quote(chef: ChefUi): DeliveryQuote =
+        quote(chef, distanceKm(chef), context())
 
     /**
      * The area surcharge covering this customer right now, if any.
@@ -74,11 +104,9 @@ object DeliveryQuoter {
      * chef delivers themselves the fee is their income, so TiffinBox doesn't
      * add a surge on top of it.
      */
-    private suspend fun surchargeFor(chef: ChefUi): DeliverySurcharge? {
-        if (chef.deliveryMode != "tiffinbox") return null
+    private suspend fun surchargeAt(me: GeoPoint): DeliverySurcharge? {
         val active = FirestoreAppConfigRepository.activeSurcharges()
         if (active.isEmpty()) return null
-        val me = myLocation() ?: return null
         // Several zones can overlap; charge the customer the smallest one
         // rather than stacking them or picking the harshest.
         return active.filter { it.covers(me.latitude, me.longitude) }.minByOrNull { it.extraOn(100) }

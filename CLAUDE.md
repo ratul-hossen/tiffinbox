@@ -1071,6 +1071,13 @@ Owner's rule: **the admin fixes a maximum, the chef chooses anything up to it**
   key), flat ৳ or a multiplier, with an optional start/end time. Applied
   **only to TiffinBox-delivered orders** - when the chef delivers, the fee is
   their income, so TiffinBox doesn't surge on top of it.
+- **Every screen quotes the same way**: `DeliveryContext` (`data/DeliveryQuoter.kt`)
+  is the rates + global cap + the customer's live area surcharge, loaded once per
+  screen; `DeliveryQuoter.quote(chef, distanceKm, context)` is pure, so a list can
+  quote each card without a read per card. Home, the chef list and **Favorites**
+  used `DeliveryQuotes.quote(distance, appPricing)` instead, so a card showed the
+  app's rate even for a kitchen delivering free, and Favorites passed no fee at
+  all - fixed 2026-10-17, covered by `app/src/test/.../data/DeliveryQuoterTest.kt`.
 - **Config freshness**: `FirestoreAppConfigRepository` caches for
   `CACHE_TTL_MS` (5 min) instead of once per app run, so an admin's change
   reaches a running app without a restart. A failed read keeps the last good

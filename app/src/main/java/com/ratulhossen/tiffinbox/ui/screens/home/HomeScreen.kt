@@ -50,8 +50,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
-import com.ratulhossen.tiffinbox.domain.DeliveryQuotes
-import com.ratulhossen.tiffinbox.domain.DeliveryPricing
+import com.ratulhossen.tiffinbox.data.DeliveryContext
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
@@ -141,7 +141,7 @@ fun HomeScreen(
     // Signals the recommender uses (review averages, delivery ratings, the
     // admin-set radius, my orders, offers); filled by the load below.
     var recContext by remember { mutableStateOf(RecommendationContext()) }
-    var deliveryPricing by remember { mutableStateOf<DeliveryPricing?>(null) }
+    var deliveryContext by remember { mutableStateOf<DeliveryContext?>(null) }
 
     LaunchedEffect(Unit) {
         val allMeals = FirestoreCatalogRepository.getAllMeals()
@@ -197,7 +197,7 @@ fun HomeScreen(
         }
 
         recContext = recCtx
-        deliveryPricing = FirestoreAppConfigRepository.deliveryPricing()
+        deliveryContext = DeliveryQuoter.context()
         chefs = loadedChefs
         hasRealDistances = myLocation != null
     }
@@ -649,7 +649,7 @@ fun HomeScreen(
                     ChefCard(
                         chef = chef,
                         modifier = Modifier.width(180.dp),
-                        delivery = deliveryPricing?.takeIf { hasRealDistances }?.let { DeliveryQuotes.quote(chef.distanceKm, it) },
+                        delivery = deliveryContext?.takeIf { hasRealDistances }?.let { DeliveryQuoter.quote(chef, chef.distanceKm, it) },
                         onClick = { onChefClick(chef.id) }
                     )
                 }
@@ -693,7 +693,7 @@ fun HomeScreen(
                     ChefCard(
                         chef = chef,
                         modifier = Modifier.width(180.dp),
-                        delivery = deliveryPricing?.takeIf { hasRealDistances }?.let { DeliveryQuotes.quote(chef.distanceKm, it) },
+                        delivery = deliveryContext?.takeIf { hasRealDistances }?.let { DeliveryQuoter.quote(chef, chef.distanceKm, it) },
                         onClick = { onChefClick(chef.id) }
                     )
                 }
