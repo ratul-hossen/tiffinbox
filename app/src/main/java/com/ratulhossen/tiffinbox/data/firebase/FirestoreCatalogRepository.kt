@@ -156,7 +156,15 @@ object FirestoreCatalogRepository {
             selfDeliveryBaseFee = getLong("selfDeliveryBaseFee")?.toInt() ?: -1,
             selfDeliveryPerKmFee = getLong("selfDeliveryPerKmFee")?.toInt() ?: -1,
             selfDeliveryIncludedKm = getDouble("selfDeliveryIncludedKm") ?: -1.0,
-            maxDeliveryFee = getLong("maxDeliveryFee")?.toInt() ?: 0
+            maxDeliveryFee = getLong("maxDeliveryFee")?.toInt() ?: 0,
+            mealPlanEnabled = getBoolean("mealPlanEnabled") ?: true,
+            mealPlanDescription = getString("mealPlanDescription") ?: "",
+            mealPlanPricePerMealMin = getLong("mealPlanPricePerMealMin")?.toInt() ?: 0,
+            mealPlanPricePerMealMax = getLong("mealPlanPricePerMealMax")?.toInt() ?: 0,
+            mealPlanPackages = (get("mealPlanPackages") as? List<*>)?.filterIsInstance<String>()
+                ?.takeIf { it.isNotEmpty() } ?: listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY"),
+            mealPlanMealTypes = (get("mealPlanMealTypes") as? List<*>)?.filterIsInstance<String>()
+                ?.takeIf { it.isNotEmpty() } ?: listOf(com.ratulhossen.tiffinbox.data.model.MealType.BREAKFAST, com.ratulhossen.tiffinbox.data.model.MealType.LUNCH, com.ratulhossen.tiffinbox.data.model.MealType.DINNER)
         )
     }
 

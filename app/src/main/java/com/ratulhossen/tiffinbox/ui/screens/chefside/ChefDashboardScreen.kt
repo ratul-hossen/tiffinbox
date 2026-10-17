@@ -6,6 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.RestaurantMenu
+import com.ratulhossen.tiffinbox.data.model.MealType
+import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
+import com.ratulhossen.tiffinbox.data.model.label
+import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Edit
@@ -106,6 +114,14 @@ fun ChefDashboardScreen(
     var videos by remember { mutableStateOf<List<ChefVideoUi>>(emptyList()) }
     var videoUrl by remember { mutableStateOf("") }
     var videoCaption by remember { mutableStateOf("") }
+    var mealPlanEnabled by remember { mutableStateOf(true) }
+    var mealPlanDescription by remember { mutableStateOf("") }
+    var mealPlanPriceMin by remember { mutableStateOf("") }
+    var mealPlanPriceMax by remember { mutableStateOf("") }
+    var mealPlanPackages by remember { mutableStateOf(listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY")) }
+    var mealPlanMealTypes by remember { mutableStateOf(listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)) }
+    var chefBkashNumber by remember { mutableStateOf("") }
+    var isSavingMealPlan by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -132,6 +148,13 @@ fun ChefDashboardScreen(
     LaunchedEffect(chefId) {
         val chef = FirestoreCatalogRepository.getChef(chefId)
         kitchenName = chef?.kitchenName
+        mealPlanEnabled = chef?.mealPlanEnabled ?: true
+        mealPlanDescription = chef?.mealPlanDescription.orEmpty()
+        mealPlanPriceMin = if ((chef?.mealPlanPricePerMealMin ?: 0) > 0) chef!!.mealPlanPricePerMealMin.toString() else ""
+        mealPlanPriceMax = if ((chef?.mealPlanPricePerMealMax ?: 0) > 0) chef!!.mealPlanPricePerMealMax.toString() else ""
+        mealPlanPackages = chef?.mealPlanPackages?.takeIf { it.isNotEmpty() } ?: listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY")
+        mealPlanMealTypes = chef?.mealPlanMealTypes?.takeIf { it.isNotEmpty() } ?: listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)
+        chefBkashNumber = chef?.bkashNumber.orEmpty()
         // Ends an expired delivery agreement first, so the summary below is current.
         FirestoreDeliveryApplicationRepository.syncExpiry(chefId)
         val freshChef = FirestoreCatalogRepository.getChef(chefId)
@@ -423,6 +446,58 @@ fun ChefDashboardScreen(
             Text(stringResource(R.string.messages_label))
         }
 
+        Spacer(modifier = Modifier.height(14.dp))
+        ChefMealPlanConfigCard(
+            enabled = mealPlanEnabled,
+            onEnabledChange = { mealPlanEnabled = it },
+            description = mealPlanDescription,
+            onDescriptionChange = { mealPlanDescription = it },
+            priceMin = mealPlanPriceMin,
+            onPriceMinChange = { mealPlanPriceMin = it },
+            priceMax = mealPlanPriceMax,
+            onPriceMaxChange = { mealPlanPriceMax = it },
+            selectedPackages = mealPlanPackages,
+            onTogglePackage = { pkg ->
+                mealPlanPackages = if (mealPlanPackages.contains(pkg)) {
+                    if (mealPlanPackages.size > 1) mealPlanPackages - pkg else mealPlanPackages
+                } else {
+                    mealPlanPackages + pkg
+                }
+            },
+            selectedMealTypes = mealPlanMealTypes,
+            onToggleMealType = { type ->
+                mealPlanMealTypes = if (mealPlanMealTypes.contains(type)) {
+                    if (mealPlanMealTypes.size > 1) mealPlanMealTypes - type else mealPlanMealTypes
+                } else {
+                    mealPlanMealTypes + type
+                }
+            },
+            bkashNumber = chefBkashNumber,
+            onBkashNumberChange = { chefBkashNumber = it },
+            isSaving = isSavingMealPlan,
+            onSave = {
+                isSavingMealPlan = true
+                scope.launch {
+                    val ok = FirestoreChefRepository.updateMealPlanSettings(
+                        uid = chefId,
+                        enabled = mealPlanEnabled,
+                        description = mealPlanDescription.trim(),
+                        priceMin = mealPlanPriceMin.toIntOrNull() ?: 0,
+                        priceMax = mealPlanPriceMax.toIntOrNull() ?: 0,
+                        packages = mealPlanPackages,
+                        mealTypes = mealPlanMealTypes,
+                        bkashNumber = chefBkashNumber.trim()
+                    )
+                    isSavingMealPlan = false
+                    Toast.makeText(
+                        context,
+                        context.getString(if (ok) R.string.chef_meal_plan_saved else R.string.chef_meal_plan_save_failed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        )
+
         Spacer(modifier = Modifier.height(12.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -597,9 +672,23 @@ fun ChefDashboardScreen(
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    "${sub.plan.name} Plan · ${sub.mealType} · ${sub.mealsPerWeek} meals/week",
+                                    "${sub.plan.name} Plan (${sub.plan.days} Days) · ${sub.mealType} · ${sub.mealsPerWeek} meals/week",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
+                                )
+                                if (sub.scheduleSummary.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        "🗓️ ${sub.scheduleSummary}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "৳${sub.totalPrice} (৳${sub.pricePerMeal}/meal) · ${sub.paymentMethod}${if (sub.paymentTransactionId.isNotBlank()) " [Trx: ${sub.paymentTransactionId}]" else ""}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (sub.deliveryAddress.isNotBlank()) {
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -973,6 +1062,205 @@ private fun CustomerDeliveryCard(
                     Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(15.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.chef_order_chat), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChefMealPlanConfigCard(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    description: String,
+    onDescriptionChange: (String) -> Unit,
+    priceMin: String,
+    onPriceMinChange: (String) -> Unit,
+    priceMax: String,
+    onPriceMaxChange: (String) -> Unit,
+    selectedPackages: List<String>,
+    onTogglePackage: (String) -> Unit,
+    selectedMealTypes: List<String>,
+    onToggleMealType: (String) -> Unit,
+    bkashNumber: String,
+    onBkashNumberChange: (String) -> Unit,
+    isSaving: Boolean,
+    onSave: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Icon(
+                        Icons.Filled.RestaurantMenu,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            stringResource(R.string.chef_meal_plan_card_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            stringResource(R.string.chef_meal_plan_card_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = onEnabledChange
+                )
+            }
+
+            if (enabled) {
+                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    stringResource(R.string.chef_meal_plan_desc_label),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = onDescriptionChange,
+                    placeholder = { Text(stringResource(R.string.chef_meal_plan_desc_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    stringResource(R.string.chef_meal_plan_price_range),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = priceMin,
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onPriceMinChange(it) },
+                        label = { Text(stringResource(R.string.chef_meal_plan_price_min)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    Text("—", fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = priceMax,
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onPriceMaxChange(it) },
+                        label = { Text(stringResource(R.string.chef_meal_plan_price_max)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+                Text(
+                    stringResource(R.string.chef_meal_plan_price_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    stringResource(R.string.chef_meal_plan_packages),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SubscriptionPlan.entries.forEach { plan ->
+                        val isSelected = selectedPackages.contains(plan.name)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onTogglePackage(plan.name) },
+                            label = { Text(plan.label()) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    stringResource(R.string.chef_meal_plan_meal_slots),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        MealType.BREAKFAST to stringResource(R.string.subscribe_meal_type_breakfast),
+                        MealType.LUNCH to stringResource(R.string.subscribe_meal_type_lunch),
+                        MealType.DINNER to stringResource(R.string.subscribe_meal_type_dinner)
+                    ).forEach { (typeKey, label) ->
+                        val isSelected = selectedMealTypes.contains(typeKey)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onToggleMealType(typeKey) },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    stringResource(R.string.chef_meal_plan_bkash_label),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = bkashNumber,
+                    onValueChange = onBkashNumberChange,
+                    placeholder = { Text("01XXXXXXXXX") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    stringResource(R.string.chef_meal_plan_bkash_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TiffinButton(
+                    enabled = !isSaving,
+                    onClick = onSave,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isSaving) "Saving…" else stringResource(R.string.chef_meal_plan_save))
                 }
             }
         }

@@ -58,7 +58,23 @@ data class ChefUi(
      * field, see chefLockedFields in firestore.rules). 0 = fall back to the
      * global cap in App Settings.
      */
-    val maxDeliveryFee: Int = 0
+    val maxDeliveryFee: Int = 0,
+    /**
+     * Chef-set meal plan template fields. Customers see these on the Subscribe
+     * screen when choosing a plan from that kitchen.
+     * [mealPlanDescription] — chef's own "what you get" blurb (e.g. "Fresh
+     *   home-cooked lunch + dinner, delivered daily at 12:30 and 8:00").
+     * [mealPlanPricePerMealMin]/[mealPlanPricePerMealMax] — the per-meal price
+     *   range the chef offers. Customer picks any value in [min, max] (they
+     *   can choose a higher tier for premium portions). 0 = not set, fall back
+     *   to the menu's average meal price.
+     */
+    val mealPlanEnabled: Boolean = true,
+    val mealPlanDescription: String = "",
+    val mealPlanPricePerMealMin: Int = 0,
+    val mealPlanPricePerMealMax: Int = 0,
+    val mealPlanPackages: List<String> = listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY"),
+    val mealPlanMealTypes: List<String> = listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)
 ) {
     /** Both checks done: shows the "Verified" badge. */
     val isFullyVerified: Boolean get() = nidVerified && kitchenVerified
@@ -202,11 +218,15 @@ fun SubscriptionPlan.label(): String = when (this) {
     SubscriptionPlan.MONTHLY -> stringResource(R.string.subscription_plan_monthly)
 }
 
-/** "Lunch", "Dinner", or "Both" - matches the reference "Meal Type" package field. */
+/** "Breakfast", "Lunch", "Dinner", or "Both" (Lunch+Dinner). */
 object MealType {
+    const val BREAKFAST = "Breakfast"
     const val LUNCH = "Lunch"
     const val DINNER = "Dinner"
     const val BOTH = "Both"
+
+    /** All options shown in the subscribe screen, in display order. */
+    val all = listOf(BREAKFAST, LUNCH, DINNER, BOTH)
 }
 
 data class SubscriptionUi(
@@ -225,7 +245,8 @@ data class SubscriptionUi(
     val startedAt: Long,
     val paymentMethod: String = "Cash on Delivery",
     val paymentTransactionId: String = "",
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val scheduleSummary: String = ""
 )
 
 data class ChefOrderUi(

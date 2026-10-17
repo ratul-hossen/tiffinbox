@@ -22,7 +22,8 @@ object FirestoreSubscriptionRepository {
         deliveryAddress: String = "",
         customerPhone: String = "",
         paymentMethod: String = "Cash on Delivery",
-        paymentTransactionId: String = ""
+        paymentTransactionId: String = "",
+        scheduleSummary: String = ""
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -50,6 +51,7 @@ object FirestoreSubscriptionRepository {
                 "totalPrice" to totalPrice,
                 "paymentMethod" to paymentMethod,
                 "paymentTransactionId" to paymentTransactionId,
+                "scheduleSummary" to scheduleSummary,
                 "startedAt" to System.currentTimeMillis(),
                 "isActive" to true
             )
@@ -65,7 +67,7 @@ object FirestoreSubscriptionRepository {
                 "items" to listOf(
                     mapOf(
                         "mealId" to "sub_${subRef.id}",
-                        "mealName" to "${plan.name.lowercase().replaceFirstChar { it.uppercase() }} Meal Plan ($mealType · $mealsPerWeek meals/wk)",
+                        "mealName" to "${plan.name.lowercase().replaceFirstChar { it.uppercase() }} Meal Plan ($mealType · $mealsPerWeek meals/wk${if (scheduleSummary.isNotBlank()) " · $scheduleSummary" else ""})",
                         "quantity" to 1,
                         "unitPrice" to totalPrice
                     )
@@ -158,7 +160,8 @@ object FirestoreSubscriptionRepository {
             startedAt = getLong("startedAt") ?: 0L,
             paymentMethod = getString("paymentMethod") ?: "Cash on Delivery",
             paymentTransactionId = getString("paymentTransactionId").orEmpty(),
-            isActive = getBoolean("isActive") ?: true
+            isActive = getBoolean("isActive") ?: true,
+            scheduleSummary = getString("scheduleSummary").orEmpty()
         )
     }
 

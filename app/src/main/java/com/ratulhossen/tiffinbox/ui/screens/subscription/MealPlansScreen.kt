@@ -59,8 +59,12 @@ fun MealPlansScreen(onBack: () -> Unit, onKitchenClick: (String) -> Unit) {
         )
         val meals = FirestoreCatalogRepository.getAllMeals().groupBy { it.chefId }
         offers = ranked.mapNotNull { chef ->
+            if (!chef.mealPlanEnabled) return@mapNotNull null
             val menu = meals[chef.id].orEmpty()
-            if (menu.isEmpty()) null else PlanOffer(chef, menu.map { it.price }.average().toInt() * 7)
+            val perMeal = if (chef.mealPlanPricePerMealMin > 0) chef.mealPlanPricePerMealMin
+            else if (menu.isNotEmpty()) menu.map { it.price }.average().toInt()
+            else 100
+            PlanOffer(chef, perMeal * 7)
         }
     }
 
@@ -123,6 +127,15 @@ fun MealPlansScreen(onBack: () -> Unit, onKitchenClick: (String) -> Unit) {
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(offer.chef.kitchenName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                if (offer.chef.mealPlanDescription.isNotBlank()) {
+                                    Text(
+                                        offer.chef.mealPlanDescription,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
                                 Text(
                                     stringResource(R.string.chef_distance_away, formatDistanceKm(offer.chef.distanceKm)),
                                     style = MaterialTheme.typography.labelSmall,
