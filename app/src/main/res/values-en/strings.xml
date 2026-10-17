@@ -167,7 +167,6 @@
 
     <!-- RoleSelectionScreen -->
     <string name="role_select_title">Who do you want to join as?</string>
-    <string name="role_select_subtitle">You can change this later</string>
     <string name="role_customer_title">I am a Customer</string>
     <string name="role_customer_desc">I want to order food from nearby home chefs</string>
     <string name="role_chef_title">I am a Home Chef</string>
@@ -664,4 +663,5 @@
     <string name="delivery_charge_tiffinbox_note">TiffinBox Delivery is on, so the app sets the charge.</string>
     <string name="delivery_charge_example">At %1$d km: ৳%2$d</string>
     <string name="delivery_charge_invalid">Enter a valid number in every box.</string>
+    <string name="delivery_charge_free_note">Enter 0 for both the base fee and the per-km fee to deliver free.</string>
 </resources>

@@ -169,7 +169,6 @@
 
     <!-- RoleSelectionScreen -->
     <string name="role_select_title">আপনি কে হিসেবে যুক্ত হতে চান?</string>
-    <string name="role_select_subtitle">পরে আপনি এটা পরিবর্তন করতে পারবেন</string>
     <string name="role_customer_title">আমি একজন Customer</string>
     <string name="role_customer_desc">কাছাকাছি home chef থেকে খাবার অর্ডার করতে চাই</string>
     <string name="role_chef_title">আমি একজন Home Chef</string>
@@ -666,4 +665,5 @@
     <string name="delivery_charge_tiffinbox_note">TiffinBox Delivery চালু আছে, তাই চার্জ app ঠিক করে।</string>
     <string name="delivery_charge_example">%1$d km দূরে হলে: ৳%2$d</string>
     <string name="delivery_charge_invalid">সব ঘরে ঠিক সংখ্যা দাও।</string>
+    <string name="delivery_charge_free_note">বেস fee আর প্রতি km fee দুটোতেই ০ দিলে delivery ফ্রি হবে।</string>
 </resources>

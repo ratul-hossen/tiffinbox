@@ -1,4 +1,8 @@
+import { useState } from "react";
+import { doc, updateDoc } from "firebase/firestore";
 import { Star } from "lucide-react";
+import { db } from "../firebase";
+import { logActivity } from "../lib/activityLog";
 import DetailDrawer from "./ui/DetailDrawer";
 import Badge from "./ui/Badge";
 import type { Chef, Meal, Order, Review } from "../types";
@@ -58,6 +62,8 @@ export default function ChefDetail({ chef, meals, orders, reviews, onClose }: Pr
           </div>
           <div className="text-xs text-apple-secondary mt-2 break-all">ID: {chef.id}</div>
         </div>
+
+        <MaxDeliveryFeeEditor key={chef.id} chef={chef} />
 
         <section>
           <h4 className="text-sm font-semibold text-apple-text mb-2">
@@ -138,5 +144,94 @@ export default function ChefDetail({ chef, meals, orders, reviews, onClose }: Pr
         </section>
       </div>
     </DetailDrawer>
+  );
+}
+
+const MAX_FEE_LIMIT = 1000;
+
+/** Sets the ceiling on what this kitchen may charge when it delivers itself. */
+function MaxDeliveryFeeEditor({ chef }: { chef: Chef }) {
+  const current = chef.maxDeliveryFee ?? 0;
+  const [value, setValue] = useState(current > 0 ? String(current) : "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const hasOwnRates =
+    (chef.selfDeliveryBaseFee ?? -1) >= 0 ||
+    (chef.selfDeliveryPerKmFee ?? -1) >= 0 ||
+    (chef.selfDeliveryIncludedKm ?? -1) >= 0;
+
+  async function save() {
+    const trimmed = value.trim();
+    const amount = trimmed === "" ? 0 : Number(trimmed);
+    if (!Number.isInteger(amount) || amount < 0 || amount > MAX_FEE_LIMIT) {
+      setError(`Enter a whole number from 0 to ${MAX_FEE_LIMIT}. 0 uses the App Settings default.`);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setSaved(false);
+    try {
+      await updateDoc(doc(db, "chefs", chef.id), { maxDeliveryFee: amount });
+      await logActivity("Set chef max delivery fee", "chefs", chef.id, { maxDeliveryFee: amount });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-apple-border bg-apple-surface p-4 space-y-3">
+      <div>
+        <h4 className="text-sm font-semibold text-apple-text">Delivery charge cap</h4>
+        <p className="text-xs text-apple-secondary mt-1">
+          The highest fee this kitchen may charge when it delivers itself. The chef can set a lower
+          fee in their app but never above this. 0 uses the App Settings default.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-apple-secondary">৳</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={MAX_FEE_LIMIT}
+          value={value}
+          placeholder="0"
+          onChange={(e) => {
+            setValue(e.target.value);
+            setSaved(false);
+          }}
+          className="w-32 rounded-xl border border-apple-border bg-apple-bg px-3 py-2 text-sm"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy}
+          className="rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {busy ? "Saving…" : "Save cap"}
+        </button>
+        {saved && <span className="text-xs text-apple-green">Saved</span>}
+      </div>
+
+      {error && <p className="text-xs text-apple-red">{error}</p>}
+
+      <p className="text-xs text-apple-secondary">
+        Current cap: {current > 0 ? formatCurrency(current) : "App Settings default"}
+      </p>
+      <p className="text-xs text-apple-secondary">
+        Chef's own rates:{" "}
+        {hasOwnRates
+          ? `base ${formatCurrency(chef.selfDeliveryBaseFee ?? 0)}, ${formatCurrency(
+              chef.selfDeliveryPerKmFee ?? 0,
+            )}/km after ${chef.selfDeliveryIncludedKm ?? 0} km`
+          : "not set (app default applies)"}
+      </p>
+    </section>
   );
 }

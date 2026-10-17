@@ -92,6 +92,17 @@ data class DeliveryQuote(
 
 object DeliveryQuotes {
     /**
+     * Hard ceiling on one kitchen's delivery fee, whatever the admin or the
+     * chef has configured. App Settings allows a ৳500 base and ৳100/km, and a
+     * recommend radius up to 50 km, which multiplies out to ৳5500 - a number
+     * no home-kitchen order should ever show, and above the sanity bound
+     * `orderMoneySane()` in firestore.rules allows, so the order would be
+     * refused rather than merely look wrong. Applied before the surcharge,
+     * like the per-kitchen cap.
+     */
+    const val MAX_FEE = 1000
+
+    /**
      * [distanceKm] null = unknown location: base fee and the default estimate.
      * [surcharge] should already have been matched to the customer's location
      * and the current time by the caller (see DeliveryQuoter).
@@ -107,7 +118,8 @@ object DeliveryQuotes {
         // surcharge - TiffinBox's own surge isn't something a chef's ceiling
         // should swallow (and the two never combine anyway: a cap only exists
         // in self delivery, a surcharge only in TiffinBox delivery).
-        val capped = if (pricing.maxFee > 0) raw.coerceAtMost(pricing.maxFee) else raw
+        val capped = (if (pricing.maxFee > 0) raw.coerceAtMost(pricing.maxFee) else raw)
+            .coerceAtMost(MAX_FEE)
         val extra = surcharge?.extraOn(capped) ?: 0
         return DeliveryQuote(
             fee = (capped + extra).coerceAtLeast(0),

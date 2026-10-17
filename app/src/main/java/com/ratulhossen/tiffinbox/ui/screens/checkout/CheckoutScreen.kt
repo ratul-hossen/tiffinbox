@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.checkout
 
+import com.ratulhossen.tiffinbox.data.AppConfigStore
 import kotlinx.coroutines.delay
 import com.ratulhossen.tiffinbox.ui.components.TiffinLottie
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -99,7 +100,7 @@ fun CheckoutScreen(
         Rewards.maxRedeemablePoints(rewards?.balance ?: 0, (CartStore.subtotal - discount - rankDiscount).coerceAtLeast(0))
     } else 0
     val pointsTaka = Rewards.takaForPoints(pointsUsed)
-    val payableTotal = (CartStore.subtotal + deliveryFee + CartStore.PLATFORM_FEE - discount - rankDiscount - pointsTaka)
+    val payableTotal = (CartStore.subtotal + deliveryFee + AppConfigStore.platformFee - discount - rankDiscount - pointsTaka)
         .coerceAtLeast(0)
     val etaMinutes = Rewards.estimatedDeliveryMinutes(chefDistanceKm)
     // null = as soon as possible; otherwise the chosen pre-order slot (epoch millis).
@@ -222,7 +223,7 @@ fun CheckoutScreen(
                                     items = items.toList(),
                                     subtotal = CartStore.subtotal,
                                     deliveryFee = deliveryFee,
-                                    platformFee = CartStore.PLATFORM_FEE,
+                                    platformFee = AppConfigStore.platformFee,
                                     total = payableTotal,
                                     deliveryAddress = address,
                                     paymentMethod = selectedPayment.name,
@@ -566,7 +567,7 @@ fun CheckoutScreen(
             if (deliveryFee == 0) {
                 SummaryRow(stringResource(R.string.checkout_free_delivery_row), -CartStore.deliveryFee)
             }
-            SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
+            SummaryRow(stringResource(R.string.cart_summary_platform_fee), AppConfigStore.platformFee)
             if (discount > 0) {
                 SummaryRow(stringResource(R.string.coupon_discount_row, appliedCoupon?.code.orEmpty()), -discount)
             }

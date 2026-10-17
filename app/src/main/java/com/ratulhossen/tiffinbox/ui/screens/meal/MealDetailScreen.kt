@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.meal
 
+import com.ratulhossen.tiffinbox.data.AppConfigStore
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.graphics.RectangleShape
@@ -85,7 +86,7 @@ fun MealDetailScreen(
     LightStatusBarIcons()
     var quantity by remember(mealId) { mutableIntStateOf(1) }
     // Today's plates cap an order for now; a pre-order (when sold out) is capped at 10.
-    val maxQuantity = if (meal.availableQuantity > 0) meal.availableQuantity else PRE_ORDER_MAX_PLATES
+    val maxQuantity = if (meal.availableQuantity > 0) meal.availableQuantity else AppConfigStore.preOrderMaxPlates
 
     Scaffold(
         // Transparent so the app-wide AnimatedGradientBackground shows through.
@@ -328,5 +329,3 @@ private fun ChefByline(chef: ChefUi, delivery: DeliveryQuote? = null, onClick: (
         }
     }
 }
-
-private const val PRE_ORDER_MAX_PLATES = 10
