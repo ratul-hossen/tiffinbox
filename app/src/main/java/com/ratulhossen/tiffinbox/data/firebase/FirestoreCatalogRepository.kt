@@ -164,7 +164,19 @@ object FirestoreCatalogRepository {
             mealPlanPackages = (get("mealPlanPackages") as? List<*>)?.filterIsInstance<String>()
                 ?.takeIf { it.isNotEmpty() } ?: listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY"),
             mealPlanMealTypes = (get("mealPlanMealTypes") as? List<*>)?.filterIsInstance<String>()
-                ?.takeIf { it.isNotEmpty() } ?: listOf(com.ratulhossen.tiffinbox.data.model.MealType.BREAKFAST, com.ratulhossen.tiffinbox.data.model.MealType.LUNCH, com.ratulhossen.tiffinbox.data.model.MealType.DINNER)
+                ?.takeIf { it.isNotEmpty() } ?: listOf(com.ratulhossen.tiffinbox.data.model.MealType.BREAKFAST, com.ratulhossen.tiffinbox.data.model.MealType.LUNCH, com.ratulhossen.tiffinbox.data.model.MealType.DINNER),
+            mealPlanBaseBreakfastPrice = getLong("mealPlanBaseBreakfastPrice")?.toInt() ?: 0,
+            mealPlanBaseLunchPrice = getLong("mealPlanBaseLunchPrice")?.toInt() ?: 0,
+            mealPlanBaseDinnerPrice = getLong("mealPlanBaseDinnerPrice")?.toInt() ?: 0,
+            mealPlanDayPrices = ((get("mealPlanDayPrices") as? Map<*, *>)?.mapNotNull { (dayKey, slotMap) ->
+                val dayStr = dayKey as? String ?: return@mapNotNull null
+                val innerMap = (slotMap as? Map<*, *>)?.mapNotNull { (slotKey, priceVal) ->
+                    val slotStr = slotKey as? String ?: return@mapNotNull null
+                    val price = (priceVal as? Number)?.toInt() ?: return@mapNotNull null
+                    slotStr to price
+                }?.toMap() ?: return@mapNotNull null
+                dayStr to innerMap
+            }?.toMap()) ?: emptyMap()
         )
     }
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.RestaurantMenu
 import com.ratulhossen.tiffinbox.data.model.MealType
+import androidx.compose.foundation.horizontalScroll
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.label
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
@@ -36,10 +37,12 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -120,6 +123,10 @@ fun ChefDashboardScreen(
     var mealPlanPriceMax by remember { mutableStateOf("") }
     var mealPlanPackages by remember { mutableStateOf(listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY")) }
     var mealPlanMealTypes by remember { mutableStateOf(listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)) }
+    var mealPlanBaseBreakfastPrice by remember { mutableStateOf("") }
+    var mealPlanBaseLunchPrice by remember { mutableStateOf("") }
+    var mealPlanBaseDinnerPrice by remember { mutableStateOf("") }
+    var mealPlanDayPrices by remember { mutableStateOf<Map<String, Map<String, Int>>>(emptyMap()) }
     var chefBkashNumber by remember { mutableStateOf("") }
     var isSavingMealPlan by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -154,6 +161,10 @@ fun ChefDashboardScreen(
         mealPlanPriceMax = if ((chef?.mealPlanPricePerMealMax ?: 0) > 0) chef!!.mealPlanPricePerMealMax.toString() else ""
         mealPlanPackages = chef?.mealPlanPackages?.takeIf { it.isNotEmpty() } ?: listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY")
         mealPlanMealTypes = chef?.mealPlanMealTypes?.takeIf { it.isNotEmpty() } ?: listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)
+        mealPlanBaseBreakfastPrice = if ((chef?.mealPlanBaseBreakfastPrice ?: 0) > 0) chef!!.mealPlanBaseBreakfastPrice.toString() else ""
+        mealPlanBaseLunchPrice = if ((chef?.mealPlanBaseLunchPrice ?: 0) > 0) chef!!.mealPlanBaseLunchPrice.toString() else ""
+        mealPlanBaseDinnerPrice = if ((chef?.mealPlanBaseDinnerPrice ?: 0) > 0) chef!!.mealPlanBaseDinnerPrice.toString() else ""
+        mealPlanDayPrices = chef?.mealPlanDayPrices ?: emptyMap()
         chefBkashNumber = chef?.bkashNumber.orEmpty()
         // Ends an expired delivery agreement first, so the summary below is current.
         FirestoreDeliveryApplicationRepository.syncExpiry(chefId)
@@ -456,6 +467,22 @@ fun ChefDashboardScreen(
             onPriceMinChange = { mealPlanPriceMin = it },
             priceMax = mealPlanPriceMax,
             onPriceMaxChange = { mealPlanPriceMax = it },
+            baseBreakfastPrice = mealPlanBaseBreakfastPrice,
+            onBaseBreakfastPriceChange = { mealPlanBaseBreakfastPrice = it },
+            baseLunchPrice = mealPlanBaseLunchPrice,
+            onBaseLunchPriceChange = { mealPlanBaseLunchPrice = it },
+            baseDinnerPrice = mealPlanBaseDinnerPrice,
+            onBaseDinnerPriceChange = { mealPlanBaseDinnerPrice = it },
+            dayPrices = mealPlanDayPrices,
+            onUpdateDayPrice = { day, slot, price ->
+                val dayMap = mealPlanDayPrices[day]?.toMutableMap() ?: mutableMapOf()
+                if (price > 0) {
+                    dayMap[slot] = price
+                } else {
+                    dayMap.remove(slot)
+                }
+                mealPlanDayPrices = mealPlanDayPrices + (day to dayMap)
+            },
             selectedPackages = mealPlanPackages,
             onTogglePackage = { pkg ->
                 mealPlanPackages = if (mealPlanPackages.contains(pkg)) {
@@ -486,7 +513,11 @@ fun ChefDashboardScreen(
                         priceMax = mealPlanPriceMax.toIntOrNull() ?: 0,
                         packages = mealPlanPackages,
                         mealTypes = mealPlanMealTypes,
-                        bkashNumber = chefBkashNumber.trim()
+                        bkashNumber = chefBkashNumber.trim(),
+                        baseBreakfastPrice = mealPlanBaseBreakfastPrice.toIntOrNull() ?: 0,
+                        baseLunchPrice = mealPlanBaseLunchPrice.toIntOrNull() ?: 0,
+                        baseDinnerPrice = mealPlanBaseDinnerPrice.toIntOrNull() ?: 0,
+                        dayPrices = mealPlanDayPrices
                     )
                     isSavingMealPlan = false
                     Toast.makeText(
@@ -647,14 +678,15 @@ fun ChefDashboardScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
+                        val pendingCount = subscribers.count { !it.isApprovedByChef }
                         Surface(
                             shape = androidx.compose.foundation.shape.CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer
+                            color = if (pendingCount > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Text(
-                                "Active",
+                                if (pendingCount > 0) "$pendingCount Pending" else "Active",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = if (pendingCount > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                             )
                         }
@@ -666,11 +698,30 @@ fun ChefDashboardScreen(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    sub.customerName.ifBlank { "Customer" },
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        sub.customerName.ifBlank { "Customer" },
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    if (!sub.isApprovedByChef) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.errorContainer
+                                        ) {
+                                            Text(
+                                                "Pending Approval",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
                                 Text(
                                     "${sub.plan.name} Plan (${sub.plan.days} Days) · ${sub.mealType} · ${sub.mealsPerWeek} meals/week",
                                     style = MaterialTheme.typography.bodySmall,
@@ -718,11 +769,12 @@ fun ChefDashboardScreen(
                                         Button(
                                             onClick = { onOpenChat(sub.customerId) },
                                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                            modifier = Modifier.height(34.dp)
+                                            modifier = Modifier.height(34.dp),
+                                            colors = if (!sub.isApprovedByChef) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error) else ButtonDefaults.buttonColors()
                                         ) {
                                             Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(14.dp))
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Chat", style = MaterialTheme.typography.labelMedium)
+                                            Text(if (!sub.isApprovedByChef) "Chat & Request Payment" else "Chat", style = MaterialTheme.typography.labelMedium)
                                         }
                                     }
                                 }
@@ -1078,6 +1130,14 @@ private fun ChefMealPlanConfigCard(
     onPriceMinChange: (String) -> Unit,
     priceMax: String,
     onPriceMaxChange: (String) -> Unit,
+    baseBreakfastPrice: String,
+    onBaseBreakfastPriceChange: (String) -> Unit,
+    baseLunchPrice: String,
+    onBaseLunchPriceChange: (String) -> Unit,
+    baseDinnerPrice: String,
+    onBaseDinnerPriceChange: (String) -> Unit,
+    dayPrices: Map<String, Map<String, Int>>,
+    onUpdateDayPrice: (day: String, slot: String, price: Int) -> Unit,
     selectedPackages: List<String>,
     onTogglePackage: (String) -> Unit,
     selectedMealTypes: List<String>,
@@ -1181,6 +1241,150 @@ private fun ChefMealPlanConfigCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp)
                 )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Base Slot Prices (Breakfast, Lunch, Dinner)
+                Text(
+                    stringResource(R.string.chef_meal_plan_slot_prices_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    stringResource(R.string.chef_meal_plan_slot_prices_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = baseBreakfastPrice,
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onBaseBreakfastPriceChange(it) },
+                        label = { Text("Breakfast (৳)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = baseLunchPrice,
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onBaseLunchPriceChange(it) },
+                        label = { Text("Lunch (৳)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = baseDinnerPrice,
+                        onValueChange = { if (it.all { c -> c.isDigit() }) onBaseDinnerPriceChange(it) },
+                        label = { Text("Dinner (৳)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Day-by-Day Slot Prices
+                Text(
+                    stringResource(R.string.chef_meal_plan_day_prices_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    stringResource(R.string.chef_meal_plan_day_prices_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val days = listOf(
+                    "Saturday" to "শনি",
+                    "Sunday" to "রবি",
+                    "Monday" to "সোম",
+                    "Tuesday" to "মঙ্গল",
+                    "Wednesday" to "বুধ",
+                    "Thursday" to "বৃহঃ",
+                    "Friday" to "শুক্র"
+                )
+                var selectedDayIndex by remember { mutableIntStateOf(0) }
+                val currentDayPair = days[selectedDayIndex]
+                val currentDayKey = currentDayPair.first
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    days.forEachIndexed { idx, pair ->
+                        val hasCustom = (dayPrices[pair.first]?.values?.any { it > 0 }) == true
+                        FilterChip(
+                            selected = selectedDayIndex == idx,
+                            onClick = { selectedDayIndex = idx },
+                            label = {
+                                Text(
+                                    text = "${pair.second}${if (hasCustom) " •" else ""}",
+                                    fontWeight = if (hasCustom) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            "${currentDayPair.second}বার (${currentDayKey}) এর বিশেষ রেট:",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val dayBreakfast = dayPrices[currentDayKey]?.get("Breakfast")?.let { if (it > 0) it.toString() else "" } ?: ""
+                            val dayLunch = dayPrices[currentDayKey]?.get("Lunch")?.let { if (it > 0) it.toString() else "" } ?: ""
+                            val dayDinner = dayPrices[currentDayKey]?.get("Dinner")?.let { if (it > 0) it.toString() else "" } ?: ""
+
+                            OutlinedTextField(
+                                value = dayBreakfast,
+                                onValueChange = { onUpdateDayPrice(currentDayKey, "Breakfast", it.toIntOrNull() ?: 0) },
+                                label = { Text("Breakfast") },
+                                placeholder = { Text(baseBreakfastPrice.ifBlank { "Base" }) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = dayLunch,
+                                onValueChange = { onUpdateDayPrice(currentDayKey, "Lunch", it.toIntOrNull() ?: 0) },
+                                label = { Text("Lunch") },
+                                placeholder = { Text(baseLunchPrice.ifBlank { "Base" }) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = dayDinner,
+                                onValueChange = { onUpdateDayPrice(currentDayKey, "Dinner", it.toIntOrNull() ?: 0) },
+                                label = { Text("Dinner") },
+                                placeholder = { Text(baseDinnerPrice.ifBlank { "Base" }) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 

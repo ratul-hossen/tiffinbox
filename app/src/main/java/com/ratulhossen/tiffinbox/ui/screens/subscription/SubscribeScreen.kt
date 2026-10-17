@@ -48,7 +48,8 @@ import kotlin.math.roundToInt
 fun SubscribeScreen(
     chefId: String,
     onBack: () -> Unit,
-    onSubscribed: () -> Unit
+    onSubscribed: () -> Unit,
+    onOpenChat: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -61,6 +62,7 @@ fun SubscribeScreen(
     var customerPhone by remember { mutableStateOf("") }
     var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
     var trxId by remember { mutableStateOf("") }
+    var showPendingApprovalDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chef = it }
@@ -109,6 +111,48 @@ fun SubscribeScreen(
         )
     }
 
+    // Category price averages from menu dishes as smart fallbacks
+    val categoryAverages = remember(meals) {
+        val groups = meals.groupBy { it.category.lowercase() }
+        val bAvg = groups.filterKeys { it.contains("breakfast") }.values.flatten().map { it.price }.average()
+        val lAvg = groups.filterKeys { it.contains("lunch") || it.contains("rice") }.values.flatten().map { it.price }.average()
+        val dAvg = groups.filterKeys { it.contains("dinner") || it.contains("curry") }.values.flatten().map { it.price }.average()
+        val overallAvg = if (meals.isNotEmpty()) meals.map { it.price }.average() else 100.0
+        mapOf(
+            MealType.BREAKFAST to (if (!bAvg.isNaN() && bAvg > 0) bAvg.roundToInt() else (overallAvg * 0.7).roundToInt().coerceAtLeast(50)),
+            MealType.LUNCH to (if (!lAvg.isNaN() && lAvg > 0) lAvg.roundToInt() else overallAvg.roundToInt().coerceAtLeast(80)),
+            MealType.DINNER to (if (!dAvg.isNaN() && dAvg > 0) dAvg.roundToInt() else (overallAvg * 0.95).roundToInt().coerceAtLeast(80))
+        )
+    }
+
+    // Resolves the exact price for a given day and meal slot
+    fun getMealSlotPrice(day: String, slot: String): Int {
+        // 1. Day-specific override price from chef
+        val dayPrice = chef?.mealPlanDayPrices?.get(day)?.get(slot) ?: 0
+        if (dayPrice > 0) return dayPrice
+
+        // 2. Base slot price set by chef
+        val baseSlotPrice = when (slot) {
+            MealType.BREAKFAST -> chef?.mealPlanBaseBreakfastPrice ?: 0
+            MealType.LUNCH -> chef?.mealPlanBaseLunchPrice ?: 0
+            MealType.DINNER -> chef?.mealPlanBaseDinnerPrice ?: 0
+            else -> 0
+        }
+        if (baseSlotPrice > 0) return baseSlotPrice
+
+        // 3. Fallback: Mean/average price of menu dishes in that category
+        val catAvg = categoryAverages[slot] ?: 0
+        if (catAvg > 0) return catAvg
+
+        // 4. Default fallback
+        return when (slot) {
+            MealType.BREAKFAST -> 60
+            MealType.LUNCH -> 130
+            MealType.DINNER -> 120
+            else -> 100
+        }
+    }
+
     // Day-wise weekly custom schedule
     val daysOfWeek = remember {
         listOf("Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
@@ -135,8 +179,21 @@ fun SubscribeScreen(
         else (mealsPerWeek * (plan.days / 7.0)).roundToInt()
     }
 
-    val totalPrice = remember(totalMeals, selectedPricePerMeal) {
-        totalMeals * selectedPricePerMeal
+    // Exact weekly cost calculated by summing price of each chosen slot for each day
+    val weeklyCost = remember(weeklySchedule, chef, categoryAverages) {
+        weeklySchedule.entries.sumOf { (day, slots) ->
+            slots.sumOf { slot -> getMealSlotPrice(day, slot) }
+        }
+    }
+
+    // Total price across the package duration
+    val totalPrice = remember(weeklyCost, plan, mealsPerWeek) {
+        if (plan == SubscriptionPlan.WEEKLY) weeklyCost
+        else ((weeklyCost / 7.0) * plan.days).roundToInt()
+    }
+
+    val effectivePricePerMeal = remember(totalPrice, totalMeals) {
+        if (totalMeals > 0) (totalPrice.toDouble() / totalMeals).roundToInt() else 100
     }
 
     // Schedule summary string for database & display
@@ -388,6 +445,22 @@ fun SubscribeScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         style = MaterialTheme.typography.bodyLarge
                                     )
+                                    if (daySlots.isNotEmpty()) {
+                                        val dayTotal = daySlots.sumOf { getMealSlotPrice(day, it) }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                        ) {
+                                            Text(
+                                                "৳$dayTotal",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
                                     if (day == "Friday") {
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Surface(
@@ -428,6 +501,7 @@ fun SubscribeScreen(
                             ) {
                                 availableMealSlots.forEach { slot ->
                                     val isSelected = daySlots.contains(slot)
+                                    val slotPrice = getMealSlotPrice(day, slot)
                                     val label = when (slot) {
                                         MealType.BREAKFAST -> stringResource(R.string.subscribe_meal_type_breakfast)
                                         MealType.LUNCH -> stringResource(R.string.subscribe_meal_type_lunch)
@@ -440,7 +514,7 @@ fun SubscribeScreen(
                                             val newSlots = if (isSelected) daySlots - slot else daySlots + slot
                                             weeklySchedule = weeklySchedule + (day to newSlots)
                                         },
-                                        label = { Text(label, fontSize = 12.sp) }
+                                        label = { Text("$label · ৳$slotPrice", fontSize = 12.sp) }
                                     )
                                 }
                             }
@@ -593,12 +667,38 @@ fun SubscribeScreen(
                 )
             }
 
+            // Notice for custom meal plan
+            Spacer(modifier = Modifier.height(14.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        stringResource(R.string.subscribe_custom_pending_notice),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+
             // Summary Breakdown Card
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), stringResource(R.string.price_tag, selectedPricePerMeal))
+                    SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), "Avg ৳$effectivePricePerMeal/meal")
                     SummaryRow(stringResource(R.string.subscribe_summary_meals_per_week), "$mealsPerWeek meals/wk")
+                    SummaryRow("Weekly plan cost", "৳$weeklyCost/week")
                     SummaryRow(stringResource(R.string.subscribe_summary_duration), stringResource(R.string.subscribe_summary_duration_value, plan.days))
                     SummaryRow("Total meals in package", "$totalMeals meals")
                     if (scheduleSummary.isNotBlank()) {
@@ -634,17 +734,18 @@ fun SubscribeScreen(
                             plan = plan,
                             mealsPerWeek = mealsPerWeek,
                             mealType = resolvedMealType,
-                            pricePerMeal = selectedPricePerMeal,
+                            pricePerMeal = effectivePricePerMeal,
                             deliveryAddress = deliveryAddress,
                             customerPhone = customerPhone,
                             paymentMethod = paymentMethod,
                             paymentTransactionId = trxId,
-                            scheduleSummary = scheduleSummary
+                            scheduleSummary = scheduleSummary,
+                            isCustomSchedule = true,
+                            customTotalPrice = totalPrice
                         )
                         isSubmitting = false
                         if (subId != null) {
-                            Toast.makeText(context, "Subscribed successfully!", Toast.LENGTH_SHORT).show()
-                            onSubscribed()
+                            showPendingApprovalDialog = true
                         } else {
                             Toast.makeText(context, "Failed to subscribe. Please try again.", Toast.LENGTH_SHORT).show()
                         }
@@ -657,6 +758,44 @@ fun SubscribeScreen(
                 Text(if (isSubmitting) "Subscribing…" else stringResource(R.string.subscribe_button))
             }
         }
+    }
+
+    if (showPendingApprovalDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showPendingApprovalDialog = false
+                onSubscribed()
+            },
+            title = { Text("মিল প্ল্যান রিকোয়েস্ট সফল!") },
+            text = {
+                Text("আপনার কাস্টম মিল প্ল্যানটি শেফের কাছে পৌঁছেছে এবং শেফের অনুমোদনের অপেক্ষায় আছে। আপনি চ্যাটে শেফের সাথে কথা বলে পেমেন্ট এবং খাবারের বিবরণ নিশ্চিত করতে পারেন।")
+            },
+            confirmButton = {
+                if (onOpenChat != null) {
+                    Button(onClick = {
+                        showPendingApprovalDialog = false
+                        onOpenChat(chefId)
+                    }) {
+                        Text("শেফের সাথে চ্যাট করুন")
+                    }
+                } else {
+                    Button(onClick = {
+                        showPendingApprovalDialog = false
+                        onSubscribed()
+                    }) {
+                        Text("ঠিক আছে")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showPendingApprovalDialog = false
+                    onSubscribed()
+                }) {
+                    Text("হোমে যান")
+                }
+            }
+        )
     }
 }
 

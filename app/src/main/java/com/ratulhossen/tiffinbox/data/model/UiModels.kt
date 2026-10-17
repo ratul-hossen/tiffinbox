@@ -74,7 +74,11 @@ data class ChefUi(
     val mealPlanPricePerMealMin: Int = 0,
     val mealPlanPricePerMealMax: Int = 0,
     val mealPlanPackages: List<String> = listOf("WEEKLY", "DAYS_10", "DAYS_15", "MONTHLY"),
-    val mealPlanMealTypes: List<String> = listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)
+    val mealPlanMealTypes: List<String> = listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER),
+    val mealPlanBaseBreakfastPrice: Int = 0,
+    val mealPlanBaseLunchPrice: Int = 0,
+    val mealPlanBaseDinnerPrice: Int = 0,
+    val mealPlanDayPrices: Map<String, Map<String, Int>> = emptyMap()
 ) {
     /** Both checks done: shows the "Verified" badge. */
     val isFullyVerified: Boolean get() = nidVerified && kitchenVerified
@@ -246,7 +250,10 @@ data class SubscriptionUi(
     val paymentMethod: String = "Cash on Delivery",
     val paymentTransactionId: String = "",
     val isActive: Boolean = true,
-    val scheduleSummary: String = ""
+    val scheduleSummary: String = "",
+    val isApprovedByChef: Boolean = true,
+    val isCustomSchedule: Boolean = false,
+    val status: String = "Active"
 )
 
 data class ChefOrderUi(

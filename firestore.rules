@@ -344,7 +344,7 @@ service cloud.firestore {
       ));
 
       match /messages/{messageId} {
-        allow read, create: if isAdmin() || (isSignedIn() && (
+        allow read, create, update: if isAdmin() || (isSignedIn() && (
           get(/databases/$(database)/documents/chats/$(chatId)).data.customerId == request.auth.uid ||
           get(/databases/$(database)/documents/chats/$(chatId)).data.chefId == request.auth.uid
         ));

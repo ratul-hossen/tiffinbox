@@ -708,6 +708,47 @@
     <string name="chef_meal_plan_save">সেটিংস সংরক্ষণ করুন</string>
     <string name="chef_meal_plan_saved">মিল প্ল্যান সেটিংস সংরক্ষিত হয়েছে!</string>
     <string name="chef_meal_plan_save_failed">সেটিংস সংরক্ষণ করা যায়নি</string>
+    <string name="chef_meal_plan_slot_prices_title">খাবারের বেলার মূল রেট (৳)</string>
+    <string name="chef_meal_plan_slot_prices_hint">নির্দিষ্ট দিনের আলাদা দাম না থাকলে এই বেস রেট প্রযোজ্য হবে</string>
+    <string name="chef_meal_plan_breakfast_price">নাস্তা / Breakfast (৳)</string>
+    <string name="chef_meal_plan_lunch_price">দুপুর / Lunch (৳)</string>
+    <string name="chef_meal_plan_dinner_price">রাত / Dinner (৳)</string>
+    <string name="chef_meal_plan_day_prices_title">দিন অনুযায়ী আলাদা রেট (ঐচ্ছিক)</string>
+    <string name="chef_meal_plan_day_prices_hint">যে দিনের জন্য বিশেষ দাম চান, সেই দিন সিলেক্ট করে রেট বসান</string>
+    <string name="chef_meal_plan_using_base">বেস রেট ব্যবহৃত হবে</string>
+
+    <!-- Chat Payment & Voice -->
+    <string name="chat_request_payment_btn">পেমেন্ট চান</string>
+    <string name="chat_payment_request_title">গ্রাহকের কাছ থেকে পেমেন্ট চান</string>
+    <string name="chat_payment_amount_label">টাকার পরিমাণ (৳)</string>
+    <string name="chat_payment_method_label">পদ্ধতি</string>
+    <string name="chat_payment_number_label">বিকাশ/নগদ নাম্বার</string>
+    <string name="chat_payment_for_label">পেমেন্টের বিবরণ / কারণ</string>
+    <string name="chat_payment_for_hint">যেমন: কাস্টম উইকলি মিল প্ল্যান</string>
+    <string name="chat_payment_send_btn">পেমেন্ট রিকোয়েস্ট পাঠান</string>
+    <string name="chat_payment_pending_badge">পেমেন্ট অপেক্ষমান</string>
+    <string name="chat_payment_paid_badge">পরিশোধিত ✓</string>
+    <string name="chat_payment_send_money_prompt">অনুগ্রহ করে নিচের নাম্বারে টাকা পাঠিয়ে Transaction ID দিন:</string>
+    <string name="chat_payment_trx_placeholder">TrxID লিখুন (যেমন: 9J283LA)</string>
+    <string name="chat_payment_submit_trx">পেমেন্ট নিশ্চিত করুন</string>
+    <string name="chat_payment_trx_submitted">Transaction ID জমা দেওয়া হয়েছে: %1$s</string>
+    <string name="chat_payment_confirm_received">টাকা পেয়েছি ✓</string>
+    <string name="chat_payment_received_done">টাকা পাওয়া গেছে ও মিল প্ল্যান অ্যাক্টিভ করা হয়েছে!</string>
+    <string name="chat_pending_plan_recommendation">কাস্টম মিল প্ল্যানের সুপারিশ:</string>
+
+    <string name="chat_voice_record_hint">ভয়েস রেকর্ড করতে চাপুন</string>
+    <string name="chat_voice_recording">রেকর্ড হচ্ছে… %1$d সেকেন্ড</string>
+    <string name="chat_voice_cancel">বাতিল</string>
+    <string name="chat_voice_send">পাঠান</string>
+    <string name="chat_voice_permission_needed">ভয়েস মেসেজের জন্য মাইক্রোফোন পারমিশন প্রয়োজন</string>
+
+    <string name="subscribe_custom_pending_notice">⚠️ কাস্টম মিল প্ল্যান তৈরির পর শেফের অনুমোদন প্রয়োজন। শেফের সাথে চ্যাট করে পেমেন্ট ও প্ল্যান নিশ্চিত করুন।</string>
+    <string name="subscribe_chat_with_chef">শেফের সাথে চ্যাট করুন</string>
+    <string name="subscribe_status_pending_chef">শেফের অনুমোদনের অপেক্ষায়</string>
+    <string name="subscribe_day_rate">দিন: %1$s • ৳%2$d</string>
+    <string name="subscribe_slot_breakfast">নাস্তা: ৳%1$d</string>
+    <string name="subscribe_slot_lunch">দুপুর: ৳%1$d</string>
+    <string name="subscribe_slot_dinner">রাত: ৳%1$d</string>
     <string name="meal_plans_how">একবার সাবস্ক্রাইব করলে প্রতিদিন নির্দিষ্ট সময়ে খাবার আসবে — প্রতিবার আলাদা করে অর্ডার করতে হবে না।</string>
     <string name="meal_plans_per_week">প্রতি সপ্তাহে</string>
 </resources>
