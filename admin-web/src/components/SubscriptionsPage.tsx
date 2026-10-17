@@ -22,7 +22,7 @@ export default function SubscriptionsPage({ search }: Props) {
       if (activeFilter === "active" && !s.isActive) return false;
       if (activeFilter === "inactive" && s.isActive) return false;
       if (q) {
-        const haystack = `${s.chefName ?? ""} ${s.chefId ?? ""} ${s.customerName ?? ""} ${s.customerPhone ?? ""} ${s.deliveryAddress ?? ""} ${s.paymentMethod ?? ""} ${s.paymentTransactionId ?? ""} ${s.plan ?? ""} ${s.id}`.toLowerCase();
+        const haystack = `${s.chefName ?? ""} ${s.chefId ?? ""} ${s.customerName ?? ""} ${s.customerPhone ?? ""} ${s.deliveryAddress ?? ""} ${s.paymentMethod ?? ""} ${s.paymentTransactionId ?? ""} ${s.plan ?? ""} ${s.scheduleSummary ?? ""} ${s.id}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -66,7 +66,7 @@ export default function SubscriptionsPage({ search }: Props) {
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Chef</th>
               <th className="px-4 py-3">Plan</th>
-              <th className="px-4 py-3">Meal</th>
+              <th className="px-4 py-3">Meal / Schedule</th>
               <th className="px-4 py-3">Meals/wk</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Payment</th>
@@ -85,7 +85,14 @@ export default function SubscriptionsPage({ search }: Props) {
                 </td>
                 <td className="px-4 py-3">{sub.chefName ?? sub.chefId}</td>
                 <td className="px-4 py-3 text-apple-secondary">{sub.plan}</td>
-                <td className="px-4 py-3 text-apple-secondary">{sub.mealType ?? "–"}</td>
+                <td className="px-4 py-3 text-apple-secondary">
+                  <div>{sub.mealType ?? "–"}</div>
+                  {sub.scheduleSummary && (
+                    <div className="text-[11px] text-apple-secondary font-mono mt-0.5 leading-tight max-w-[200px]" title={sub.scheduleSummary}>
+                      🗓️ {sub.scheduleSummary}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3">{sub.mealsPerWeek ?? "–"}</td>
                 <td className="px-4 py-3">{formatCurrency(sub.totalPrice ?? 0)}</td>
                 <td className="px-4 py-3">
