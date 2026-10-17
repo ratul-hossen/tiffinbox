@@ -192,12 +192,19 @@
     <string name="home_hero_subtitle">কাছের হোম শেফদের তাজা খাবার অর্ডার করুন</string>
     <string name="home_empty_title">এখনো কোনো chef নেই</string>
     <string name="home_empty_subtitle">আপনার এলাকায় chef যোগ হলেই এখানে দেখাবে</string>
+    <string name="home_section_all_kitchens">সব Kitchen</string>
+    <string name="home_section_all_kitchens_subtitle">কাছের সব kitchen দেখাচ্ছে — দূরত্ব অনুযায়ী সাজানো</string>
     <string name="home_category_meals_title">%1$s মেনু</string>
     <string name="home_category_empty">এই ক্যাটাগরিতে এখনো কোনো খাবার নেই</string>
     <string name="menu_manager_category_label">ক্যাটাগরি</string>
     <string name="home_see_all">সব দেখুন</string>
 
     <!-- SearchScreen -->
+    <string name="search_tab_food">খাবার</string>
+    <string name="search_tab_kitchens">Kitchen</string>
+    <string name="search_kitchens_placeholder">Kitchen-এর নাম, specialty...</string>
+    <string name="search_distance_nearby">১০ কিমি-র মধ্যে</string>
+    <string name="search_distance_all">সব Kitchen</string>
     <string name="search_veg_only_chip">শুধু Veg</string>
     <string name="search_empty_state_message">কিছু পাওয়া যায়নি, অন্য কিছু খুঁজে দেখুন</string>
 

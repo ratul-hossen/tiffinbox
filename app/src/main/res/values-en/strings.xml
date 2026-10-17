@@ -190,12 +190,19 @@
     <string name="home_hero_subtitle">Order fresh meals from home chefs near you</string>
     <string name="home_empty_title">No chefs yet</string>
     <string name="home_empty_subtitle">Chefs in your area will show up here once they join</string>
+    <string name="home_section_all_kitchens">All Kitchens</string>
+    <string name="home_section_all_kitchens_subtitle">Showing all kitchens, sorted by distance</string>
     <string name="home_category_meals_title">%1$s menu</string>
     <string name="home_category_empty">No meals in this category yet</string>
     <string name="menu_manager_category_label">Category</string>
     <string name="home_see_all">See all</string>
 
     <!-- SearchScreen -->
+    <string name="search_tab_food">Food</string>
+    <string name="search_tab_kitchens">Kitchens</string>
+    <string name="search_kitchens_placeholder">Kitchen name, specialty…</string>
+    <string name="search_distance_nearby">Within 10 km</string>
+    <string name="search_distance_all">All kitchens</string>
     <string name="search_veg_only_chip">Veg only</string>
     <string name="search_empty_state_message">Nothing found, try searching something else</string>
 

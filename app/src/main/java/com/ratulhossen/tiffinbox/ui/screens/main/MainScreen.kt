@@ -150,7 +150,7 @@ fun MainScreen(
                     cartCount = cartCount,
                     onMealPlansClick = onMealPlansClick
                 )
-                1 -> SearchScreen(onMealClick = onMealClick)
+                1 -> SearchScreen(onMealClick = onMealClick, onChefClick = onChefClick)
                 2 -> OrdersScreen(onOrderAgain = onCartClick)
                 3 -> FavoritesScreen(onChefClick = onChefClick)
                 4 -> ProfileScreen(
