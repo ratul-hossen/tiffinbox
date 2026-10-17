@@ -24,7 +24,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,7 +95,7 @@ fun Base64Thumbnail(
                 Text(
                     emoji,
                     style = TextStyle(fontSize = emojiFontSize),
-                    modifier = Modifier.semantics { clearAndSetSemantics {} }
+                    modifier = Modifier.clearAndSetSemantics {}
                 )
             }
         }

@@ -614,18 +614,51 @@ fun HomeScreen(
             }
         }
 
-        // Also shown when kitchens exist but none is within reach of the
-        // customer (e.g. every kitchen is in another city), instead of empty
-        // section headers with nothing under them.
+        // When no kitchen is in the recommendation/nearby radius (e.g. customer
+        // is abroad or in a city without chefs yet), show ALL kitchens rather
+        // than a dead empty screen. Cards carry their real distance so the
+        // customer can see what's there and decide whether to order.
         val nothingNearby = chefs.isNotEmpty() && selectedCategory == null &&
             recommendedChefs.isEmpty() && nearbyChefs.isEmpty() && aiMealsShown.isEmpty()
-        if (chefs.isEmpty() || nothingNearby) {
+        val allKitchensFallback = remember(chefs, nothingNearby) {
+            if (nothingNearby) chefs.sortedBy { it.distanceKm } else emptyList()
+        }
+
+        if (chefs.isEmpty()) {
             Spacer(modifier = Modifier.height(28.dp))
             PhotoEmptyState(
                 resId = R.drawable.empty_orders,
                 title = stringResource(R.string.home_empty_title),
                 subtitle = stringResource(R.string.home_empty_subtitle)
             )
+        }
+
+        if (allKitchensFallback.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(
+                title = stringResource(R.string.home_section_all_kitchens),
+                onSeeAllClick = { onSeeAllClick("all") }
+            )
+            Text(
+                stringResource(R.string.home_section_all_kitchens_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(allKitchensFallback) { chef ->
+                    ChefCard(
+                        chef = chef,
+                        modifier = Modifier.width(180.dp),
+                        delivery = deliveryContext?.let { DeliveryQuoter.quote(chef, chef.distanceKm, it) },
+                        onClick = { onChefClick(chef.id) }
+                    )
+                }
+            }
         }
 
         // Weekly / monthly plans, highlighted for students.

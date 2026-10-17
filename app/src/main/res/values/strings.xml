@@ -192,12 +192,19 @@
     <string name="home_hero_subtitle">কাছের হোম শেফদের তাজা খাবার অর্ডার করুন</string>
     <string name="home_empty_title">এখনো কোনো chef নেই</string>
     <string name="home_empty_subtitle">আপনার এলাকায় chef যোগ হলেই এখানে দেখাবে</string>
+    <string name="home_section_all_kitchens">সব Kitchen</string>
+    <string name="home_section_all_kitchens_subtitle">কাছের সব kitchen দেখাচ্ছে — দূরত্ব অনুযায়ী সাজানো</string>
     <string name="home_category_meals_title">%1$s মেনু</string>
     <string name="home_category_empty">এই ক্যাটাগরিতে এখনো কোনো খাবার নেই</string>
     <string name="menu_manager_category_label">ক্যাটাগরি</string>
     <string name="home_see_all">সব দেখুন</string>
 
     <!-- SearchScreen -->
+    <string name="search_tab_food">খাবার</string>
+    <string name="search_tab_kitchens">Kitchen</string>
+    <string name="search_kitchens_placeholder">Kitchen-এর নাম, specialty...</string>
+    <string name="search_distance_nearby">১০ কিমি-র মধ্যে</string>
+    <string name="search_distance_all">সব Kitchen</string>
     <string name="search_veg_only_chip">শুধু Veg</string>
     <string name="search_empty_state_message">কিছু পাওয়া যায়নি, অন্য কিছু খুঁজে দেখুন</string>
 
@@ -636,16 +643,13 @@
     <string name="verification_status_done">যাচাই সম্পন্ন ✓</string>
     <string name="verification_status_waiting">যাচাইয়ের অপেক্ষায়…</string>
     <string name="chef_verified_badge">যাচাইকৃত</string>
-    <string name="chef_fact_orders">%1$s অর্ডার</string>
-    <string name="chef_fact_experience">%1$d বছরের অভিজ্ঞতা</string>
-    <string name="chef_fact_rating">%1$s রেটিং</string>
     <string name="chef_detail_specialties_title">বিশেষত্ব</string>
     <string name="chef_detail_story_title">আমাদের গল্প</string>
     <string name="edit_profile_bio_label">সংক্ষিপ্ত পরিচয়</string>
     <string name="edit_profile_story_label">আপনার গল্প</string>
-    <string name="edit_profile_specialty_label">বিশেষত্ব (কমা দিয়ে আলাদা করুন)</string>
+    <string name="edit_profile_specialties_label">বিশেষত্ব (কমা দিয়ে আলাদা করুন)</string>
     <string name="meal_plan_promo_title">সাপ্তাহিক/মাসিক মিল প্ল্যান</string>
-    <string name="meal_plan_promo_subtitle">ছাত্রদের জন্য সাশ্রয়ী — নিয়মিত খাবার, নির্দিষ্ট দামে!</string>
+    <string name="meal_plan_promo_body">ছাত্রদের জন্য সাশ্রয়ী — নিয়মিত খাবার, নির্দিষ্ট দামে!</string>
     <string name="meal_plans_title">মিল প্ল্যান</string>
     <string name="meal_plans_empty">এখনো কোনো কিচেন মিল প্ল্যান অফার করেনি</string>
     <string name="meal_plans_starting_from">৳%1$d থেকে শুরু</string>
@@ -666,4 +670,17 @@
     <string name="delivery_charge_example">%1$d km দূরে হলে: ৳%2$d</string>
     <string name="delivery_charge_invalid">সব ঘরে ঠিক সংখ্যা দাও।</string>
     <string name="delivery_charge_free_note">বেস fee আর প্রতি km fee দুটোতেই ০ দিলে delivery ফ্রি হবে।</string>
+    <string name="chef_fact_years_value">%1$d বছর</string>
+    <string name="chef_fact_years_label">অভিজ্ঞতা</string>
+    <string name="chef_fact_type_label">কিচেনের ধরন</string>
+    <string name="chef_fact_orders_label">মোট অর্ডার</string>
+    <string name="chef_map_no_location">দূরত্ব দেখতে আগে আপনার ঠিকানা যোগ করুন</string>
+    <string name="chef_map_you">আপনি এখানে</string>
+    <string name="chef_map_open_kitchen">কিচেন দেখতে চাপুন</string>
+    <string name="edit_profile_about_section">কিচেনের পরিচিতি</string>
+    <string name="edit_profile_story_placeholder">কীভাবে রান্না শুরু করলেন, কী নিয়ে আপনি গর্বিত…</string>
+    <string name="edit_profile_specialties_placeholder">বিরিয়ানি, ভর্তা, মিষ্টি</string>
+    <string name="edit_profile_years_label">অভিজ্ঞতা (বছর)</string>
+    <string name="meal_plans_how">একবার সাবস্ক্রাইব করলে প্রতিদিন নির্দিষ্ট সময়ে খাবার আসবে — প্রতিবার আলাদা করে অর্ডার করতে হবে না।</string>
+    <string name="meal_plans_per_week">প্রতি সপ্তাহে</string>
 </resources>

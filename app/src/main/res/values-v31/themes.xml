@@ -1,0 +1,18 @@
+<resources>
+    <!--
+      Android 12+ always shows a system splash before the app's first frame -
+      it can't be turned off. Left unstyled it is a white screen with a small
+      launcher icon, which flashes white and then cuts to this app's own dark
+      Splash. Painting it the same near-black and showing the TiffinBox mark
+      makes it read as the first frame of that splash rather than a separate
+      screen.
+    -->
+    <style name="Theme.TiffinBox" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <!-- The mark alone, on transparent: an icon background colour would
+             put a pale circle back on the dark screen. -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+</resources>

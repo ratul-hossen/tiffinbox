@@ -190,12 +190,19 @@
     <string name="home_hero_subtitle">Order fresh meals from home chefs near you</string>
     <string name="home_empty_title">No chefs yet</string>
     <string name="home_empty_subtitle">Chefs in your area will show up here once they join</string>
+    <string name="home_section_all_kitchens">All Kitchens</string>
+    <string name="home_section_all_kitchens_subtitle">Showing all kitchens, sorted by distance</string>
     <string name="home_category_meals_title">%1$s menu</string>
     <string name="home_category_empty">No meals in this category yet</string>
     <string name="menu_manager_category_label">Category</string>
     <string name="home_see_all">See all</string>
 
     <!-- SearchScreen -->
+    <string name="search_tab_food">Food</string>
+    <string name="search_tab_kitchens">Kitchens</string>
+    <string name="search_kitchens_placeholder">Kitchen name, specialty…</string>
+    <string name="search_distance_nearby">Within 10 km</string>
+    <string name="search_distance_all">All kitchens</string>
     <string name="search_veg_only_chip">Veg only</string>
     <string name="search_empty_state_message">Nothing found, try searching something else</string>
 
@@ -634,16 +641,13 @@
     <string name="verification_status_done">Verified ✓</string>
     <string name="verification_status_waiting">Waiting for verification…</string>
     <string name="chef_verified_badge">Verified</string>
-    <string name="chef_fact_orders">%1$s orders</string>
-    <string name="chef_fact_experience">%1$d years experience</string>
-    <string name="chef_fact_rating">%1$s rating</string>
     <string name="chef_detail_specialties_title">Specialties</string>
     <string name="chef_detail_story_title">Our Story</string>
     <string name="edit_profile_bio_label">Short bio</string>
     <string name="edit_profile_story_label">Your story</string>
-    <string name="edit_profile_specialty_label">Specialties (comma separated)</string>
+    <string name="edit_profile_specialties_label">Specialties (comma separated)</string>
     <string name="meal_plan_promo_title">Weekly/Monthly Meal Plans</string>
-    <string name="meal_plan_promo_subtitle">Affordable for students — regular meals at fixed prices!</string>
+    <string name="meal_plan_promo_body">Affordable for students — regular meals at fixed prices!</string>
     <string name="meal_plans_title">Meal Plans</string>
     <string name="meal_plans_empty">No kitchens offer meal plans yet</string>
     <string name="meal_plans_starting_from">Starting from ৳%1$d</string>
@@ -664,4 +668,17 @@
     <string name="delivery_charge_example">At %1$d km: ৳%2$d</string>
     <string name="delivery_charge_invalid">Enter a valid number in every box.</string>
     <string name="delivery_charge_free_note">Enter 0 for both the base fee and the per-km fee to deliver free.</string>
+    <string name="chef_fact_years_value">%1$d yrs</string>
+    <string name="chef_fact_years_label">Experience</string>
+    <string name="chef_fact_type_label">Kitchen type</string>
+    <string name="chef_fact_orders_label">Orders served</string>
+    <string name="chef_map_no_location">Add your address to see distances</string>
+    <string name="chef_map_you">You are here</string>
+    <string name="chef_map_open_kitchen">Tap to open kitchen</string>
+    <string name="edit_profile_about_section">About your kitchen</string>
+    <string name="edit_profile_story_placeholder">How you started cooking, what you\'re proud of…</string>
+    <string name="edit_profile_specialties_placeholder">Biryani, Bhorta, Desserts</string>
+    <string name="edit_profile_years_label">Experience (years)</string>
+    <string name="meal_plans_how">Subscribe once and your meals arrive every day — no need to order each time.</string>
+    <string name="meal_plans_per_week">per week</string>
 </resources>
