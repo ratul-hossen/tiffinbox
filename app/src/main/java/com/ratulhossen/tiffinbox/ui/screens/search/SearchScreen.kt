@@ -61,8 +61,8 @@ fun SearchScreen(
     // true = within RECOMMEND_RADIUS_KM (10 km); false = all kitchens
     var nearbyOnly by remember { mutableStateOf(true) }
 
-    var allMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
-    var allChefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
+    var allMeals by remember { mutableStateOf(FirestoreCatalogRepository.getCachedMeals()) }
+    var allChefs by remember { mutableStateOf(FirestoreCatalogRepository.getCachedChefs()) }
     var hasRealDistances by remember { mutableStateOf(false) }
     var deliveryContext by remember { mutableStateOf<DeliveryContext?>(null) }
 

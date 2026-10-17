@@ -50,8 +50,10 @@ import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreDeliveryApplicationRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
 import com.ratulhossen.tiffinbox.data.model.ChefOrderUi
 import com.ratulhossen.tiffinbox.data.model.ChefVideoUi
+import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
 import com.ratulhossen.tiffinbox.data.model.EarningsSummary
 import com.ratulhossen.tiffinbox.domain.DemandForecastEngine
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
@@ -87,6 +89,7 @@ fun ChefDashboardScreen(
     var preOrders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
     var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
+    var subscribers by remember { mutableStateOf<List<SubscriptionUi>>(emptyList()) }
     var kitchenName by remember { mutableStateOf<String?>(null) }
     var isApproved by remember { mutableStateOf<Boolean?>(null) }
     var isRejected by remember { mutableStateOf(false) }
@@ -148,6 +151,7 @@ fun ChefDashboardScreen(
             orders = FirestoreOrderRepository.getIncomingOrders(chefId)
             preOrders = FirestoreOrderRepository.getUpcomingPreOrders(chefId)
             earnings = FirestoreOrderRepository.getEarningsSummary(chefId)
+            subscribers = FirestoreSubscriptionRepository.getChefSubscriptions(chefId)
         }
     }
 
@@ -549,6 +553,95 @@ fun ChefDashboardScreen(
         if (preOrders.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             PreOrderDemandCard(preOrders)
+        }
+
+        if (subscribers.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Meal Plan Subscribers (${subscribers.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                "Active",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    subscribers.forEach { sub ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    sub.customerName.ifBlank { "Customer" },
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    "${sub.plan.name} Plan · ${sub.mealType} · ${sub.mealsPerWeek} meals/week",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                if (sub.deliveryAddress.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Filled.Place, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(sub.deliveryAddress, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    if (sub.customerPhone.isNotBlank()) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${sub.customerPhone}"))
+                                                context.startActivity(intent)
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                            modifier = Modifier.height(34.dp)
+                                        ) {
+                                            Icon(Icons.Filled.Call, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Call", style = MaterialTheme.typography.labelMedium)
+                                        }
+                                    }
+                                    if (sub.customerId.isNotBlank()) {
+                                        Button(
+                                            onClick = { onOpenChat(sub.customerId) },
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                            modifier = Modifier.height(34.dp)
+                                        ) {
+                                            Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Chat", style = MaterialTheme.typography.labelMedium)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

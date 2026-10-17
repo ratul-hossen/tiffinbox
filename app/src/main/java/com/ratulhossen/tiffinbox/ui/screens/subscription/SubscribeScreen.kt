@@ -32,6 +32,13 @@ import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TopAppBarDefaults
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.rememberCoroutineScope
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import kotlinx.coroutines.launch
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubscribeScreen(
@@ -39,13 +46,26 @@ fun SubscribeScreen(
     onBack: () -> Unit,
     onSubscribed: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    var isSubmitting by remember { mutableStateOf(false) }
     var chef by remember(chefId) { mutableStateOf<ChefUi?>(SampleData.chefById(chefId)) }
     var meals by remember(chefId) { mutableStateOf<List<MealUi>>(SampleData.mealsForChef(chefId)) }
+    var deliveryAddress by remember { mutableStateOf("") }
+    var customerPhone by remember { mutableStateOf("") }
+    var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
+    var trxId by remember { mutableStateOf("") }
 
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chef = it }
         val firestoreMeals = FirestoreCatalogRepository.getMealsForChef(chefId)
         if (firestoreMeals.isNotEmpty()) meals = firestoreMeals
+        val uid = FirebaseAuthRepository.currentUser?.uid
+        if (uid != null) {
+            FirestoreUserRepository.getProfile(uid)?.let { profile ->
+                if (deliveryAddress.isBlank()) deliveryAddress = profile.address
+                if (customerPhone.isBlank()) customerPhone = profile.phoneNumber
+            }
+        }
     }
 
     val pricePerMeal = remember(meals) {
@@ -80,8 +100,9 @@ fun SubscribeScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(20.dp)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
         ) {
             Text(
                 stringResource(R.string.subscribe_header, chef?.kitchenName.orEmpty()),
@@ -94,7 +115,7 @@ fun SubscribeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text(stringResource(R.string.subscribe_choose_plan_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -107,7 +128,7 @@ fun SubscribeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Text(stringResource(R.string.subscribe_meal_type_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -124,7 +145,7 @@ fun SubscribeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Text(stringResource(R.string.subscribe_meals_per_week_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -147,7 +168,50 @@ fun SubscribeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("Delivery Details", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(10.dp))
+            OutlinedTextField(
+                value = deliveryAddress,
+                onValueChange = { deliveryAddress = it },
+                label = { Text("Delivery Address") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            OutlinedTextField(
+                value = customerPhone,
+                onValueChange = { customerPhone = it },
+                label = { Text("Contact Phone") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("Payment Method", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf("Cash on Delivery", "bKash").forEach { method ->
+                    FilterChip(
+                        selected = paymentMethod == method,
+                        onClick = { paymentMethod = method },
+                        label = { Text(method) }
+                    )
+                }
+            }
+            if (paymentMethod == "bKash") {
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = trxId,
+                    onValueChange = { trxId = it },
+                    label = { Text("bKash Transaction ID") },
+                    placeholder = { Text("e.g. 9K20ABX8") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
             Card(elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), stringResource(R.string.price_tag, pricePerMeal))
@@ -162,24 +226,33 @@ fun SubscribeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
             TiffinButton(
+                enabled = !isSubmitting && deliveryAddress.isNotBlank() && (paymentMethod != "bKash" || trxId.isNotBlank()),
                 onClick = {
-                    FirestoreSubscriptionRepository.subscribe(
-                        chefId = chefId,
-                        chefName = chef?.kitchenName.orEmpty(),
-                        plan = plan,
-                        mealsPerWeek = mealsPerWeek,
-                        mealType = mealType,
-                        pricePerMeal = pricePerMeal
-                    )
-                    onSubscribed()
+                    isSubmitting = true
+                    scope.launch {
+                        FirestoreSubscriptionRepository.subscribe(
+                            chefId = chefId,
+                            chefName = chef?.kitchenName.orEmpty(),
+                            plan = plan,
+                            mealsPerWeek = mealsPerWeek,
+                            mealType = mealType,
+                            pricePerMeal = pricePerMeal,
+                            deliveryAddress = deliveryAddress,
+                            customerPhone = customerPhone,
+                            paymentMethod = paymentMethod,
+                            paymentTransactionId = trxId
+                        )
+                        isSubmitting = false
+                        onSubscribed()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text(stringResource(R.string.subscribe_button))
+                Text(if (isSubmitting) "Subscribing…" else stringResource(R.string.subscribe_button))
             }
         }
     }

@@ -23,6 +23,17 @@ import androidx.compose.ui.text.style.TextAlign
 import com.ratulhossen.tiffinbox.ui.theme.brandGradient
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.viewinterop.AndroidView
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.CopyrightOverlay
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon
+import com.ratulhossen.tiffinbox.data.location.GeoPoint as AppGeoPoint
+import com.ratulhossen.tiffinbox.ui.components.formatDistanceKm
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -91,15 +102,17 @@ fun HomeScreen(
     onChatClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
     cartCount: Int = 0,
-    onMealPlansClick: () -> Unit = {}
+    onMealPlansClick: () -> Unit = {},
+    onOpenMapClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     // The header/photo runs behind the status bar - keep its icons white.
     LightStatusBarIcons()
-    var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var chefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
+    var selectedCategory by remember { mutableStateOf<String?>(defaultCategoryForCurrentHour()) }
+    var chefs by remember { mutableStateOf(FirestoreCatalogRepository.getCachedChefs()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
-    var catalogMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
+    var catalogMeals by remember { mutableStateOf(FirestoreCatalogRepository.getCachedMeals()) }
+    var myLocationGeoPoint by remember { mutableStateOf<AppGeoPoint?>(null) }
     // Only true once we've replaced the static/demo distanceKm with a real
     // haversine distance from the customer's own saved location - until
     // then the 2-3km "nearby" radius filter below would be meaningless.
@@ -151,6 +164,7 @@ fun HomeScreen(
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
         val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        myLocationGeoPoint = myLocation
         val loadedChefs = if (myLocation != null) firestoreChefs.withRealDistances(myLocation) else firestoreChefs
 
         // The remaining signals are independent reads - fetch them together.
@@ -732,6 +746,51 @@ fun HomeScreen(
                 }
             }
         }
+
+        val mapChefs = remember(nearbyChefs, visibleChefs, chefs) {
+            if (nearbyChefs.isNotEmpty()) nearbyChefs else visibleChefs.ifEmpty { chefs }
+        }
+        if (mapChefs.any { it.latitude != 0.0 && it.longitude != 0.0 }) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Kitchens on Map",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Find home chefs cooking around you",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick = onOpenMapClick) {
+                    Text(
+                        "Full Map",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            HomeKitchenMapView(
+                chefs = mapChefs,
+                userLocation = myLocationGeoPoint,
+                onChefClick = onChefClick,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth()
+                    .height(240.dp)
+            )
+        }
     }
 }
 
@@ -868,3 +927,111 @@ private object HomeAddressCache {
         context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putString(uid, address).apply()
     }
 }
+
+private fun defaultCategoryForCurrentHour(): String {
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    return when (hour) {
+        in 5..10 -> "Breakfast"
+        in 11..15 -> "Lunch"
+        in 16..18 -> "Snack"
+        else -> "Dinner"
+    }
+}
+
+@Composable
+private fun HomeKitchenMapView(
+    chefs: List<ChefUi>,
+    userLocation: AppGeoPoint?,
+    onChefClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val validChefs = remember(chefs) {
+        chefs.filter { it.latitude != 0.0 && it.longitude != 0.0 }
+    }
+
+    remember {
+        Configuration.getInstance().apply {
+            load(context, context.getSharedPreferences("osmdroid", android.content.Context.MODE_PRIVATE))
+            userAgentValue = context.packageName
+        }
+    }
+
+    val mapView = remember {
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            controller.setZoom(13.5)
+            overlays.add(CopyrightOverlay(context))
+        }
+    }
+
+    DisposableEffect(Unit) {
+        mapView.onResume()
+        onDispose {
+            mapView.onPause()
+            mapView.onDetach()
+        }
+    }
+
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .shadow(6.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        AndroidView(
+            factory = {
+                mapView.apply {
+                    setOnTouchListener { v, _ ->
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+            update = { map ->
+                map.overlays.removeAll { it is Marker || it is Polygon }
+                val centre = userLocation?.let { GeoPoint(it.latitude, it.longitude) }
+                    ?: validChefs.firstOrNull()?.let { GeoPoint(it.latitude, it.longitude) }
+                    ?: GeoPoint(23.8103, 90.4125)
+                map.controller.setCenter(centre)
+
+                userLocation?.let { mine ->
+                    val here = GeoPoint(mine.latitude, mine.longitude)
+                    map.overlays.add(Polygon(map).apply {
+                        points = Polygon.pointsAsCircle(here, 5000.0)
+                        fillPaint.color = 0x22E11D2E
+                        outlinePaint.color = 0xAAE11D2E.toInt()
+                        outlinePaint.strokeWidth = 3f
+                    })
+                    map.overlays.add(Marker(map).apply {
+                        position = here
+                        title = "Your Location"
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    })
+                }
+
+                validChefs.forEach { chef ->
+                    map.overlays.add(Marker(map).apply {
+                        position = GeoPoint(chef.latitude, chef.longitude)
+                        title = chef.kitchenName
+                        snippet = if (userLocation != null) "${formatDistanceKm(chef.distanceKm)} km · Tap to open" else "Tap to open"
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        setOnMarkerClickListener { marker, _ ->
+                            if (marker.isInfoWindowShown) {
+                                marker.closeInfoWindow()
+                                onChefClick(chef.id)
+                            } else {
+                                marker.showInfoWindow()
+                            }
+                            true
+                        }
+                    })
+                }
+                map.invalidate()
+            }
+        )
+    }
+}
+
