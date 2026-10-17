@@ -13,16 +13,18 @@ interface Props {
 
 export default function SubscriptionsPage({ search }: Props) {
   const { data: subscriptions, loading, error } = useCollection<Subscription>("subscriptions");
-  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "pending" | "inactive">("all");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return subscriptions.filter((s) => {
-      if (activeFilter === "active" && !s.isActive) return false;
-      if (activeFilter === "inactive" && s.isActive) return false;
+      const isPending = s.status === "Pending Chef Approval" || s.isApprovedByChef === false;
+      if (activeFilter === "active" && (!s.isActive || isPending)) return false;
+      if (activeFilter === "pending" && !isPending) return false;
+      if (activeFilter === "inactive" && (s.isActive || isPending)) return false;
       if (q) {
-        const haystack = `${s.chefName ?? ""} ${s.chefId ?? ""} ${s.customerName ?? ""} ${s.customerPhone ?? ""} ${s.deliveryAddress ?? ""} ${s.paymentMethod ?? ""} ${s.paymentTransactionId ?? ""} ${s.plan ?? ""} ${s.scheduleSummary ?? ""} ${s.id}`.toLowerCase();
+        const haystack = `${s.chefName ?? ""} ${s.chefId ?? ""} ${s.customerName ?? ""} ${s.customerPhone ?? ""} ${s.deliveryAddress ?? ""} ${s.paymentMethod ?? ""} ${s.paymentTransactionId ?? ""} ${s.plan ?? ""} ${s.scheduleSummary ?? ""} ${s.status ?? ""} ${s.id}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -34,8 +36,27 @@ export default function SubscriptionsPage({ search }: Props) {
     if (!confirm(`${actionLabel} this subscription?`)) return;
     setBusyId(subId);
     try {
-      await updateDoc(doc(db, "subscriptions", subId), { isActive: makeActive });
+      await updateDoc(doc(db, "subscriptions", subId), {
+        isActive: makeActive,
+        isApprovedByChef: makeActive,
+        status: makeActive ? "Active" : "Cancelled"
+      });
       await logActivity(`${actionLabel}led subscription`, "subscriptions", subId);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function approveSubscription(subId: string) {
+    if (!confirm("Approve and activate this subscription?")) return;
+    setBusyId(subId);
+    try {
+      await updateDoc(doc(db, "subscriptions", subId), {
+        isActive: true,
+        isApprovedByChef: true,
+        status: "Active"
+      });
+      await logActivity("Approved custom subscription", "subscriptions", subId);
     } finally {
       setBusyId(null);
     }
@@ -50,12 +71,13 @@ export default function SubscriptionsPage({ search }: Props) {
         <p className="text-sm text-apple-secondary">{filtered.length} subscriptions</p>
         <select
           value={activeFilter}
-          onChange={(e) => setActiveFilter(e.target.value as "all" | "active" | "inactive")}
+          onChange={(e) => setActiveFilter(e.target.value as "all" | "active" | "pending" | "inactive")}
           className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
         >
           <option value="all">All</option>
           <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="pending">Pending Approval</option>
+          <option value="inactive">Inactive / Cancelled</option>
         </select>
       </div>
 
@@ -76,48 +98,66 @@ export default function SubscriptionsPage({ search }: Props) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((sub) => (
-              <tr key={sub.id} className="border-b border-apple-border last:border-0">
-                <td className="px-4 py-3">
-                  <div className="font-medium text-apple-text">{sub.customerName || sub.customerId || "–"}</div>
-                  {sub.customerPhone && <div className="text-xs text-apple-secondary">{sub.customerPhone}</div>}
-                  {sub.deliveryAddress && <div className="text-xs text-apple-secondary truncate max-w-xs">{sub.deliveryAddress}</div>}
-                </td>
-                <td className="px-4 py-3">{sub.chefName ?? sub.chefId}</td>
-                <td className="px-4 py-3 text-apple-secondary">{sub.plan}</td>
-                <td className="px-4 py-3 text-apple-secondary">
-                  <div>{sub.mealType ?? "–"}</div>
-                  {sub.scheduleSummary && (
-                    <div className="text-[11px] text-apple-secondary font-mono mt-0.5 leading-tight max-w-[200px]" title={sub.scheduleSummary}>
-                      🗓️ {sub.scheduleSummary}
+            {filtered.map((sub) => {
+              const isPending = sub.status === "Pending Chef Approval" || sub.isApprovedByChef === false;
+              return (
+                <tr key={sub.id} className="border-b border-apple-border last:border-0">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-apple-text">{sub.customerName || sub.customerId || "–"}</div>
+                    {sub.customerPhone && <div className="text-xs text-apple-secondary">{sub.customerPhone}</div>}
+                    {sub.deliveryAddress && <div className="text-xs text-apple-secondary truncate max-w-xs">{sub.deliveryAddress}</div>}
+                  </td>
+                  <td className="px-4 py-3">{sub.chefName ?? sub.chefId}</td>
+                  <td className="px-4 py-3 text-apple-secondary">{sub.plan}</td>
+                  <td className="px-4 py-3 text-apple-secondary">
+                    <div>{sub.mealType ?? "–"}</div>
+                    {sub.scheduleSummary && (
+                      <div className="text-[11px] text-apple-secondary font-mono mt-0.5 leading-tight max-w-[200px]" title={sub.scheduleSummary}>
+                        🗓️ {sub.scheduleSummary}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">{sub.mealsPerWeek ?? "–"}</td>
+                  <td className="px-4 py-3">{formatCurrency(sub.totalPrice ?? 0)}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-medium text-apple-text">{sub.paymentMethod ?? "COD"}</span>
+                    {sub.paymentTransactionId && (
+                      <div className="text-xs text-apple-secondary font-mono">{sub.paymentTransactionId}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-apple-secondary">{formatDate(sub.startedAt)}</td>
+                  <td className="px-4 py-3">
+                    {isPending ? (
+                      <Badge tone="amber">Pending Approval</Badge>
+                    ) : (
+                      <Badge tone={sub.isActive ? "green" : "neutral"}>
+                        {sub.isActive ? "Active" : "Cancelled"}
+                      </Badge>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {isPending && (
+                        <button
+                          onClick={() => approveSubscription(sub.id)}
+                          disabled={busyId === sub.id}
+                          className="text-xs text-apple-green font-medium hover:opacity-80 transition-opacity duration-150"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      <button
+                        onClick={() => toggleStatus(sub.id, !sub.isActive)}
+                        disabled={busyId === sub.id}
+                        className={`text-xs hover:opacity-80 transition-opacity duration-150 ${sub.isActive ? "text-apple-red" : "text-apple-blue font-medium"}`}
+                      >
+                        {sub.isActive ? "Cancel" : "Reactivate"}
+                      </button>
                     </div>
-                  )}
-                </td>
-                <td className="px-4 py-3">{sub.mealsPerWeek ?? "–"}</td>
-                <td className="px-4 py-3">{formatCurrency(sub.totalPrice ?? 0)}</td>
-                <td className="px-4 py-3">
-                  <span className="text-xs font-medium text-apple-text">{sub.paymentMethod ?? "COD"}</span>
-                  {sub.paymentTransactionId && (
-                    <div className="text-xs text-apple-secondary font-mono">{sub.paymentTransactionId}</div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-apple-secondary">{formatDate(sub.startedAt)}</td>
-                <td className="px-4 py-3">
-                  <Badge tone={sub.isActive ? "green" : "neutral"}>
-                    {sub.isActive ? "Active" : "Cancelled"}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => toggleStatus(sub.id, !sub.isActive)}
-                    disabled={busyId === sub.id}
-                    className={`text-xs hover:opacity-80 transition-opacity duration-150 ${sub.isActive ? "text-apple-red" : "text-apple-blue font-medium"}`}
-                  >
-                    {sub.isActive ? "Cancel" : "Reactivate"}
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {filtered.length === 0 && (

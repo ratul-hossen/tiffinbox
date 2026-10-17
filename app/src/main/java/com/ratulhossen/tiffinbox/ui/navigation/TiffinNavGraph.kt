@@ -290,7 +290,10 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
             SubscribeScreen(
                 chefId = chefId,
                 onBack = { navController.popBackStack() },
-                onSubscribed = { navController.popBackStack() }
+                onSubscribed = { navController.popBackStack() },
+                onOpenChat = { targetChefId ->
+                    navController.navigate(Routes.customerChat(targetChefId))
+                }
             )
         }
 

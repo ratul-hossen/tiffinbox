@@ -23,7 +23,9 @@ object FirestoreSubscriptionRepository {
         customerPhone: String = "",
         paymentMethod: String = "Cash on Delivery",
         paymentTransactionId: String = "",
-        scheduleSummary: String = ""
+        scheduleSummary: String = "",
+        isCustomSchedule: Boolean = false,
+        customTotalPrice: Int? = null
     ): String? {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return null
@@ -32,10 +34,11 @@ object FirestoreSubscriptionRepository {
             val finalPhone = customerPhone.ifBlank { profile?.phoneNumber.orEmpty() }
             val customerName = profile?.name.orEmpty()
 
-            // mealsPerWeek stays a weekly cadence the customer picks; plan.days/7
-            // scales it to however many days the chosen package actually runs.
             val totalMeals = (mealsPerWeek * plan.days / 7.0).roundToInt()
-            val totalPrice = pricePerMeal * totalMeals
+            val totalPrice = customTotalPrice ?: (pricePerMeal * totalMeals)
+            val isApproved = !isCustomSchedule
+            val isActive = !isCustomSchedule
+            val status = if (isCustomSchedule) "Pending Chef Approval" else "Active"
 
             val data = hashMapOf(
                 "customerId" to customerId,
@@ -53,14 +56,18 @@ object FirestoreSubscriptionRepository {
                 "paymentTransactionId" to paymentTransactionId,
                 "scheduleSummary" to scheduleSummary,
                 "startedAt" to System.currentTimeMillis(),
-                "isActive" to true
+                "isActive" to isActive,
+                "isApprovedByChef" to isApproved,
+                "isCustomSchedule" to isCustomSchedule,
+                "status" to status
             )
             val subRef = db.collection("subscriptions").add(data).await()
 
-            // Also place an active order so the chef's orders screen immediately
-            // sees this customer's plan and can prepare and deliver every day.
+            // Place order so it's tracked in orders collection.
             val deliveryPoint = FirestoreUserRepository.getLocation(customerId)
             val chef = FirestoreCatalogRepository.getChef(chefId)
+            val initialOrderStatus = if (isCustomSchedule) "Pending" else "Placed"
+            val initialPaymentStatus = if (isCustomSchedule) "Pending" else if (paymentTransactionId.isNotBlank()) "Paid" else "Pending"
             val orderData = hashMapOf(
                 "customerId" to customerId,
                 "chefId" to chefId,
@@ -88,10 +95,11 @@ object FirestoreSubscriptionRepository {
                 "deliveryLongitude" to (deliveryPoint?.longitude ?: 0.0),
                 "paymentMethod" to paymentMethod,
                 "paymentTransactionId" to paymentTransactionId,
+                "paymentStatus" to initialPaymentStatus,
                 "paymentScreenshotBase64" to "",
                 "deliveryHandledBy" to (chef?.deliveryMode ?: "self"),
                 "deliveryPartnerId" to "",
-                "status" to "Placed",
+                "status" to initialOrderStatus,
                 "placedAt" to System.currentTimeMillis(),
                 "mealIds" to listOf("sub_${subRef.id}"),
                 "mealQuantities" to mapOf("sub_${subRef.id}" to 1L),
@@ -110,16 +118,59 @@ object FirestoreSubscriptionRepository {
         }
     }
 
+    suspend fun approveAndActivateSubscription(
+        subscriptionId: String,
+        transactionId: String = "",
+        paymentMethod: String = "bKash"
+    ): Boolean {
+        return try {
+            val subUpdates = hashMapOf<String, Any>(
+                "isActive" to true,
+                "isApprovedByChef" to true,
+                "status" to "Active"
+            )
+            if (transactionId.isNotBlank()) {
+                subUpdates["paymentTransactionId"] = transactionId
+            }
+            if (paymentMethod.isNotBlank()) {
+                subUpdates["paymentMethod"] = paymentMethod
+            }
+            db.collection("subscriptions").document(subscriptionId).update(subUpdates).await()
+
+            // Find linked order and update status to "Accepted" & "Paid" so it counts in revenue
+            val orderSnap = db.collection("orders")
+                .whereEqualTo("subscriptionId", subscriptionId)
+                .get()
+                .await()
+            for (doc in orderSnap.documents) {
+                val orderUpdates = hashMapOf<String, Any>(
+                    "status" to "Accepted",
+                    "paymentStatus" to "Paid"
+                )
+                if (transactionId.isNotBlank()) {
+                    orderUpdates["paymentTransactionId"] = transactionId
+                }
+                if (paymentMethod.isNotBlank()) {
+                    orderUpdates["paymentMethod"] = paymentMethod
+                }
+                doc.reference.update(orderUpdates).await()
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     suspend fun getMySubscriptions(): List<SubscriptionUi> {
         return try {
             val customerId = FirebaseAuthRepository.currentUser?.uid ?: return emptyList()
             db.collection("subscriptions")
                 .whereEqualTo("customerId", customerId)
-                .whereEqualTo("isActive", true)
                 .get()
                 .await()
                 .documents
                 .mapNotNull { it.toSubscriptionUi() }
+                .filter { it.status != "Cancelled" }
         } catch (e: Exception) {
             emptyList()
         }
@@ -129,11 +180,26 @@ object FirestoreSubscriptionRepository {
         return try {
             db.collection("subscriptions")
                 .whereEqualTo("chefId", chefId)
-                .whereEqualTo("isActive", true)
                 .get()
                 .await()
                 .documents
                 .mapNotNull { it.toSubscriptionUi() }
+                .filter { it.status != "Cancelled" }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun getPendingCustomSubscriptions(customerId: String, chefId: String): List<SubscriptionUi> {
+        return try {
+            db.collection("subscriptions")
+                .whereEqualTo("customerId", customerId)
+                .whereEqualTo("chefId", chefId)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toSubscriptionUi() }
+                .filter { !it.isApprovedByChef && it.status != "Cancelled" }
         } catch (e: Exception) {
             emptyList()
         }
@@ -161,13 +227,21 @@ object FirestoreSubscriptionRepository {
             paymentMethod = getString("paymentMethod") ?: "Cash on Delivery",
             paymentTransactionId = getString("paymentTransactionId").orEmpty(),
             isActive = getBoolean("isActive") ?: true,
-            scheduleSummary = getString("scheduleSummary").orEmpty()
+            scheduleSummary = getString("scheduleSummary").orEmpty(),
+            isApprovedByChef = getBoolean("isApprovedByChef") ?: true,
+            isCustomSchedule = getBoolean("isCustomSchedule") ?: false,
+            status = getString("status") ?: if (getBoolean("isActive") == false) "Cancelled" else "Active"
         )
     }
 
     fun cancelSubscription(subscriptionId: String) {
         try {
-            db.collection("subscriptions").document(subscriptionId).update("isActive", false)
+            db.collection("subscriptions").document(subscriptionId).update(
+                mapOf(
+                    "isActive" to false,
+                    "status" to "Cancelled"
+                )
+            )
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
         }

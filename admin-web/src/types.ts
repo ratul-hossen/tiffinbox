@@ -60,6 +60,10 @@ export interface Chef {
   mealPlanPricePerMealMax?: number;
   mealPlanPackages?: string[];
   mealPlanMealTypes?: string[];
+  mealPlanBaseBreakfastPrice?: number;
+  mealPlanBaseLunchPrice?: number;
+  mealPlanBaseDinnerPrice?: number;
+  mealPlanDayPrices?: Record<string, Record<string, number>>;
 }
 
 /**
@@ -331,6 +335,9 @@ export interface Subscription {
   startedAt?: number;
   isActive?: boolean;
   scheduleSummary?: string;
+  isApprovedByChef?: boolean;
+  isCustomSchedule?: boolean;
+  status?: string;
 }
 
 /**

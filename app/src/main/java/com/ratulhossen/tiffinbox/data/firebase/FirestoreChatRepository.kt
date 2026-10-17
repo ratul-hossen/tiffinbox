@@ -10,7 +10,17 @@ data class ChatMessageUi(
     val senderId: String,
     val text: String,
     val sentAt: Long,
-    val isAdmin: Boolean = false
+    val isAdmin: Boolean = false,
+    val type: String = "text", // "text", "voice", "payment_request"
+    val audioBase64: String = "",
+    val audioDurationSec: Int = 0,
+    val paymentAmount: Int = 0,
+    val paymentMethod: String = "bKash",
+    val paymentNumber: String = "",
+    val paymentFor: String = "",
+    val paymentStatus: String = "pending", // "pending", "paid"
+    val paymentTransactionId: String = "",
+    val subscriptionId: String = ""
 )
 
 data class ChatThreadUi(
@@ -56,21 +66,136 @@ object FirestoreChatRepository {
                 "lastMessage" to text,
                 "lastMessageAt" to System.currentTimeMillis()
             )
-            // প্রথমে parent chat document তৈরি/update করো, তারপরই message add করো।
-            // এটা না করলে chat document না থাকলে Firestore rules messages subcollection
-            // এ access deny করে (get(parent).data.customerId == uid check fail করে)।
             chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
                 val messageData = hashMapOf(
                     "senderId" to senderId,
                     "text" to text,
-                    "sentAt" to System.currentTimeMillis()
+                    "sentAt" to System.currentTimeMillis(),
+                    "type" to "text"
                 )
                 chatRef.collection("messages").add(messageData)
-            }.addOnFailureListener {
-                // Fallback: offline বা permission error — silently ignore
             }
         } catch (e: Exception) {
-            // Firebase not configured yet, or offline — safe to ignore.
+            // Safe to ignore
+        }
+    }
+
+    fun sendVoiceMessage(
+        chatId: String,
+        customerId: String,
+        chefId: String,
+        chefName: String,
+        senderId: String,
+        audioBase64: String,
+        durationSec: Int
+    ) {
+        try {
+            val chatRef = db.collection("chats").document(chatId)
+            val threadData = hashMapOf(
+                "customerId" to customerId,
+                "chefId" to chefId,
+                "chefName" to chefName,
+                "lastMessage" to "🎤 Voice message ($durationSec s)",
+                "lastMessageAt" to System.currentTimeMillis()
+            )
+            chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
+                val messageData = hashMapOf(
+                    "senderId" to senderId,
+                    "text" to "🎤 Voice message",
+                    "sentAt" to System.currentTimeMillis(),
+                    "type" to "voice",
+                    "audioBase64" to audioBase64,
+                    "audioDurationSec" to durationSec
+                )
+                chatRef.collection("messages").add(messageData)
+            }
+        } catch (e: Exception) {
+            // Safe to ignore
+        }
+    }
+
+    fun sendPaymentRequest(
+        chatId: String,
+        customerId: String,
+        chefId: String,
+        chefName: String,
+        senderId: String,
+        amount: Int,
+        paymentMethod: String,
+        paymentNumber: String,
+        paymentFor: String,
+        subscriptionId: String = ""
+    ) {
+        try {
+            val chatRef = db.collection("chats").document(chatId)
+            val threadData = hashMapOf(
+                "customerId" to customerId,
+                "chefId" to chefId,
+                "chefName" to chefName,
+                "lastMessage" to "💳 Payment Request: ৳$amount",
+                "lastMessageAt" to System.currentTimeMillis()
+            )
+            chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
+                val messageData = hashMapOf(
+                    "senderId" to senderId,
+                    "text" to "Payment Request: ৳$amount for $paymentFor",
+                    "sentAt" to System.currentTimeMillis(),
+                    "type" to "payment_request",
+                    "paymentAmount" to amount,
+                    "paymentMethod" to paymentMethod,
+                    "paymentNumber" to paymentNumber,
+                    "paymentFor" to paymentFor,
+                    "paymentStatus" to "pending",
+                    "paymentTransactionId" to "",
+                    "subscriptionId" to subscriptionId
+                )
+                chatRef.collection("messages").add(messageData)
+            }
+        } catch (e: Exception) {
+            // Safe to ignore
+        }
+    }
+
+    fun submitPaymentTransactionId(
+        chatId: String,
+        messageId: String,
+        transactionId: String
+    ) {
+        try {
+            db.collection("chats").document(chatId)
+                .collection("messages").document(messageId)
+                .update("paymentTransactionId", transactionId)
+        } catch (e: Exception) {
+            // Safe to ignore
+        }
+    }
+
+    suspend fun confirmPaymentReceived(
+        chatId: String,
+        messageId: String,
+        subscriptionId: String,
+        transactionId: String,
+        paymentMethod: String
+    ): Boolean {
+        return try {
+            db.collection("chats").document(chatId)
+                .collection("messages").document(messageId)
+                .update(
+                    mapOf(
+                        "paymentStatus" to "paid",
+                        "paymentTransactionId" to transactionId
+                    )
+                )
+            if (subscriptionId.isNotBlank()) {
+                FirestoreSubscriptionRepository.approveAndActivateSubscription(
+                    subscriptionId = subscriptionId,
+                    transactionId = transactionId,
+                    paymentMethod = paymentMethod
+                )
+            }
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -82,10 +207,37 @@ object FirestoreChatRepository {
                 .addSnapshotListener { snapshot, _ ->
                     val messages = snapshot?.documents?.mapNotNull { doc ->
                         val senderId = doc.getString("senderId") ?: return@mapNotNull null
-                        val text = doc.getString("text") ?: return@mapNotNull null
+                        val text = doc.getString("text") ?: ""
                         val sentAt = doc.getLong("sentAt") ?: 0L
                         val isAdmin = doc.getBoolean("isAdmin") ?: false
-                        ChatMessageUi(doc.id, senderId, text, sentAt, isAdmin)
+                        val type = doc.getString("type") ?: "text"
+                        val audioBase64 = doc.getString("audioBase64") ?: ""
+                        val audioDurationSec = (doc.getLong("audioDurationSec") ?: 0L).toInt()
+                        val paymentAmount = (doc.getLong("paymentAmount") ?: 0L).toInt()
+                        val paymentMethod = doc.getString("paymentMethod") ?: "bKash"
+                        val paymentNumber = doc.getString("paymentNumber") ?: ""
+                        val paymentFor = doc.getString("paymentFor") ?: ""
+                        val paymentStatus = doc.getString("paymentStatus") ?: "pending"
+                        val paymentTransactionId = doc.getString("paymentTransactionId") ?: ""
+                        val subscriptionId = doc.getString("subscriptionId") ?: ""
+
+                        ChatMessageUi(
+                            id = doc.id,
+                            senderId = senderId,
+                            text = text,
+                            sentAt = sentAt,
+                            isAdmin = isAdmin,
+                            type = type,
+                            audioBase64 = audioBase64,
+                            audioDurationSec = audioDurationSec,
+                            paymentAmount = paymentAmount,
+                            paymentMethod = paymentMethod,
+                            paymentNumber = paymentNumber,
+                            paymentFor = paymentFor,
+                            paymentStatus = paymentStatus,
+                            paymentTransactionId = paymentTransactionId,
+                            subscriptionId = subscriptionId
+                        )
                     } ?: emptyList()
                     onUpdate(messages)
                 }

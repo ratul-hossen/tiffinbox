@@ -225,7 +225,11 @@ object FirestoreChefRepository {
         priceMax: Int,
         packages: List<String>,
         mealTypes: List<String>,
-        bkashNumber: String = ""
+        bkashNumber: String = "",
+        baseBreakfastPrice: Int = 0,
+        baseLunchPrice: Int = 0,
+        baseDinnerPrice: Int = 0,
+        dayPrices: Map<String, Map<String, Int>> = emptyMap()
     ): Boolean {
         return try {
             val map = hashMapOf<String, Any>(
@@ -234,7 +238,11 @@ object FirestoreChefRepository {
                 "mealPlanPricePerMealMin" to priceMin,
                 "mealPlanPricePerMealMax" to priceMax,
                 "mealPlanPackages" to packages,
-                "mealPlanMealTypes" to mealTypes
+                "mealPlanMealTypes" to mealTypes,
+                "mealPlanBaseBreakfastPrice" to baseBreakfastPrice,
+                "mealPlanBaseLunchPrice" to baseLunchPrice,
+                "mealPlanBaseDinnerPrice" to baseDinnerPrice,
+                "mealPlanDayPrices" to dayPrices
             )
             if (bkashNumber.isNotBlank()) {
                 map["bkashNumber"] = bkashNumber
