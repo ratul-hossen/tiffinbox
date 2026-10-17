@@ -65,6 +65,31 @@ export default function ChefDetail({ chef, meals, orders, reviews, onClose }: Pr
 
         <MaxDeliveryFeeEditor key={chef.id} chef={chef} />
 
+        <section className="bg-apple-bg rounded-xl p-3 text-xs space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-apple-text">Meal Plan Template</span>
+            <Badge tone={chef.mealPlanEnabled !== false ? "green" : "neutral"}>
+              {chef.mealPlanEnabled !== false ? "Enabled" : "Disabled"}
+            </Badge>
+          </div>
+          {chef.mealPlanDescription && (
+            <p className="text-apple-secondary italic">"{chef.mealPlanDescription}"</p>
+          )}
+          <div className="text-apple-secondary">
+            Rate: {chef.mealPlanPricePerMealMin ? `${formatCurrency(chef.mealPlanPricePerMealMin)} - ${formatCurrency(chef.mealPlanPricePerMealMax ?? chef.mealPlanPricePerMealMin)}/meal` : "Not set (menu average)"}
+          </div>
+          {chef.mealPlanPackages && chef.mealPlanPackages.length > 0 && (
+            <div className="text-apple-secondary">
+              Packages: {chef.mealPlanPackages.join(", ")}
+            </div>
+          )}
+          {chef.mealPlanMealTypes && chef.mealPlanMealTypes.length > 0 && (
+            <div className="text-apple-secondary">
+              Meal Slots: {chef.mealPlanMealTypes.join(", ")}
+            </div>
+          )}
+        </section>
+
         <section>
           <h4 className="text-sm font-semibold text-apple-text mb-2">
             Meals ({chefMeals.length})

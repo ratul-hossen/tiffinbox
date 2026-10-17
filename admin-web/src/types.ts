@@ -54,6 +54,12 @@ export interface Chef {
   /** Admin-only: set on the Chef Verification page after checking the NID / kitchen photo. */
   nidVerified?: boolean;
   kitchenVerified?: boolean;
+  mealPlanEnabled?: boolean;
+  mealPlanDescription?: string;
+  mealPlanPricePerMealMin?: number;
+  mealPlanPricePerMealMax?: number;
+  mealPlanPackages?: string[];
+  mealPlanMealTypes?: string[];
 }
 
 /**
@@ -324,6 +330,7 @@ export interface Subscription {
   paymentTransactionId?: string;
   startedAt?: number;
   isActive?: boolean;
+  scheduleSummary?: string;
 }
 
 /**

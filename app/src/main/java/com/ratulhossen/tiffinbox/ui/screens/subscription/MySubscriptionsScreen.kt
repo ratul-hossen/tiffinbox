@@ -83,6 +83,14 @@ fun MySubscriptionsScreen(onBack: () -> Unit) {
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (subscription.scheduleSummary.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "🗓️ " + subscription.scheduleSummary,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 stringResource(R.string.price_tag, subscription.totalPrice),

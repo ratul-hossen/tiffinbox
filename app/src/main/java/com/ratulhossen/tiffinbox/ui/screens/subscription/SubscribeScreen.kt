@@ -1,43 +1,47 @@
 package com.ratulhossen.tiffinbox.ui.screens.subscription
 
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.SampleData
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.model.MealType
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.label
-import kotlin.math.roundToInt
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.TopAppBarDefaults
-
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.rememberCoroutineScope
-import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
-import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +50,10 @@ fun SubscribeScreen(
     onBack: () -> Unit,
     onSubscribed: () -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+
     var isSubmitting by remember { mutableStateOf(false) }
     var chef by remember(chefId) { mutableStateOf<ChefUi?>(SampleData.chefById(chefId)) }
     var meals by remember(chefId) { mutableStateOf<List<MealUi>>(SampleData.mealsForChef(chefId)) }
@@ -68,22 +75,103 @@ fun SubscribeScreen(
         }
     }
 
-    val pricePerMeal = remember(meals) {
-        if (meals.isEmpty()) 100 else meals.map { it.price }.average().toInt()
+    // Available package durations configured by chef
+    val availablePlans = remember(chef) {
+        val allowed = chef?.mealPlanPackages.orEmpty()
+        if (allowed.isEmpty()) SubscriptionPlan.entries
+        else SubscriptionPlan.entries.filter { allowed.contains(it.name) }.ifEmpty { SubscriptionPlan.entries }
+    }
+    var plan by remember { mutableStateOf(SubscriptionPlan.WEEKLY) }
+    LaunchedEffect(availablePlans) {
+        if (!availablePlans.contains(plan) && availablePlans.isNotEmpty()) {
+            plan = availablePlans.first()
+        }
     }
 
-    var plan by remember { mutableStateOf(SubscriptionPlan.WEEKLY) }
-    var mealsPerWeek by remember { mutableIntStateOf(5) }
-    var mealType by remember { mutableStateOf(MealType.BOTH) }
-    val totalMeals = remember(plan, mealsPerWeek) {
-        (mealsPerWeek * plan.days / 7.0).roundToInt()
+    // Available meal slots configured by chef
+    val availableMealSlots = remember(chef) {
+        val list = chef?.mealPlanMealTypes.orEmpty()
+        if (list.isEmpty()) listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER)
+        else list
     }
-    val totalPrice = remember(totalMeals, pricePerMeal) {
-        pricePerMeal * totalMeals
+
+    // Price per meal tier / range
+    val minPrice = chef?.mealPlanPricePerMealMin ?: 0
+    val maxPrice = chef?.mealPlanPricePerMealMax ?: 0
+    val hasPriceRange = minPrice > 0 && maxPrice >= minPrice
+    val defaultFallbackPrice = remember(meals) {
+        if (meals.isEmpty()) 100 else meals.map { it.price }.average().toInt().coerceAtLeast(60)
+    }
+
+    var selectedPricePerMeal by remember(minPrice, maxPrice, defaultFallbackPrice) {
+        mutableIntStateOf(
+            if (hasPriceRange) minPrice else defaultFallbackPrice
+        )
+    }
+
+    // Day-wise weekly custom schedule
+    val daysOfWeek = remember {
+        listOf("Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+    }
+
+    // Default schedule: Sat-Thu Lunch + Dinner, Friday off
+    var weeklySchedule by remember(availableMealSlots) {
+        val defaultSlots = availableMealSlots.filter { it == MealType.LUNCH || it == MealType.DINNER }.toSet()
+            .ifEmpty { availableMealSlots.toSet() }
+        mutableStateOf(
+            daysOfWeek.associateWith { day ->
+                if (day == "Friday") emptySet<String>()
+                else defaultSlots
+            }
+        )
+    }
+
+    // Total meals per week is the exact count from the custom schedule
+    val mealsPerWeek = weeklySchedule.values.sumOf { it.size }
+
+    // Summary of total meals across the package duration
+    val totalMeals = remember(plan, mealsPerWeek) {
+        if (plan == SubscriptionPlan.WEEKLY) mealsPerWeek
+        else (mealsPerWeek * (plan.days / 7.0)).roundToInt()
+    }
+
+    val totalPrice = remember(totalMeals, selectedPricePerMeal) {
+        totalMeals * selectedPricePerMeal
+    }
+
+    // Schedule summary string for database & display
+    val scheduleSummary = remember(weeklySchedule) {
+        weeklySchedule.entries.mapNotNull { (day, slots) ->
+            if (slots.isEmpty()) null
+            else {
+                val shortDay = day.take(3)
+                val codes = slots.map {
+                    when (it) {
+                        MealType.BREAKFAST -> "B"
+                        MealType.LUNCH -> "L"
+                        MealType.DINNER -> "D"
+                        else -> it.take(1)
+                    }
+                }.joinToString(",")
+                "$shortDay: $codes"
+            }
+        }.joinToString("; ")
+    }
+
+    // Resolved meal type summary (e.g. Lunch, Dinner, Both, Custom)
+    val resolvedMealType = remember(weeklySchedule) {
+        val allSlots = weeklySchedule.values.flatten().toSet()
+        when {
+            allSlots.isEmpty() -> "None"
+            allSlots == setOf(MealType.LUNCH) -> MealType.LUNCH
+            allSlots == setOf(MealType.DINNER) -> MealType.DINNER
+            allSlots == setOf(MealType.BREAKFAST) -> MealType.BREAKFAST
+            allSlots == setOf(MealType.LUNCH, MealType.DINNER) -> MealType.BOTH
+            else -> allSlots.joinToString("+")
+        }
     }
 
     Scaffold(
-        // Transparent so the app-wide AnimatedGradientBackground shows through.
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
@@ -104,9 +192,11 @@ fun SubscribeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
+            // Header
             Text(
                 stringResource(R.string.subscribe_header, chef?.kitchenName.orEmpty()),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -115,11 +205,53 @@ fun SubscribeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            // Chef's Meal Plan Description Card (if configured by chef)
+            if (chef?.mealPlanDescription?.isNotBlank() == true) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            Icons.Filled.RestaurantMenu,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                stringResource(R.string.subscribe_chef_note),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                chef!!.mealPlanDescription,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Package Duration (7 Days, 10 Days, 15 Days, 30 Days)
             Spacer(modifier = Modifier.height(24.dp))
-            Text(stringResource(R.string.subscribe_choose_plan_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.subscribe_choose_plan_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SubscriptionPlan.entries.forEach { option ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                availablePlans.forEach { option ->
                     FilterChip(
                         selected = plan == option,
                         onClick = { plan = option },
@@ -128,48 +260,214 @@ fun SubscribeScreen(
                 }
             }
 
+            // Price Per Meal (Chef Range or Default)
             Spacer(modifier = Modifier.height(20.dp))
-            Text(stringResource(R.string.subscribe_meal_type_title), style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf(
-                    MealType.LUNCH to stringResource(R.string.subscribe_meal_type_lunch),
-                    MealType.DINNER to stringResource(R.string.subscribe_meal_type_dinner),
-                    MealType.BOTH to stringResource(R.string.subscribe_meal_type_both)
-                ).forEach { (value, label) ->
-                    FilterChip(
-                        selected = mealType == value,
-                        onClick = { mealType = value },
-                        label = { Text(label) }
+            Text(
+                stringResource(R.string.subscribe_tier_price_label, selectedPricePerMeal),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (hasPriceRange && minPrice < maxPrice) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Chef's price range: ৳$minPrice — ৳$maxPrice / meal. Move the slider to choose your portion tier.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Slider(
+                    value = selectedPricePerMeal.toFloat(),
+                    onValueChange = { selectedPricePerMeal = it.roundToInt() },
+                    valueRange = minPrice.toFloat()..maxPrice.toFloat(),
+                    steps = ((maxPrice - minPrice) / 10).coerceAtLeast(0),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Standard meal rate from this kitchen: ৳$selectedPricePerMeal per meal",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Day-wise Schedule Customization
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        stringResource(R.string.subscribe_schedule_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        stringResource(R.string.subscribe_schedule_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        stringResource(R.string.subscribe_schedule_summary, mealsPerWeek),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(stringResource(R.string.subscribe_meals_per_week_title), style = MaterialTheme.typography.titleMedium)
+            // Quick preset chips
             Spacer(modifier = Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { if (mealsPerWeek > 1) mealsPerWeek-- },
-                    enabled = mealsPerWeek > 1
-                ) {
-                    Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.content_description_decrease))
-                }
-                Text(
-                    "$mealsPerWeek",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                val lunchDinnerSlots = availableMealSlots.filter { it == MealType.LUNCH || it == MealType.DINNER }.toSet()
+                FilterChip(
+                    selected = false,
+                    onClick = {
+                        weeklySchedule = daysOfWeek.associateWith { day ->
+                            if (day == "Friday") emptySet() else lunchDinnerSlots
+                        }
+                    },
+                    label = { Text("Sat–Thu (L+D)", fontSize = 12.sp) }
                 )
-                IconButton(
-                    onClick = { if (mealsPerWeek < 14) mealsPerWeek++ },
-                    enabled = mealsPerWeek < 14
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.content_description_increase))
+                FilterChip(
+                    selected = false,
+                    onClick = {
+                        weeklySchedule = daysOfWeek.associateWith { lunchDinnerSlots }
+                    },
+                    label = { Text("All 7 Days (L+D)", fontSize = 12.sp) }
+                )
+                FilterChip(
+                    selected = false,
+                    onClick = {
+                        val allAvailable = availableMealSlots.toSet()
+                        weeklySchedule = daysOfWeek.associateWith { day ->
+                            if (day == "Friday") emptySet() else allAvailable
+                        }
+                    },
+                    label = { Text("Sat–Thu All", fontSize = 12.sp) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Day-by-Day schedule list
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    daysOfWeek.forEachIndexed { index, day ->
+                        val daySlots = weeklySchedule[day] ?: emptySet()
+                        val isDayOff = daySlots.isEmpty()
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        day,
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    if (day == "Friday") {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant
+                                        ) {
+                                            Text(
+                                                "Weekend",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                TextButton(
+                                    onClick = {
+                                        weeklySchedule = if (isDayOff) {
+                                            weeklySchedule + (day to availableMealSlots.toSet())
+                                        } else {
+                                            weeklySchedule + (day to emptySet())
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        if (isDayOff) "Take meals" else "Take off",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                availableMealSlots.forEach { slot ->
+                                    val isSelected = daySlots.contains(slot)
+                                    val label = when (slot) {
+                                        MealType.BREAKFAST -> stringResource(R.string.subscribe_meal_type_breakfast)
+                                        MealType.LUNCH -> stringResource(R.string.subscribe_meal_type_lunch)
+                                        MealType.DINNER -> stringResource(R.string.subscribe_meal_type_dinner)
+                                        else -> slot
+                                    }
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            val newSlots = if (isSelected) daySlots - slot else daySlots + slot
+                                            weeklySchedule = weeklySchedule + (day to newSlots)
+                                        },
+                                        label = { Text(label, fontSize = 12.sp) }
+                                    )
+                                }
+                            }
+                        }
+
+                        if (index < daysOfWeek.lastIndex) {
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            Text("Delivery Details", style = MaterialTheme.typography.titleMedium)
+            if (mealsPerWeek == 0) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "⚠️ Please select at least one meal in your schedule.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            // Delivery Details
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Delivery Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = deliveryAddress,
@@ -187,8 +485,9 @@ fun SubscribeScreen(
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
-            Text("Payment Method", style = MaterialTheme.typography.titleMedium)
+            // Payment Method
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Payment Method", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("Cash on Delivery", "bKash").forEach { method ->
@@ -199,7 +498,90 @@ fun SubscribeScreen(
                     )
                 }
             }
+
+            // bKash details card with Chef's bKash number & copy action
             if (paymentMethod == "bKash") {
+                val chefBkash = chef?.bkashNumber.orEmpty().ifBlank {
+                    chef?.nagadNumber.orEmpty()
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.Payment,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.subscribe_bkash_number_label),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (chefBkash.isNotBlank()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    chefBkash,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                OutlinedButton(
+                                    onClick = {
+                                        clipboardManager.setText(AnnotatedString(chefBkash))
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.subscribe_bkash_number_copied),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(stringResource(R.string.subscribe_bkash_copy_number), style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        } else {
+                            Text(
+                                "Chef has not set a bKash number. Please contact the chef or use Cash on Delivery.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Send ৳$totalPrice to the bKash number above via Send Money, then enter your Transaction ID below.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedTextField(
                     value = trxId,
@@ -211,12 +593,22 @@ fun SubscribeScreen(
                 )
             }
 
+            // Summary Breakdown Card
             Spacer(modifier = Modifier.height(24.dp))
-            Card(elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+            Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), stringResource(R.string.price_tag, pricePerMeal))
-                    SummaryRow(stringResource(R.string.subscribe_summary_meals_per_week), "$mealsPerWeek")
+                    SummaryRow(stringResource(R.string.subscribe_summary_price_per_meal), stringResource(R.string.price_tag, selectedPricePerMeal))
+                    SummaryRow(stringResource(R.string.subscribe_summary_meals_per_week), "$mealsPerWeek meals/wk")
                     SummaryRow(stringResource(R.string.subscribe_summary_duration), stringResource(R.string.subscribe_summary_duration_value, plan.days))
+                    SummaryRow("Total meals in package", "$totalMeals meals")
+                    if (scheduleSummary.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "🗓️ $scheduleSummary",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     SummaryRow(
                         stringResource(R.string.subscribe_summary_total, plan.label()),
@@ -226,26 +618,36 @@ fun SubscribeScreen(
                 }
             }
 
+            // Subscribe Button
             Spacer(modifier = Modifier.height(24.dp))
             TiffinButton(
-                enabled = !isSubmitting && deliveryAddress.isNotBlank() && (paymentMethod != "bKash" || trxId.isNotBlank()),
+                enabled = !isSubmitting &&
+                    deliveryAddress.isNotBlank() &&
+                    mealsPerWeek > 0 &&
+                    (paymentMethod != "bKash" || trxId.isNotBlank()),
                 onClick = {
                     isSubmitting = true
                     scope.launch {
-                        FirestoreSubscriptionRepository.subscribe(
+                        val subId = FirestoreSubscriptionRepository.subscribe(
                             chefId = chefId,
                             chefName = chef?.kitchenName.orEmpty(),
                             plan = plan,
                             mealsPerWeek = mealsPerWeek,
-                            mealType = mealType,
-                            pricePerMeal = pricePerMeal,
+                            mealType = resolvedMealType,
+                            pricePerMeal = selectedPricePerMeal,
                             deliveryAddress = deliveryAddress,
                             customerPhone = customerPhone,
                             paymentMethod = paymentMethod,
-                            paymentTransactionId = trxId
+                            paymentTransactionId = trxId,
+                            scheduleSummary = scheduleSummary
                         )
                         isSubmitting = false
-                        onSubscribed()
+                        if (subId != null) {
+                            Toast.makeText(context, "Subscribed successfully!", Toast.LENGTH_SHORT).show()
+                            onSubscribed()
+                        } else {
+                            Toast.makeText(context, "Failed to subscribe. Please try again.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
                 modifier = Modifier
@@ -261,7 +663,9 @@ fun SubscribeScreen(
 @Composable
 private fun SummaryRow(label: String, value: String, bold: Boolean = false) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)

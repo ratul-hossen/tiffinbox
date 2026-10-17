@@ -681,6 +681,33 @@
     <string name="edit_profile_story_placeholder">কীভাবে রান্না শুরু করলেন, কী নিয়ে আপনি গর্বিত…</string>
     <string name="edit_profile_specialties_placeholder">বিরিয়ানি, ভর্তা, মিষ্টি</string>
     <string name="edit_profile_years_label">অভিজ্ঞতা (বছর)</string>
+    <string name="subscribe_meal_type_breakfast">সকালের নাস্তা</string>
+    <string name="subscribe_schedule_title">সাপ্তাহিক খাবারের সময়সূচি</string>
+    <string name="subscribe_schedule_subtitle">সপ্তাহের কোন দিন কোন কোন বেলার খাবার চান তা নির্ধারণ করুন</string>
+    <string name="subscribe_schedule_summary">%1$d টি মিল/সপ্তাহ নির্বাচিত</string>
+    <string name="subscribe_bkash_number_label">শেফের বিকাশ নাম্বারে সেন্ড মানি করুন</string>
+    <string name="subscribe_bkash_copy_number">নাম্বার কপি করুন</string>
+    <string name="subscribe_bkash_number_copied">বিকাশ নাম্বার কপি করা হয়েছে!</string>
+    <string name="subscribe_chef_note">শেফের মিল প্ল্যান বিবরণ</string>
+    <string name="subscribe_tier_price_label">প্রতি মিল রেট (৳%1$d/মিল)</string>
+
+    <!-- Chef Meal Plan Management -->
+    <string name="chef_meal_plan_card_title">মিল প্ল্যান ও প্যাকেজ সেটিংস</string>
+    <string name="chef_meal_plan_card_subtitle">গ্রাহকদের জন্য নিয়মিত খাবার প্যাকেজ চালু করুন</string>
+    <string name="chef_meal_plan_active">মিল প্ল্যান চালু রাখুন</string>
+    <string name="chef_meal_plan_desc_label">মিল প্ল্যানের বিবরণ / নোট</string>
+    <string name="chef_meal_plan_desc_hint">মেনুর বৈচিত্র্য, ডেলিভারির সময়, স্বাস্থ্যকর পরিবেশ ইত্যাদি লিখুন</string>
+    <string name="chef_meal_plan_price_range">প্রতি মিলের মূল্য পরিসীমা (৳)</string>
+    <string name="chef_meal_plan_price_min">সর্বনিম্ন (৳)</string>
+    <string name="chef_meal_plan_price_max">সর্বোচ্চ (৳)</string>
+    <string name="chef_meal_plan_price_hint">গ্রাহকরা এই রেঞ্জের মধ্য থেকে তাদের পছন্দের মিল রেট বেছে নেবে</string>
+    <string name="chef_meal_plan_packages">প্যাকেজের মেয়াদ</string>
+    <string name="chef_meal_plan_meal_slots">খাবারের সময় (স্লট)</string>
+    <string name="chef_meal_plan_bkash_label">শেফের বিকাশ নাম্বার</string>
+    <string name="chef_meal_plan_bkash_hint">গ্রাহকরা এই বিকাশ নাম্বারে সাবস্ক্রিপশন ফি পাঠাবে</string>
+    <string name="chef_meal_plan_save">সেটিংস সংরক্ষণ করুন</string>
+    <string name="chef_meal_plan_saved">মিল প্ল্যান সেটিংস সংরক্ষিত হয়েছে!</string>
+    <string name="chef_meal_plan_save_failed">সেটিংস সংরক্ষণ করা যায়নি</string>
     <string name="meal_plans_how">একবার সাবস্ক্রাইব করলে প্রতিদিন নির্দিষ্ট সময়ে খাবার আসবে — প্রতিবার আলাদা করে অর্ডার করতে হবে না।</string>
     <string name="meal_plans_per_week">প্রতি সপ্তাহে</string>
 </resources>

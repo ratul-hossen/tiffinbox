@@ -679,6 +679,33 @@
     <string name="edit_profile_story_placeholder">How you started cooking, what you\'re proud of…</string>
     <string name="edit_profile_specialties_placeholder">Biryani, Bhorta, Desserts</string>
     <string name="edit_profile_years_label">Experience (years)</string>
+    <string name="subscribe_meal_type_breakfast">Breakfast</string>
+    <string name="subscribe_schedule_title">Weekly Custom Schedule</string>
+    <string name="subscribe_schedule_subtitle">Select exactly which days and meals you want</string>
+    <string name="subscribe_schedule_summary">%1$d meals/week selected</string>
+    <string name="subscribe_bkash_number_label">Send Money to Chef\'s bKash Number</string>
+    <string name="subscribe_bkash_copy_number">Copy Number</string>
+    <string name="subscribe_bkash_number_copied">bKash number copied!</string>
+    <string name="subscribe_chef_note">Chef\'s Meal Plan Details</string>
+    <string name="subscribe_tier_price_label">Meal Tier Price (৳%1$d/meal)</string>
+
+    <!-- Chef Meal Plan Management -->
+    <string name="chef_meal_plan_card_title">Meal Plan &amp; Packages</string>
+    <string name="chef_meal_plan_card_subtitle">Offer customized daily meal packages to customers</string>
+    <string name="chef_meal_plan_active">Offer Meal Plans</string>
+    <string name="chef_meal_plan_desc_label">Meal Plan Description / Note</string>
+    <string name="chef_meal_plan_desc_hint">Describe menu variety, delivery times, hygiene, etc.</string>
+    <string name="chef_meal_plan_price_range">Price Per Meal Range (৳)</string>
+    <string name="chef_meal_plan_price_min">Min (৳)</string>
+    <string name="chef_meal_plan_price_max">Max (৳)</string>
+    <string name="chef_meal_plan_price_hint">Customers choose their price within this range</string>
+    <string name="chef_meal_plan_packages">Available Packages</string>
+    <string name="chef_meal_plan_meal_slots">Available Meal Slots</string>
+    <string name="chef_meal_plan_bkash_label">Chef bKash Number for Payments</string>
+    <string name="chef_meal_plan_bkash_hint">Subscribers will send payment to this bKash number</string>
+    <string name="chef_meal_plan_save">Save Meal Plan Settings</string>
+    <string name="chef_meal_plan_saved">Meal plan settings saved!</string>
+    <string name="chef_meal_plan_save_failed">Failed to save meal plan settings</string>
     <string name="meal_plans_how">Subscribe once and your meals arrive every day — no need to order each time.</string>
     <string name="meal_plans_per_week">per week</string>
 </resources>

@@ -676,11 +676,6 @@ fun HomeScreen(
             }
         }
 
-        // Weekly / monthly plans, highlighted for students.
-        if (chefs.isNotEmpty() && !nothingNearby) {
-            Spacer(modifier = Modifier.height(20.dp))
-            MealPlanPromoCard(onClick = onMealPlansClick, modifier = Modifier.padding(horizontal = 20.dp))
-        }
 
         if (recommendedChefs.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))

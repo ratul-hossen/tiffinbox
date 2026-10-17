@@ -212,4 +212,37 @@ object FirestoreChefRepository {
             // Firebase not configured yet, or offline — safe to ignore.
         }
     }
+
+    /**
+     * Chef Meal Plan configuration: enables/disables meal plans, sets blurb,
+     * price range per meal, offered package durations, meal types, and bKash number.
+     */
+    suspend fun updateMealPlanSettings(
+        uid: String,
+        enabled: Boolean,
+        description: String,
+        priceMin: Int,
+        priceMax: Int,
+        packages: List<String>,
+        mealTypes: List<String>,
+        bkashNumber: String = ""
+    ): Boolean {
+        return try {
+            val map = hashMapOf<String, Any>(
+                "mealPlanEnabled" to enabled,
+                "mealPlanDescription" to description,
+                "mealPlanPricePerMealMin" to priceMin,
+                "mealPlanPricePerMealMax" to priceMax,
+                "mealPlanPackages" to packages,
+                "mealPlanMealTypes" to mealTypes
+            )
+            if (bkashNumber.isNotBlank()) {
+                map["bkashNumber"] = bkashNumber
+            }
+            db.collection("chefs").document(uid).set(map, SetOptions.merge()).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

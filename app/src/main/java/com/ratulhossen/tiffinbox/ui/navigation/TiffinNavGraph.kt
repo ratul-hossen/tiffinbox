@@ -215,6 +215,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onCartClick = { navController.navigate(Routes.CART) },
                 onChatClick = { navController.navigate(Routes.CUSTOMER_CHAT_LIST) },
                 onSubscriptionsClick = { navController.navigate(Routes.MY_SUBSCRIPTIONS) },
+                onMealPlansClick = { navController.navigate(Routes.MEAL_PLANS) },
                 onSettingsClick = { navController.navigate(Routes.SETTINGS) },
                 onSeeAllChefsClick = { sort -> navController.navigate(Routes.chefList(sort)) },
                 onPaymentMethodsClick = { navController.navigate(Routes.PAYMENT_METHODS) },
