@@ -1,6 +1,7 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.ratulhossen.tiffinbox.data.AppConfigStore
 import com.ratulhossen.tiffinbox.domain.DeliveryPricing
 import com.ratulhossen.tiffinbox.domain.DeliverySurcharge
 import com.ratulhossen.tiffinbox.util.RECOMMEND_RADIUS_KM

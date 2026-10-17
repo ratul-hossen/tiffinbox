@@ -1,6 +1,8 @@
 package com.ratulhossen.tiffinbox.data
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 
 /**
  * Admin-tunable numbers that screens read synchronously. Starts at the built-in
