@@ -79,8 +79,15 @@ object FirestoreUserRepository {
         }
     }
 
+    private val profileCache = java.util.concurrent.ConcurrentHashMap<String, UserProfile>()
+    private val locationCache = java.util.concurrent.ConcurrentHashMap<String, GeoPoint>()
+
     fun saveLocation(uid: String, latitude: Double, longitude: Double, address: String = "") {
         try {
+            locationCache[uid] = GeoPoint(latitude, longitude)
+            profileCache[uid]?.let {
+                profileCache[uid] = it.copy(address = address.ifBlank { it.address }, hasLocation = true)
+            }
             db.collection("users").document(uid).set(
                 hashMapOf("latitude" to latitude, "longitude" to longitude, "address" to address),
                 SetOptions.merge()
@@ -90,11 +97,14 @@ object FirestoreUserRepository {
         }
     }
 
-    /** Fields shown on the Edit Profile screen; null if the doc can't be read. */
-    suspend fun getProfile(uid: String): UserProfile? {
+    /** Fields shown on the Edit Profile screen; cached in memory to save database reads. */
+    suspend fun getProfile(uid: String, forceRefresh: Boolean = false): UserProfile? {
+        if (!forceRefresh) {
+            profileCache[uid]?.let { return it }
+        }
         return try {
             val doc = db.collection("users").document(uid).get().await()
-            UserProfile(
+            val profile = UserProfile(
                 name = doc.getString("name").orEmpty(),
                 email = doc.getString("email").orEmpty(),
                 role = doc.getString("role").orEmpty(),
@@ -103,8 +113,15 @@ object FirestoreUserRepository {
                 address = doc.getString("address").orEmpty(),
                 hasLocation = doc.getDouble("latitude") != null && doc.getDouble("longitude") != null
             )
+            profileCache[uid] = profile
+            val lat = doc.getDouble("latitude")
+            val lng = doc.getDouble("longitude")
+            if (lat != null && lng != null) {
+                locationCache[uid] = GeoPoint(lat, lng)
+            }
+            profile
         } catch (e: Exception) {
-            null
+            profileCache[uid]
         }
     }
 
@@ -192,15 +209,22 @@ object FirestoreUserRepository {
         }
     }
 
-    /** Null if the user hasn't set a location yet (e.g. an account from before this feature). */
-    suspend fun getLocation(uid: String): GeoPoint? {
+    /** Null if the user hasn't set a location yet; cached in memory to avoid repeated queries. */
+    suspend fun getLocation(uid: String, forceRefresh: Boolean = false): GeoPoint? {
+        if (!forceRefresh) {
+            locationCache[uid]?.let { return it }
+        }
         return try {
             val doc = db.collection("users").document(uid).get().await()
             val lat = doc.getDouble("latitude")
             val lng = doc.getDouble("longitude")
-            if (lat != null && lng != null) GeoPoint(lat, lng) else null
+            if (lat != null && lng != null) {
+                val point = GeoPoint(lat, lng)
+                locationCache[uid] = point
+                point
+            } else null
         } catch (e: Exception) {
-            null
+            locationCache[uid]
         }
     }
 }

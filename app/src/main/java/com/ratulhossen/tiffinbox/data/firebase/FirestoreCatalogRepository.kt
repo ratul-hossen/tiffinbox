@@ -27,6 +27,10 @@ object FirestoreCatalogRepository {
     fun getCachedChefs(): List<ChefUi> = cachedChefs.orEmpty()
     fun getCachedMeals(): List<MealUi> = cachedMeals.orEmpty()
 
+    fun updateCachedChefs(chefs: List<ChefUi>) {
+        cachedChefs = chefs
+    }
+
     fun invalidateCache() {
         cachedChefs = null
         cachedMeals = null
@@ -79,6 +83,7 @@ object FirestoreCatalogRepository {
     }
 
     suspend fun getMeal(mealId: String): MealUi? {
+        cachedMeals?.find { it.id == mealId }?.let { return it }
         return try {
             db.collection("meals").document(mealId).get().await().toMealUi()
         } catch (e: Exception) {
@@ -88,14 +93,21 @@ object FirestoreCatalogRepository {
 
     /** [includeUnavailable] is for the chef's own Menu Manager; customers only see available meals. */
     suspend fun getMealsForChef(chefId: String, includeUnavailable: Boolean = false): List<MealUi> {
+        if (!includeUnavailable) {
+            val fromCache = cachedMeals?.filter { it.chefId == chefId }
+            if (!fromCache.isNullOrEmpty()) {
+                return fromCache
+            }
+        }
         return try {
-            db.collection("meals")
+            val list = db.collection("meals")
                 .whereEqualTo("chefId", chefId)
                 .get()
                 .await()
                 .documents
                 .mapNotNull { it.toMealUi() }
                 .filter { includeUnavailable || it.isAvailable }
+            list
         } catch (e: Exception) {
             emptyList()
         }

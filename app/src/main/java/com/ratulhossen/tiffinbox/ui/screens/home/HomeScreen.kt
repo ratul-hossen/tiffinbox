@@ -33,6 +33,7 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
 import com.ratulhossen.tiffinbox.data.location.GeoPoint as AppGeoPoint
+import com.ratulhossen.tiffinbox.data.location.UserLocationCache
 import com.ratulhossen.tiffinbox.ui.components.formatDistanceKm
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -109,20 +110,25 @@ fun HomeScreen(
     val context = LocalContext.current
     // The header/photo runs behind the status bar - keep its icons white.
     LightStatusBarIcons()
+    val uidForAddress = FirebaseAuthRepository.currentUser?.uid
+    val cachedLocation = remember(uidForAddress) { UserLocationCache.read(context, uidForAddress) }
     var selectedCategory by remember { mutableStateOf<String?>(defaultCategoryForCurrentHour()) }
-    var chefs by remember { mutableStateOf(FirestoreCatalogRepository.getCachedChefs()) }
+    var chefs by remember {
+        mutableStateOf(
+            FirestoreCatalogRepository.getCachedChefs().let { list ->
+                if (cachedLocation != null) list.withRealDistances(cachedLocation) else list
+            }
+        )
+    }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     var catalogMeals by remember { mutableStateOf(FirestoreCatalogRepository.getCachedMeals()) }
-    var myLocationGeoPoint by remember { mutableStateOf<AppGeoPoint?>(null) }
-    // Only true once we've replaced the static/demo distanceKm with a real
-    // haversine distance from the customer's own saved location - until
-    // then the 2-3km "nearby" radius filter below would be meaningless.
-    var hasRealDistances by remember { mutableStateOf(false) }
+    var myLocationGeoPoint by remember { mutableStateOf<AppGeoPoint?>(cachedLocation) }
+    // Starts true immediately if we have cached real location, avoiding any 1km default distance flicker
+    var hasRealDistances by remember { mutableStateOf(cachedLocation != null) }
     // The customer's own saved (default) address - the same point used for
     // the distance math below, so the header and "nearby" always agree.
     // Starts from the copy saved on the phone last time, so the header shows
     // the address instantly instead of "…" while Firestore loads.
-    val uidForAddress = FirebaseAuthRepository.currentUser?.uid
     var myAddress by remember { mutableStateOf(HomeAddressCache.read(context, uidForAddress)) }
     LaunchedEffect(uidForAddress) {
         // Refresh on its own (not after the meals/chefs loads) and only touch
@@ -133,8 +139,16 @@ fun HomeScreen(
             if (myAddress == null) myAddress = ""
             return@LaunchedEffect
         }
+        val loc = FirestoreUserRepository.getLocation(uid)
+        if (loc != null) {
+            UserLocationCache.write(context, uid, loc)
+            if (myLocationGeoPoint == null) {
+                myLocationGeoPoint = loc
+                hasRealDistances = true
+            }
+        }
         val fresh = profile.address.ifBlank { null }
-            ?: FirestoreUserRepository.getLocation(uid)?.let { LocationRepository.reverseGeocode(context, it) }
+            ?: loc?.let { LocationRepository.reverseGeocode(context, it) }
             ?: ""
         if (fresh != myAddress) myAddress = fresh
         HomeAddressCache.write(context, uid, fresh)
@@ -164,9 +178,13 @@ fun HomeScreen(
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
         if (firestoreChefs.isEmpty()) return@LaunchedEffect
         val uid = FirebaseAuthRepository.currentUser?.uid
-        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) } ?: cachedLocation
+        if (uid != null && myLocation != null) {
+            UserLocationCache.write(context, uid, myLocation)
+        }
         myLocationGeoPoint = myLocation
         val loadedChefs = if (myLocation != null) firestoreChefs.withRealDistances(myLocation) else firestoreChefs
+        FirestoreCatalogRepository.updateCachedChefs(loadedChefs)
 
         // The remaining signals are independent reads - fetch them together.
         val ctx = coroutineScope {
@@ -682,11 +700,6 @@ fun HomeScreen(
             }
         }
 
-        // Weekly / monthly plans, highlighted for students.
-        if (chefs.isNotEmpty() && !nothingNearby) {
-            Spacer(modifier = Modifier.height(20.dp))
-            MealPlanPromoCard(onClick = onMealPlansClick, modifier = Modifier.padding(horizontal = 20.dp))
-        }
 
         if (recommendedChefs.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -913,6 +926,7 @@ private object HomeAddressCache {
     }
 }
 
+
 @Composable
 private fun HomeKitchenMapView(
     chefs: List<ChefUi>,
@@ -929,6 +943,8 @@ private fun HomeKitchenMapView(
         Configuration.getInstance().apply {
             load(context, context.getSharedPreferences("osmdroid", android.content.Context.MODE_PRIVATE))
             userAgentValue = context.packageName
+            cacheMapTileCount = 150
+            cacheMapTileOvershoot = 30
         }
     }
 
@@ -945,7 +961,6 @@ private fun HomeKitchenMapView(
         mapView.onResume()
         onDispose {
             mapView.onPause()
-            mapView.onDetach()
         }
     }
 
