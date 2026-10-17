@@ -113,6 +113,18 @@ object FirestoreSubscriptionRepository {
             )
             db.collection("orders").add(orderData).await()
 
+            FirestoreChatRepository.sendSubscriptionRequestedMessage(
+                customerId = customerId,
+                chefId = chefId,
+                chefName = chefName,
+                planName = plan.name,
+                mealsPerWeek = mealsPerWeek,
+                mealType = mealType,
+                totalPrice = totalPrice,
+                scheduleSummary = scheduleSummary,
+                isCustomSchedule = isCustomSchedule
+            )
+
             subRef.id
         } catch (e: Exception) {
             Log.e("SubscriptionRepo", "Failed to subscribe", e)
@@ -204,6 +216,21 @@ object FirestoreSubscriptionRepository {
                 .filter { !it.isApprovedByChef && it.status != "Cancelled" }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    suspend fun getCustomerActiveSubscriptionForChef(customerId: String, chefId: String): SubscriptionUi? {
+        return try {
+            db.collection("subscriptions")
+                .whereEqualTo("customerId", customerId)
+                .whereEqualTo("chefId", chefId)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { it.toSubscriptionUi() }
+                .firstOrNull { it.status != "Cancelled" && (it.isActive || !it.isApprovedByChef) }
+        } catch (e: Exception) {
+            null
         }
     }
 

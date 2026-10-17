@@ -81,6 +81,68 @@ object FirestoreChatRepository {
         }
     }
 
+    fun sendOrderPlacedMessage(
+        customerId: String,
+        chefId: String,
+        chefName: String,
+        orderId: String,
+        itemsSummary: String,
+        totalPrice: Int,
+        isPreOrder: Boolean,
+        paymentMethod: String
+    ) {
+        val chatId = chatId(customerId, chefId)
+        val shortId = if (orderId.length > 6) orderId.takeLast(6).uppercase() else orderId.uppercase()
+        val text = buildString {
+            append(if (isPreOrder) "⏳ নতুন প্রি-অর্ডার প্লেস করা হয়েছে!" else "🍱 নতুন অর্ডার প্লেস করা হয়েছে!")
+            append("\nঅর্ডার আইডি: #$shortId")
+            append("\nখাবার: $itemsSummary")
+            append("\nমোট মূল্য: ৳$totalPrice")
+            append("\nপেমেন্ট: $paymentMethod")
+        }
+        sendMessage(
+            chatId = chatId,
+            customerId = customerId,
+            chefId = chefId,
+            chefName = chefName,
+            senderId = customerId,
+            text = text
+        )
+    }
+
+    fun sendSubscriptionRequestedMessage(
+        customerId: String,
+        chefId: String,
+        chefName: String,
+        planName: String,
+        mealsPerWeek: Int,
+        mealType: String,
+        totalPrice: Int,
+        scheduleSummary: String,
+        isCustomSchedule: Boolean
+    ) {
+        val chatId = chatId(customerId, chefId)
+        val text = buildString {
+            append("📅 নতুন মিল প্ল্যান সাবস্ক্রিপশন রিকোয়েস্ট!")
+            append("\nপ্ল্যান: $planName (${if (isCustomSchedule) "কাস্টম শিডিউল" else "রেগুলার"})")
+            append("\nমিল সংখ্যা: $mealsPerWeek meals/week")
+            if (scheduleSummary.isNotBlank()) {
+                append("\nশিডিউল: $scheduleSummary")
+            } else {
+                append("\nখাবারের সময়: $mealType")
+            }
+            append("\nমোট মূল্য: ৳$totalPrice")
+        }
+        sendMessage(
+            chatId = chatId,
+            customerId = customerId,
+            chefId = chefId,
+            chefName = chefName,
+            senderId = customerId,
+            text = text
+        )
+    }
+
     fun sendVoiceMessage(
         chatId: String,
         customerId: String,

@@ -44,11 +44,15 @@ import com.ratulhossen.tiffinbox.domain.DeliveryQuote
 import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreSubscriptionRepository
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
 import com.ratulhossen.tiffinbox.ui.components.Base64Thumbnail
 import com.ratulhossen.tiffinbox.ui.components.MealCard
 import com.ratulhossen.tiffinbox.ui.components.RatingRow
 import com.ratulhossen.tiffinbox.ui.components.ShimmerBox
+import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TopAppBarDefaults
@@ -68,8 +72,13 @@ fun ChefDetailScreen(
     val context = LocalContext.current
     var reviews by remember(chefId) { mutableStateOf<List<ReviewUi>>(emptyList()) }
 
+    var existingSub by remember(chefId) { mutableStateOf<SubscriptionUi?>(null) }
     LaunchedEffect(chefId) {
         reviews = FirestoreReviewRepository.getReviewsForChef(chefId)
+        val uid = FirebaseAuthRepository.currentUser?.uid
+        if (uid != null) {
+            existingSub = FirestoreSubscriptionRepository.getCustomerActiveSubscriptionForChef(uid, chefId)
+        }
     }
 
     var delivery by remember(chefId) { mutableStateOf<DeliveryQuote?>(null) }
@@ -255,7 +264,55 @@ fun ChefDetailScreen(
 
                     // Meal plans, highlighted for students (weekly / monthly).
                     Spacer(modifier = Modifier.height(18.dp))
-                    MealPlanPromoCard(onClick = onSubscribeClick)
+                    val sub = existingSub
+                    if (sub != null) {
+                        Surface(
+                            onClick = onChatClick,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(14.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (sub.isApprovedByChef) "Active Meal Plan: ${sub.plan.name}" else "Meal Plan Pending Approval",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${sub.mealsPerWeek} meals/wk · ${if (sub.scheduleSummary.isNotBlank()) sub.scheduleSummary else sub.mealType}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                TextButton(onClick = onChatClick) {
+                                    Text("চ্যাট", fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    } else {
+                        MealPlanPromoCard(onClick = onSubscribeClick)
+                    }
 
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(stringResource(R.string.chef_detail_rating_breakdown_title), style = MaterialTheme.typography.titleMedium)

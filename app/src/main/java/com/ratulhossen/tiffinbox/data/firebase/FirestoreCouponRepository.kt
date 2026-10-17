@@ -106,16 +106,24 @@ object FirestoreCouponRepository {
      * model's numOffers input, which it was trained with but the app had no
      * real data for until coupons existed.
      */
+    private const val OFFERS_TTL_MS = 5 * 60 * 1000L
+    @Volatile private var cachedOffers: Pair<Long, Map<String, Int>>? = null
+
     suspend fun getActiveOfferCounts(): Map<String, Int> {
+        cachedOffers?.let { (at, map) ->
+            if (System.currentTimeMillis() - at < OFFERS_TTL_MS) return map
+        }
         return try {
             val now = System.currentTimeMillis()
-            db.collection("coupons").whereEqualTo("isActive", true).get().await()
+            val map = db.collection("coupons").whereEqualTo("isActive", true).get().await()
                 .documents.map { it.toCoupon() }
                 .filter { it.validFrom <= now && !it.isExpired && !it.isUsedUp }
                 .groupingBy { it.chefId }
                 .eachCount()
+            cachedOffers = System.currentTimeMillis() to map
+            map
         } catch (e: Exception) {
-            emptyMap()
+            cachedOffers?.second ?: emptyMap()
         }
     }
 

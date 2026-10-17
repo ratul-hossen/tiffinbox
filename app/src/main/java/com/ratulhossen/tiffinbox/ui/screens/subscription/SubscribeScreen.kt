@@ -38,6 +38,7 @@ import com.ratulhossen.tiffinbox.data.model.ChefUi
 import com.ratulhossen.tiffinbox.data.model.MealType
 import com.ratulhossen.tiffinbox.data.model.MealUi
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
+import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
 import com.ratulhossen.tiffinbox.data.model.label
 import com.ratulhossen.tiffinbox.ui.components.TiffinButton
 import kotlinx.coroutines.launch
@@ -61,6 +62,7 @@ fun SubscribeScreen(
     var deliveryAddress by remember { mutableStateOf("") }
     var customerPhone by remember { mutableStateOf("") }
     var showPendingApprovalDialog by remember { mutableStateOf(false) }
+    var existingSub by remember(chefId) { mutableStateOf<SubscriptionUi?>(null) }
 
     LaunchedEffect(chefId) {
         FirestoreCatalogRepository.getChefs().find { it.id == chefId }?.let { chef = it }
@@ -68,6 +70,7 @@ fun SubscribeScreen(
         if (firestoreMeals.isNotEmpty()) meals = firestoreMeals
         val uid = FirebaseAuthRepository.currentUser?.uid
         if (uid != null) {
+            existingSub = FirestoreSubscriptionRepository.getCustomerActiveSubscriptionForChef(uid, chefId)
             FirestoreUserRepository.getProfile(uid)?.let { profile ->
                 if (deliveryAddress.isBlank()) deliveryAddress = profile.address
                 if (customerPhone.isBlank()) customerPhone = profile.phoneNumber
@@ -608,10 +611,55 @@ fun SubscribeScreen(
                 }
             }
 
+            val currentSub = existingSub
+            if (currentSub != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (currentSub.isApprovedByChef) "ইতিমধ্যে একটি মিল প্ল্যান সক্রিয় রয়েছে" else "মিল প্ল্যান রিকোয়েস্ট পেন্ডিং রয়েছে",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "আপনার এই কিচেনে ইতিমধ্যে একটি মিল প্ল্যান (${currentSub.plan.name} · ${currentSub.mealsPerWeek} meals/wk) রয়েছে। একটি কিচেনে একাধিক প্ল্যান একসাথে নেওয়া যায় না।",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (onOpenChat != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            OutlinedButton(
+                                onClick = { onOpenChat(chefId) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("শেফের সাথে চ্যাটে কথা বলুন")
+                            }
+                        }
+                    }
+                }
+            }
+
             // Subscribe Button
             Spacer(modifier = Modifier.height(24.dp))
             TiffinButton(
                 enabled = !isSubmitting &&
+                    existingSub == null &&
                     deliveryAddress.isNotBlank() &&
                     mealsPerWeek > 0,
                 onClick = {
@@ -644,7 +692,14 @@ fun SubscribeScreen(
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text(if (isSubmitting) "Subscribing…" else stringResource(R.string.subscribe_button))
+                Text(
+                    when {
+                        isSubmitting -> "Subscribing…"
+                        existingSub != null && existingSub!!.isApprovedByChef -> "ইতিমধ্যে সাবস্ক্রাইব করা আছে"
+                        existingSub != null -> "রিকোয়েস্ট পেন্ডিং রয়েছে"
+                        else -> stringResource(R.string.subscribe_button)
+                    }
+                )
             }
         }
     }

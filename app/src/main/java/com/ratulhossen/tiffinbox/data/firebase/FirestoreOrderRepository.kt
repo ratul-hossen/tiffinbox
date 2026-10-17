@@ -237,6 +237,18 @@ object FirestoreOrderRepository {
                 }.await()
             }
             val orderId = orderRef.id
+            val itemsSummary = items.joinToString(", ") { "${it.meal.name} x${it.quantity}" }
+            val chefObj = FirestoreCatalogRepository.getChef(chefId)
+            FirestoreChatRepository.sendOrderPlacedMessage(
+                customerId = customerId,
+                chefId = chefId,
+                chefName = chefObj?.kitchenName ?: "Chef",
+                orderId = orderId,
+                itemsSummary = itemsSummary,
+                totalPrice = total,
+                isPreOrder = isPreOrder,
+                paymentMethod = paymentMethod
+            )
             FirestoreNotificationRepository.addNotification(
                 uid = customerId,
                 title = "Order placed",
