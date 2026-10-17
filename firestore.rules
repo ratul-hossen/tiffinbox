@@ -309,7 +309,7 @@ service cloud.firestore {
         (resource.data.chefId != "" && exists(/databases/$(database)/documents/chefs/$(resource.data.chefId)) &&
          get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid)
       ));
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.customerId == request.auth.uid);
       allow update: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
         resource.data.chefId == request.auth.uid ||
