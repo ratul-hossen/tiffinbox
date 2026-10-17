@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.tasks.await
 
 data class ChatMessageUi(
     val id: String,
@@ -185,7 +186,7 @@ object FirestoreChatRepository {
                         "paymentStatus" to "paid",
                         "paymentTransactionId" to transactionId
                     )
-                )
+                ).await()
             if (subscriptionId.isNotBlank()) {
                 FirestoreSubscriptionRepository.approveAndActivateSubscription(
                     subscriptionId = subscriptionId,
