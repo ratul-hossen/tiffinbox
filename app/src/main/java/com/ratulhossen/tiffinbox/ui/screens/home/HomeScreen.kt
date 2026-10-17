@@ -36,6 +36,7 @@ import com.ratulhossen.tiffinbox.data.location.GeoPoint as AppGeoPoint
 import com.ratulhossen.tiffinbox.ui.components.formatDistanceKm
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -108,7 +109,7 @@ fun HomeScreen(
     val context = LocalContext.current
     // The header/photo runs behind the status bar - keep its icons white.
     LightStatusBarIcons()
-    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var selectedCategory by remember { mutableStateOf<String?>(defaultCategoryForCurrentHour()) }
     var chefs by remember { mutableStateOf(FirestoreCatalogRepository.getCachedChefs()) }
     var aiRecommendedMeals by remember { mutableStateOf<List<MealUi>>(emptyList()) }
     var catalogMeals by remember { mutableStateOf(FirestoreCatalogRepository.getCachedMeals()) }
@@ -472,82 +473,87 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Hero banner with a real food photo (res/drawable-nodpi/hero_food.jpg).
-        AnimatedVisibility(
-            visible = revealed,
-            enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 3 }
-        ) {
-            if (heroMeals.isNotEmpty()) {
-                // Today's Special: meals chefs marked in Menu Manager today
-                // (nearest first); otherwise the top AI picks that have a photo.
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(heroMeals, key = { it.id }) { meal ->
-                        TodaySpecialCard(
-                            meal = meal,
-                            chefName = chefs.find { it.id == meal.chefId }?.kitchenName.orEmpty(),
-                            badge = stringResource(if (heroIsSpecial) R.string.home_hero_badge else R.string.home_hero_badge_pick),
-                            modifier = Modifier.fillParentMaxWidth(if (heroMeals.size == 1) 1f else 0.86f),
-                            onClick = { onMealClick(meal.id) }
-                        )
+        if (heroMeals.isNotEmpty()) {
+            val heroListState = rememberLazyListState()
+            LaunchedEffect(heroMeals) {
+                if (heroMeals.size > 1) {
+                    while (true) {
+                        kotlinx.coroutines.delay(4000L)
+                        val nextIndex = (heroListState.firstVisibleItemIndex + 1) % heroMeals.size
+                        heroListState.animateScrollToItem(nextIndex)
                     }
                 }
-            } else {
+            }
+            // Today's Special / AI recommendations:
+            LazyRow(
+                state = heroListState,
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(heroMeals, key = { it.id }) { meal ->
+                    TodaySpecialCard(
+                        meal = meal,
+                        chefName = chefs.find { it.id == meal.chefId }?.kitchenName.orEmpty(),
+                        badge = stringResource(if (heroIsSpecial) R.string.home_hero_badge else R.string.home_hero_badge_pick),
+                        modifier = Modifier.fillParentMaxWidth(if (heroMeals.size == 1) 1f else 0.86f),
+                        onClick = { onMealClick(meal.id) }
+                    )
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth()
+                    .height(170.dp)
+                    .shadow(12.dp, MaterialTheme.shapes.large)
+                    .clip(MaterialTheme.shapes.large)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.hero_food),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.CenterEnd,
+                    modifier = Modifier.fillMaxSize()
+                )
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                        .fillMaxWidth()
-                        .height(170.dp)
-                        .shadow(12.dp, MaterialTheme.shapes.large)
-                        .clip(MaterialTheme.shapes.large)
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.hero_food),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        alignment = Alignment.CenterEnd,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
-                                )
+                        .fillMaxSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent)
                             )
-                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(20.dp)
-                            .fillMaxWidth(0.7f)
-                    ) {
-                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                            Text(
-                                stringResource(R.string.home_hero_badge_generic),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            stringResource(R.string.home_hero_title),
-                            color = Color.White,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 26.sp
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                )
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(20.dp)
+                        .fillMaxWidth(0.7f)
+                ) {
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
                         Text(
-                            stringResource(R.string.home_hero_subtitle),
-                            color = Color.White.copy(alpha = 0.85f),
-                            style = MaterialTheme.typography.bodySmall
+                            stringResource(R.string.home_hero_badge_generic),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        stringResource(R.string.home_hero_title),
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 26.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.home_hero_subtitle),
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
@@ -721,28 +727,6 @@ fun HomeScreen(
                         meal = meal,
                         modifier = Modifier.width(220.dp),
                         onClick = { onMealClick(meal.id) }
-                    )
-                }
-            }
-        }
-
-        if (nearbyChefs.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(20.dp))
-            SectionHeader(
-                title = stringResource(R.string.home_section_nearby),
-                onSeeAllClick = { onSeeAllClick("nearby") }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(nearbyChefs) { chef ->
-                    ChefCard(
-                        chef = chef,
-                        modifier = Modifier.width(180.dp),
-                        delivery = deliveryContext?.takeIf { hasRealDistances }?.let { DeliveryQuoter.quote(chef, chef.distanceKm, it) },
-                        onClick = { onChefClick(chef.id) }
                     )
                 }
             }
@@ -1026,3 +1010,12 @@ private fun HomeKitchenMapView(
     }
 }
 
+private fun defaultCategoryForCurrentHour(): String {
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    return when (hour) {
+        in 5..10 -> "Breakfast"
+        in 11..15 -> "Lunch"
+        in 16..18 -> "Snack"
+        else -> "Dinner"
+    }
+}
