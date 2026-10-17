@@ -213,12 +213,19 @@ data class SubscriptionUi(
     val id: String,
     val chefId: String,
     val chefName: String,
+    val customerId: String = "",
+    val customerName: String = "",
+    val customerPhone: String = "",
+    val deliveryAddress: String = "",
     val plan: SubscriptionPlan,
     val mealsPerWeek: Int,
     val mealType: String = MealType.BOTH,
     val pricePerMeal: Int,
     val totalPrice: Int,
-    val startedAt: Long
+    val startedAt: Long,
+    val paymentMethod: String = "Cash on Delivery",
+    val paymentTransactionId: String = "",
+    val isActive: Boolean = true
 )
 
 data class ChefOrderUi(

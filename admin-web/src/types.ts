@@ -310,6 +310,9 @@ export interface RecycleBinEntry {
 export interface Subscription {
   id: string;
   customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  deliveryAddress?: string;
   chefId?: string;
   chefName?: string;
   plan?: "WEEKLY" | "DAYS_10" | "DAYS_15" | "MONTHLY" | string;
@@ -317,6 +320,8 @@ export interface Subscription {
   mealType?: "Lunch" | "Dinner" | "Both" | string;
   pricePerMeal?: number;
   totalPrice?: number;
+  paymentMethod?: string;
+  paymentTransactionId?: string;
   startedAt?: number;
   isActive?: boolean;
 }

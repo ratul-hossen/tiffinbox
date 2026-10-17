@@ -221,6 +221,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
                 onEditProfileClick = { navController.navigate(Routes.EDIT_PROFILE) },
                 onRewardsClick = { navController.navigate(Routes.REWARDS) },
+                onOpenMapClick = { navController.navigate(Routes.CHEF_MAP) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
                     navController.navigate(Routes.ROLE_SELECT) { popUpTo(0) { inclusive = true } }

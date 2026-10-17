@@ -18,23 +18,44 @@ object FirestoreCatalogRepository {
     private val db: FirebaseFirestore
         get() = FirebaseFirestore.getInstance()
 
+    @Volatile
+    private var cachedChefs: List<ChefUi>? = null
+
+    @Volatile
+    private var cachedMeals: List<MealUi>? = null
+
+    fun getCachedChefs(): List<ChefUi> = cachedChefs.orEmpty()
+    fun getCachedMeals(): List<MealUi> = cachedMeals.orEmpty()
+
+    fun invalidateCache() {
+        cachedChefs = null
+        cachedMeals = null
+    }
+
     /**
      * Only approved (isVerified) chefs are customer-visible - an admin must
      * explicitly verify a chef (admin-web's Chefs page) before their kitchen
      * shows up anywhere a customer browses, even though the chef's own
      * dashboard and profile already exist right after signup.
      */
-    suspend fun getChefs(): List<ChefUi> {
+    suspend fun getChefs(forceRefresh: Boolean = false): List<ChefUi> {
+        val existing = cachedChefs
+        if (!forceRefresh && existing != null && existing.isNotEmpty()) {
+            return existing
+        }
         return try {
-            db.collection("chefs").get().await().documents
+            val list = db.collection("chefs").get().await().documents
                 .mapNotNull { it.toChefUi() }
                 .filter { it.isVerified }
+            cachedChefs = list
+            list
         } catch (e: Exception) {
-            emptyList()
+            cachedChefs ?: emptyList()
         }
     }
 
     suspend fun getChef(chefId: String): ChefUi? {
+        cachedChefs?.find { it.id == chefId }?.let { return it }
         return try {
             db.collection("chefs").document(chefId).get().await().toChefUi()
         } catch (e: Exception) {
@@ -42,12 +63,18 @@ object FirestoreCatalogRepository {
         }
     }
 
-    suspend fun getAllMeals(): List<MealUi> {
+    suspend fun getAllMeals(forceRefresh: Boolean = false): List<MealUi> {
+        val existing = cachedMeals
+        if (!forceRefresh && existing != null && existing.isNotEmpty()) {
+            return existing
+        }
         return try {
             // Customer-facing: meals the chef switched off in Menu Manager are hidden.
-            db.collection("meals").get().await().documents.mapNotNull { it.toMealUi() }.filter { it.isAvailable }
+            val list = db.collection("meals").get().await().documents.mapNotNull { it.toMealUi() }.filter { it.isAvailable }
+            cachedMeals = list
+            list
         } catch (e: Exception) {
-            emptyList()
+            cachedMeals ?: emptyList()
         }
     }
 
