@@ -226,7 +226,7 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isAdmin() || (isSignedIn() &&
         request.resource.data.customerId == request.auth.uid &&
-        request.resource.data.status == "Placed" &&
+        (request.resource.data.status == "Placed" || request.resource.data.status == "Pending") &&
         orderMoneySane());
       allow read: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
@@ -305,12 +305,16 @@ service cloud.firestore {
     match /subscriptions/{subscriptionId} {
       allow read: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
-        resource.data.chefId == request.auth.uid
+        resource.data.chefId == request.auth.uid ||
+        (resource.data.chefId != "" && exists(/databases/$(database)/documents/chefs/$(resource.data.chefId)) &&
+         get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid)
       ));
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
       allow update: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
-        resource.data.chefId == request.auth.uid
+        resource.data.chefId == request.auth.uid ||
+        (resource.data.chefId != "" && exists(/databases/$(database)/documents/chefs/$(resource.data.chefId)) &&
+         get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid)
       ));
       allow delete: if isAdmin();
     }

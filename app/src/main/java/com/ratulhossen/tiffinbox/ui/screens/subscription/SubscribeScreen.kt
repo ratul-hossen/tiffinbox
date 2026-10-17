@@ -60,8 +60,6 @@ fun SubscribeScreen(
     var meals by remember(chefId) { mutableStateOf<List<MealUi>>(SampleData.mealsForChef(chefId)) }
     var deliveryAddress by remember { mutableStateOf("") }
     var customerPhone by remember { mutableStateOf("") }
-    var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
-    var trxId by remember { mutableStateOf("") }
     var showPendingApprovalDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(chefId) {
@@ -559,116 +557,8 @@ fun SubscribeScreen(
                 singleLine = true
             )
 
-            // Payment Method
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Payment Method", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf("Cash on Delivery", "bKash").forEach { method ->
-                    FilterChip(
-                        selected = paymentMethod == method,
-                        onClick = { paymentMethod = method },
-                        label = { Text(method) }
-                    )
-                }
-            }
-
-            // bKash details card with Chef's bKash number & copy action
-            if (paymentMethod == "bKash") {
-                val chefBkash = chef?.bkashNumber.orEmpty().ifBlank {
-                    chef?.nagadNumber.orEmpty()
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.Payment,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                stringResource(R.string.subscribe_bkash_number_label),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        if (chefBkash.isNotBlank()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.surface,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    chefBkash,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                OutlinedButton(
-                                    onClick = {
-                                        clipboardManager.setText(AnnotatedString(chefBkash))
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.subscribe_bkash_number_copied),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(stringResource(R.string.subscribe_bkash_copy_number), style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        } else {
-                            Text(
-                                "Chef has not set a bKash number. Please contact the chef or use Cash on Delivery.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "Send ৳$totalPrice to the bKash number above via Send Money, then enter your Transaction ID below.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = trxId,
-                    onValueChange = { trxId = it },
-                    label = { Text("bKash Transaction ID") },
-                    placeholder = { Text("e.g. 9K20ABX8") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-
             // Notice for custom meal plan
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(18.dp))
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f)
@@ -723,8 +613,7 @@ fun SubscribeScreen(
             TiffinButton(
                 enabled = !isSubmitting &&
                     deliveryAddress.isNotBlank() &&
-                    mealsPerWeek > 0 &&
-                    (paymentMethod != "bKash" || trxId.isNotBlank()),
+                    mealsPerWeek > 0,
                 onClick = {
                     isSubmitting = true
                     scope.launch {
@@ -737,8 +626,8 @@ fun SubscribeScreen(
                             pricePerMeal = effectivePricePerMeal,
                             deliveryAddress = deliveryAddress,
                             customerPhone = customerPhone,
-                            paymentMethod = paymentMethod,
-                            paymentTransactionId = trxId,
+                            paymentMethod = "Cash on Delivery",
+                            paymentTransactionId = "",
                             scheduleSummary = scheduleSummary,
                             isCustomSchedule = true,
                             customTotalPrice = totalPrice

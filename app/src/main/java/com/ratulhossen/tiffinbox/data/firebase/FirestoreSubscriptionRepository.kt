@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.ratulhossen.tiffinbox.data.model.MealType
 import com.ratulhossen.tiffinbox.data.model.SubscriptionPlan
 import com.ratulhossen.tiffinbox.data.model.SubscriptionUi
+import android.util.Log
 import kotlin.math.roundToInt
 import kotlinx.coroutines.tasks.await
 
@@ -66,8 +67,8 @@ object FirestoreSubscriptionRepository {
             // Place order so it's tracked in orders collection.
             val deliveryPoint = FirestoreUserRepository.getLocation(customerId)
             val chef = FirestoreCatalogRepository.getChef(chefId)
-            val initialOrderStatus = if (isCustomSchedule) "Pending" else "Placed"
-            val initialPaymentStatus = if (isCustomSchedule) "Pending" else if (paymentTransactionId.isNotBlank()) "Paid" else "Pending"
+            val initialOrderStatus = "Placed"
+            val initialPaymentStatus = if (paymentTransactionId.isNotBlank()) "Paid" else "Pending"
             val orderData = hashMapOf(
                 "customerId" to customerId,
                 "chefId" to chefId,
@@ -114,6 +115,7 @@ object FirestoreSubscriptionRepository {
 
             subRef.id
         } catch (e: Exception) {
+            Log.e("SubscriptionRepo", "Failed to subscribe", e)
             null
         }
     }
