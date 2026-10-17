@@ -669,7 +669,7 @@
     <string name="chef_map_you">You are here</string>
     <string name="chef_map_open_kitchen">Tap to open kitchen</string>
     <string name="edit_profile_about_section">About your kitchen</string>
-    <string name="edit_profile_story_placeholder">How you started cooking, what you're proud of…</string>
+    <string name="edit_profile_story_placeholder">How you started cooking, what you\'re proud of…</string>
     <string name="edit_profile_specialties_placeholder">Biryani, Bhorta, Desserts</string>
     <string name="edit_profile_years_label">Experience (years)</string>
     <string name="meal_plans_how">Subscribe once and your meals arrive every day — no need to order each time.</string>
