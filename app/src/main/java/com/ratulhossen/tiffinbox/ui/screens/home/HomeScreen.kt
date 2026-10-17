@@ -195,13 +195,14 @@ fun HomeScreen(
             val orderedCategories = allMeals.filter { it.id in orderedMealIds }.map { it.category }.toSet()
             aiRecommendedMeals = allMeals
                 .sortedByDescending { meal ->
+                    val chef = chefById[meal.chefId]
                     val modelScore = MlRecommendModel.predict(
                         avgPrice = meal.price.toDouble(),
                         vegFraction = if (meal.isVeg) 1.0 else 0.0,
                         numOffers = ((recCtx.offerCounts[meal.chefId] ?: 0) + platformOffers).toDouble(),
-                        popularity = meal.availableQuantity.toDouble()
+                        // totalOrders = chef-এর মোট completed orders — এটাই popularity signal
+                        popularity = chef?.totalOrders?.toDouble() ?: 0.0
                     )
-                    val chef = chefById[meal.chefId]
                     val kitchenQuality = chef?.let { 0.15 * RecommendationEngine.quality(it, recCtx) } ?: 0.0
                     val closeness = chef?.let { 0.10 * RecommendationEngine.proximity(it.distanceKm, recCtx) } ?: 0.0
                     val chefAffinity = 0.15 * ((recCtx.myOrderCounts[meal.chefId] ?: 0).coerceAtMost(3) / 3.0)

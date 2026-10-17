@@ -49,22 +49,26 @@ object FirestoreChatRepository {
     ) {
         try {
             val chatRef = db.collection("chats").document(chatId)
-            val messageData = hashMapOf(
-                "senderId" to senderId,
-                "text" to text,
-                "sentAt" to System.currentTimeMillis()
+            val threadData = hashMapOf(
+                "customerId" to customerId,
+                "chefId" to chefId,
+                "chefName" to chefName,
+                "lastMessage" to text,
+                "lastMessageAt" to System.currentTimeMillis()
             )
-            chatRef.collection("messages").add(messageData)
-            chatRef.set(
-                hashMapOf(
-                    "customerId" to customerId,
-                    "chefId" to chefId,
-                    "chefName" to chefName,
-                    "lastMessage" to text,
-                    "lastMessageAt" to System.currentTimeMillis()
-                ),
-                SetOptions.merge()
-            )
+            // প্রথমে parent chat document তৈরি/update করো, তারপরই message add করো।
+            // এটা না করলে chat document না থাকলে Firestore rules messages subcollection
+            // এ access deny করে (get(parent).data.customerId == uid check fail করে)।
+            chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
+                val messageData = hashMapOf(
+                    "senderId" to senderId,
+                    "text" to text,
+                    "sentAt" to System.currentTimeMillis()
+                )
+                chatRef.collection("messages").add(messageData)
+            }.addOnFailureListener {
+                // Fallback: offline বা permission error — silently ignore
+            }
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
         }
