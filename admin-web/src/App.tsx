@@ -11,6 +11,7 @@ import {
   Menu,
   MessageCircle,
   Moon,
+  MapPin,
   Navigation,
   Package,
   ShieldCheck,
@@ -50,6 +51,7 @@ import DeliveryApplicationsPage from "./components/DeliveryApplicationsPage";
 import RecycleBinPage from "./components/RecycleBinPage";
 import AppSettingsPage from "./components/AppSettingsPage";
 import VerificationsPage from "./components/VerificationsPage";
+import DeliverySurchargesPage from "./components/DeliverySurchargesPage";
 import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
@@ -68,6 +70,7 @@ type Tab =
   | "chats"
   | "deliveryPartners"
   | "deliveryApplications"
+  | "deliverySurcharges"
   | "recycleBin"
   | "appSettings"
   | "verifications";
@@ -170,6 +173,14 @@ const TABS: TabMeta[] = [
     group: "Operations",
     searchPlaceholder: "Search applications…",
     description: "Chefs who applied to use TiffinBox's own delivery service (launching later).",
+  },
+  {
+    key: "deliverySurcharges",
+    label: "Delivery Surcharges",
+    icon: MapPin,
+    group: "Operations",
+    searchPlaceholder: "Search areas…",
+    description: "Extra delivery charge for an area and time window, on TiffinBox-delivered orders.",
   },
   {
     key: "users",
@@ -406,6 +417,7 @@ export default function App() {
           {tab === "chats" && <ChatsPage search={search} />}
           {tab === "deliveryPartners" && <DeliveryPartnersPage />}
           {tab === "deliveryApplications" && <DeliveryApplicationsPage search={search} />}
+          {tab === "deliverySurcharges" && <DeliverySurchargesPage search={search} />}
           {tab === "admins" && <AdminsPage isSuperAdmin={isSuperAdmin} />}
           {tab === "recycleBin" && <RecycleBinPage search={search} isSuperAdmin={isSuperAdmin} />}
           {tab === "appSettings" && <AppSettingsPage />}

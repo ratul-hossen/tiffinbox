@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.screens.cart
 
+import com.ratulhossen.tiffinbox.data.AppConfigStore
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -72,7 +73,7 @@ fun CartScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        SummaryRow(stringResource(R.string.cart_summary_platform_fee), CartStore.PLATFORM_FEE)
+                        SummaryRow(stringResource(R.string.cart_summary_platform_fee), AppConfigStore.platformFee)
                         Divider(modifier = Modifier.padding(vertical = 6.dp))
                         SummaryRow(stringResource(R.string.cart_summary_total), CartStore.total, bold = true)
                         Spacer(modifier = Modifier.height(12.dp))

@@ -664,4 +664,5 @@
     <string name="delivery_charge_tiffinbox_note">TiffinBox Delivery is on, so the app sets the charge.</string>
     <string name="delivery_charge_example">At %1$d km: ৳%2$d</string>
     <string name="delivery_charge_invalid">Enter a valid number in every box.</string>
+    <string name="delivery_charge_free_note">Enter 0 for both the base fee and the per-km fee to deliver free.</string>
 </resources>

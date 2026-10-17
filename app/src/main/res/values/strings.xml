@@ -666,4 +666,5 @@
     <string name="delivery_charge_tiffinbox_note">TiffinBox Delivery চালু আছে, তাই চার্জ app ঠিক করে।</string>
     <string name="delivery_charge_example">%1$d km দূরে হলে: ৳%2$d</string>
     <string name="delivery_charge_invalid">সব ঘরে ঠিক সংখ্যা দাও।</string>
+    <string name="delivery_charge_free_note">বেস fee আর প্রতি km fee দুটোতেই ০ দিলে delivery ফ্রি হবে।</string>
 </resources>

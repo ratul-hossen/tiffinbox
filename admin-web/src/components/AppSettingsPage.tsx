@@ -10,12 +10,18 @@ import { logActivity } from "../lib/activityLog";
  *  - recommendRadiusKm: how far a kitchen may be and still be recommended.
  *  - deliveryBaseFee / deliveryIncludedKm / deliveryPerKmFee: delivery fee =
  *    base for the first N km, then per-km for every started km after that.
+ *  - deliveryMaxFee: ceiling on a self-delivering kitchen's fee (0 = no cap).
+ *  - platformFee / preOrderMaxPlates / fewPlatesThreshold: order and plate rules.
  */
 const DEFAULTS = {
   recommendRadiusKm: 10,
   deliveryBaseFee: 20,
   deliveryIncludedKm: 2,
   deliveryPerKmFee: 5,
+  deliveryMaxFee: 0,
+  platformFee: 10,
+  preOrderMaxPlates: 10,
+  fewPlatesThreshold: 5,
 };
 type Settings = typeof DEFAULTS;
 type Key = keyof Settings;
@@ -25,6 +31,10 @@ const LIMITS: Record<Key, { min: number; max: number; step: number }> = {
   deliveryBaseFee: { min: 0, max: 500, step: 1 },
   deliveryIncludedKm: { min: 0, max: 20, step: 0.5 },
   deliveryPerKmFee: { min: 0, max: 100, step: 1 },
+  deliveryMaxFee: { min: 0, max: 1000, step: 1 },
+  platformFee: { min: 0, max: 200, step: 1 },
+  preOrderMaxPlates: { min: 1, max: 50, step: 1 },
+  fewPlatesThreshold: { min: 1, max: 20, step: 1 },
 };
 const RADIUS_PRESETS = [2, 5, 10, 15];
 
@@ -141,16 +151,35 @@ export default function AppSettingsPage() {
             km; each started km after that adds the per-km fee. Top-rank customers still get free delivery.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {field("deliveryBaseFee", "Base fee, ৳")}
           {field("deliveryIncludedKm", "Included km")}
           {field("deliveryPerKmFee", "Per extra km, ৳")}
+          {field("deliveryMaxFee", "Max fee for kitchens delivering themselves, ৳")}
         </div>
+        <p className="text-xs text-apple-secondary">
+          0 = no cap. A kitchen's own cap (set on its Chef page) takes priority over this one.
+        </p>
         {invalid.length === 0 && (
           <p className="text-xs text-apple-secondary">
             Example: 1 km → ৳{feeFor(1, parsed)} · 3 km → ৳{feeFor(3, parsed)} · 5 km → ৳{feeFor(5, parsed)}
           </p>
         )}
+      </div>
+
+      <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card p-5 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-apple-text">Orders and plates</h2>
+          <p className="text-sm text-apple-secondary mt-1">
+            Platform fee added to every order, the most plates a customer can pre-order at once, and when a meal
+            starts showing "plates left".
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {field("platformFee", "Platform fee, ৳")}
+          {field("preOrderMaxPlates", "Max plates per pre-order")}
+          {field("fewPlatesThreshold", "Warn when plates left is at most")}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

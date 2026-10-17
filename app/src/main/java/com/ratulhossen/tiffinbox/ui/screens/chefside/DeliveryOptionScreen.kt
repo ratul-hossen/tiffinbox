@@ -319,6 +319,11 @@ private fun SelfDeliveryChargeCard(chef: ChefUi?) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Text(
+                stringResource(R.string.delivery_charge_free_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             if (cap > 0) {
                 Text(
                     stringResource(R.string.delivery_charge_max_note, cap),

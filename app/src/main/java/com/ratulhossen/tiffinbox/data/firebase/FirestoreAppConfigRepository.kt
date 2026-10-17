@@ -17,7 +17,10 @@ object FirestoreAppConfigRepository {
         val recommendRadiusKm: Double = RECOMMEND_RADIUS_KM,
         val delivery: DeliveryPricing = DeliveryPricing(),
         /** Global ceiling on a self-delivering chef's own fee; 0 = no cap. */
-        val deliveryMaxFee: Int = 0
+        val deliveryMaxFee: Int = 0,
+        val platformFee: Int = AppConfigStore.DEFAULT_PLATFORM_FEE,
+        val preOrderMaxPlates: Int = AppConfigStore.DEFAULT_PRE_ORDER_MAX_PLATES,
+        val fewPlatesThreshold: Int = AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD
     )
 
     @Volatile private var cached: AppConfig? = null
@@ -34,8 +37,19 @@ object FirestoreAppConfigRepository {
                     perKmFee = doc.getLong("deliveryPerKmFee")?.toInt()?.takeIf { it >= 0 } ?: defaults.perKmFee,
                     includedKm = doc.getDouble("deliveryIncludedKm")?.takeIf { it >= 0 } ?: defaults.includedKm
                 ),
-                deliveryMaxFee = doc.getLong("deliveryMaxFee")?.toInt()?.takeIf { it >= 0 } ?: 0
-            ).also { cached = it }
+                deliveryMaxFee = doc.getLong("deliveryMaxFee")?.toInt()?.takeIf { it >= 0 } ?: 0,
+                platformFee = doc.getLong("platformFee")?.toInt()?.takeIf { it in 0..200 }
+                    ?: AppConfigStore.DEFAULT_PLATFORM_FEE,
+                preOrderMaxPlates = doc.getLong("preOrderMaxPlates")?.toInt()?.takeIf { it in 1..50 }
+                    ?: AppConfigStore.DEFAULT_PRE_ORDER_MAX_PLATES,
+                fewPlatesThreshold = doc.getLong("fewPlatesThreshold")?.toInt()?.takeIf { it in 1..20 }
+                    ?: AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD
+            ).also {
+                cached = it
+                AppConfigStore.platformFee = it.platformFee
+                AppConfigStore.preOrderMaxPlates = it.preOrderMaxPlates
+                AppConfigStore.fewPlatesThreshold = it.fewPlatesThreshold
+            }
         } catch (e: Exception) {
             AppConfig()
         }

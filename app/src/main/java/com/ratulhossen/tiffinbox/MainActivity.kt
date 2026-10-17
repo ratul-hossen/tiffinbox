@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox
 
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,6 +53,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TiffinBoxApp() {
+    LaunchedEffect(Unit) { FirestoreAppConfigRepository.config() }
     TiffinBoxTheme {
         // Drifting brand-colored gradient behind every screen that doesn't
         // paint its own opaque background (see AnimatedGradientBackground).

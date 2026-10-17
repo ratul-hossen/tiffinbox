@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.ui.components
 
+import com.ratulhossen.tiffinbox.data.AppConfigStore
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -103,16 +104,13 @@ fun MealCard(
     }
 }
 
-/** Below this many plates the card shows how many are left. */
-const val FEW_PLATES_THRESHOLD = 5
-
 /**
  * "3 plates left" when today's stock is low (so a customer knows the chef can
  * feed only a few more people), "Sold out" at 0, nothing when plenty remain.
  */
 @Composable
 fun PlatesLeftBadge(platesLeft: Int, modifier: Modifier = Modifier) {
-    if (platesLeft > FEW_PLATES_THRESHOLD) return
+    if (platesLeft > AppConfigStore.fewPlatesThreshold) return
     val soldOut = platesLeft <= 0
     Surface(
         shape = MaterialTheme.shapes.small,
