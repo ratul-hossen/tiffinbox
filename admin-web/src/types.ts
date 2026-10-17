@@ -29,6 +29,12 @@ export interface Chef {
   /** End of the TiffinBox Delivery agreement (epoch ms); past it the chef counts as self-delivery. */
   deliveryUntil?: number;
   photoBase64?: string;
+  /** Admin-set ceiling on this kitchen's self-delivery fee; 0/absent = the App Settings default. */
+  maxDeliveryFee?: number;
+  /** The chef's own self-delivery rates; absent or negative = the app's default rate. */
+  selfDeliveryBaseFee?: number;
+  selfDeliveryPerKmFee?: number;
+  selfDeliveryIncludedKm?: number;
   kitchenType?: string;
   yearsOfExperience?: number;
   bkashNumber?: string;

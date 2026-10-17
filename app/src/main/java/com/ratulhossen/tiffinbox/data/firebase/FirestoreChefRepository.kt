@@ -161,6 +161,23 @@ object FirestoreChefRepository {
         }
     }
 
+    /** Self-delivery charge the chef sets. -1 = not set, so the app's own rate applies. */
+    suspend fun updateSelfDeliveryCharge(uid: String, baseFee: Int, perKmFee: Int, includedKm: Double): Boolean {
+        return try {
+            db.collection("chefs").document(uid).set(
+                hashMapOf(
+                    "selfDeliveryBaseFee" to baseFee,
+                    "selfDeliveryPerKmFee" to perKmFee,
+                    "selfDeliveryIncludedKm" to includedKm
+                ),
+                SetOptions.merge()
+            ).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     /** Dashboard "Available today" switch - unavailable kitchens are shown as closed to customers. */
     suspend fun updateAvailableToday(uid: String, available: Boolean): Boolean {
         return try {
