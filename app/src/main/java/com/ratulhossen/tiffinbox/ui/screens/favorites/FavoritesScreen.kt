@@ -18,19 +18,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.DeliveryContext
+import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.ratulhossen.tiffinbox.data.model.ChefUi
+import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.components.ChefCard
 import com.ratulhossen.tiffinbox.ui.components.PhotoEmptyState
+import com.ratulhossen.tiffinbox.util.withRealDistances
 
 @Composable
 fun FavoritesScreen(onChefClick: (String) -> Unit) {
     var allChefs by remember { mutableStateOf<List<ChefUi>>(emptyList()) }
+    var hasRealDistances by remember { mutableStateOf(false) }
+    var deliveryContext by remember { mutableStateOf<DeliveryContext?>(null) }
 
     LaunchedEffect(Unit) {
         val firestoreChefs = FirestoreCatalogRepository.getChefs()
-        allChefs = firestoreChefs
+        // Distances and the delivery fee, same as Home and the chef list -
+        // a favorited kitchen showed neither before.
+        val uid = FirebaseAuthRepository.currentUser?.uid
+        val myLocation = uid?.let { FirestoreUserRepository.getLocation(it) }
+        allChefs = if (myLocation != null) firestoreChefs.withRealDistances(myLocation) else firestoreChefs
+        hasRealDistances = myLocation != null
+        deliveryContext = DeliveryQuoter.context()
     }
 
     val favoriteChefs = allChefs.filter { FavoritesStore.isFavorite(it.id) }
@@ -55,7 +68,12 @@ fun FavoritesScreen(onChefClick: (String) -> Unit) {
             modifier = Modifier.fillMaxSize()
         ) {
             items(favoriteChefs, key = { it.id }) { chef ->
-                ChefCard(chef = chef, onClick = { onChefClick(chef.id) })
+                ChefCard(
+                    chef = chef,
+                    delivery = deliveryContext?.takeIf { hasRealDistances }
+                        ?.let { DeliveryQuoter.quote(chef, chef.distanceKm, it) },
+                    onClick = { onChefClick(chef.id) }
+                )
             }
         }
     }
