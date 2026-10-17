@@ -92,6 +92,9 @@ function validate(d: Draft): string | null {
   const amount = Number(d.amount);
   if (d.amount === "" || !(amount >= 0)) return "Amount can't be negative.";
   if (d.type === "multiply" && amount < 1) return "A multiplier must be at least 1 (1.5 = +50%).";
+  // Unbounded, one typo (15 for 1.5) multiplies a real customer's fee by 15
+  // and the order is then refused by orderMoneySane() in firestore.rules.
+  if (d.type === "multiply" && amount > 2) return "A multiplier above 2 (double the fee) looks like a typo.";
   if (d.type === "flat" && amount > 500) return "A flat amount above ৳500 looks like a typo.";
   const from = fromInputValue(d.validFrom);
   const until = fromInputValue(d.validUntil);

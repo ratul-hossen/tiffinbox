@@ -1075,12 +1075,29 @@ Owner's rule: **the admin fixes a maximum, the chef chooses anything up to it**
   `CACHE_TTL_MS` (5 min) instead of once per app run, so an admin's change
   reaches a running app without a restart. A failed read keeps the last good
   value rather than snapping back to defaults.
+- **One hard ceiling**: `DeliveryQuotes.MAX_FEE` (৳1000) clamps a kitchen's fee
+  whatever the admin or chef configured, because App Settings' own maximums
+  (৳500 base, ৳100/km, a 50 km radius) multiply out to ৳5500 - above the sanity
+  bound in the rules, so such an order would have been refused outright. An
+  area surcharge's multiplier is likewise capped at 2 in admin-web.
 - **Rules**: `delivery_surcharges` is public-read / admin-write;
   `maxDeliveryFee` is admin-only; `orders` create now also runs
   `orderMoneySane()` - wide bounds on deliveryFee / platformFee / discounts /
   total. It is **not** a recomputation (rules can't do haversine and there are
   no Cloud Functions), just a floor/ceiling so a tampered client can't write a
-  negative or absurd total.
+  negative or absurd total. Bound at ৳3000, comfortably above the ৳2000 the app
+  can now produce at most (MAX_FEE doubled by a surcharge).
+
+## Rules tests (2026-10-17)
+
+`firestore-tests/` runs the **real** rules engine (the Firestore emulator) against
+`firestore.rules` - 27 cases: every order shape the app actually writes must be
+allowed, the tampered ones refused, plus `delivery_surcharges` access and the
+`maxDeliveryFee` lock. `cd firestore-tests && npm install && npm test` (needs
+Java 11+; the emulator is local and never touches `tiffinbox-2cb8b`). **These
+ones have been executed here - 27/27 pass.** Extend them whenever a rule
+changes: a mistake in this file is not a crash, it is a customer who cannot
+place an order.
 
 ## Unit tests (2026-10-17)
 
@@ -1126,6 +1143,7 @@ expected numbers were cross-checked against a port of the same formulas.
 - `admin-web/src/components/DeliverySurchargesPage.tsx`,
   `src/components/ui/LocationPicker.tsx` — area surcharges + the OSM picker.
 - `app/src/test/java/com/ratulhossen/tiffinbox/domain/` — the unit tests.
+- `firestore-tests/` — emulator-backed tests for `firestore.rules`.
 
 ## Delivery fee, map, verification, meal plans, polish (2026-10-16)
 

@@ -52,6 +52,19 @@ class DeliveryQuotesTest {
     }
 
     @Test
+    fun `no configuration can charge more than the hard ceiling`() {
+        // The highest App Settings itself allows: a 500 base, 100 per km and a
+        // 50 km recommend radius would otherwise work out to 5500.
+        val extreme = DeliveryPricing(baseFee = 500, perKmFee = 100, includedKm = 0.0)
+        assertEquals(DeliveryQuotes.MAX_FEE, DeliveryQuotes.quote(50.0, extreme).fee)
+    }
+
+    @Test
+    fun `the hard ceiling does not touch an ordinary fee`() {
+        assertEquals(35, DeliveryQuotes.quote(5.0, pricing).fee)
+    }
+
+    @Test
     fun `a surcharge is added on top of the capped fee`() {
         val capped = pricing.copy(maxFee = 25)
         val surge = DeliverySurcharge(amount = 15.0, radiusKm = 3.0, latitude = 23.8, longitude = 90.4)
