@@ -1264,3 +1264,46 @@ Worked on branch `feat/parvej-work` (a teammate's branch; the admin merges PRs).
   `android-ci.yml` (build + unit tests on PRs). Settings shows the version.
 - **Local build on this Windows PC:** `JAVA_HOME="D:\C Drive Replica\android-studio\jbr"`;
   `git config core.fileMode false` is set locally (keeps gradlew's exec bit out of diffs).
+
+## AI Agent (MCP), phase A (2026-11-18, branch feat/mcp-server)
+
+Customers connect their own AI agent (Claude/ChatGPT/any MCP client) to browse
+TiffinBox. Owner's rules: **login is mandatory for every tool**, and the feature
+lives in **Profile -> "AI Agent (MCP)"**. No AI runs on our side (no LLM cost).
+In-app assistant = later, separate decision.
+- `mcp-server/` - Cloudflare Worker (free plan), TypeScript. MCP over Streamable
+  HTTP (stateless, `@modelcontextprotocol/sdk`), OAuth 2.1 + PKCE via
+  `@cloudflare/workers-oauth-provider` (KV `OAUTH_KV`). Firestore through the
+  REST API with a service account (`src/firestore.ts`). **The service account
+  bypasses firestore.rules - every check is in server code; the uid always
+  comes from the token, never from tool input.** README.md has deploy steps
+  and the security table.
+- Sign-in = one-time code: the app writes `mcp_pairing/{CODE}` = {uid,
+  createdAt: serverTimestamp}. 8 chars from `ABCDEFGHJKMNPQRSTUVWXYZ23456789`,
+  5 min, single use. The server records `users/{uid}/agent_connections/{id}`
+  and notifies the user. Disconnect = deleting that doc (checked every call,
+  1-min cache). Customers only.
+- Tools (read-only): search_kitchens, get_menu, get_meal, get_delivery_quote,
+  list_my_addresses, list_areas. Field masks keep phone/bKash/Nagad/NID/
+  address/photos off the server. `src/pricing.ts` is a port of DeliveryQuote.kt
+  + DeliveryQuoter.kt; `test/pricing.test.ts` mirrors the Kotlin tests - change
+  both together. `src/areas.ts` = fixed Dhaka area table (no Maps billing).
+- Limits (`src/limits.ts`, `wrangler.jsonc`): 60 req/min/IP and 30/min/agent
+  (edge), 1000 calls/agent/day, 5 wrong codes/IP -> 15-min lockout, 10 client
+  registrations/IP/day, 64KB bodies, 60-s catalog cache, and an MCP-wide daily
+  Firestore read budget (`app_config/settings.mcpDailyReadBudget`, default
+  15000) kept in the `Guard` Durable Object - when it runs out only MCP stops.
+- Admin: App Settings -> AI agents card (`mcpEnabled` kill switch,
+  `mcpServerUrl` shown in the app, read budget). User Details -> AI agents
+  (Disconnect, Block via admin-only `mcp_blocks/{uid}` - not on users/{uid}
+  because owners can delete/recreate their own user doc).
+- App: `FirestoreAgentRepository.kt`, `ui/screens/profile/AgentMcpScreen.kt`,
+  route `agent_mcp`.
+- Tests: `npm test` (vitest), `scripts/e2e-emulator.mjs` (real OAuth flow vs the
+  Firestore emulator), firestore-tests (MCP rule cases added; run with
+  `npm install --legacy-peer-deps` - firebase 13 vs rules-unit-testing's
+  peer ^12).
+- **Phase B (not built):** prepare_order/place_order, COD only,
+  `AwaitingConfirmation` status confirmed in the app, trust levels (new 1/day
+  ৳500, regular 3/day ৳1000, trusted 5/day ৳2000, hard cap 5/day ৳3000),
+  2-min cooldown, idempotency keys, chef "COD not collected" button.

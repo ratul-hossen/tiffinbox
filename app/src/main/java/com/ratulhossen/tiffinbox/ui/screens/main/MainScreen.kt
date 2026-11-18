@@ -49,6 +49,7 @@ fun MainScreen(
     onNotificationsClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
     onRewardsClick: () -> Unit = {},
+    onAgentMcpClick: () -> Unit = {},
     onMealPlansClick: () -> Unit = {},
     onOpenMapClick: () -> Unit = {},
     onLogout: () -> Unit
@@ -181,6 +182,7 @@ fun MainScreen(
                     onNotificationsClick = onNotificationsClick,
                     onEditProfileClick = onEditProfileClick,
                     onRewardsClick = onRewardsClick,
+                    onAgentMcpClick = onAgentMcpClick,
                     onMyOrdersClick = { selectedTab = 2 },
                     onFavoritesClick = { selectedTab = 3 }
                 )

@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import fs from "node:fs";
 
 const env = await initializeTestEnvironment({
@@ -84,6 +84,40 @@ console.log("\n--- maxDeliveryFee is the admin's to set ---");
 await t("chef cannot raise their own cap", () => assertFails(updateDoc(doc(chef, "chefs", CHEF), { maxDeliveryFee: 999 })));
 await t("chef can still set their own rates", () => assertSucceeds(updateDoc(doc(chef, "chefs", CHEF), { selfDeliveryBaseFee: 30, selfDeliveryPerKmFee: 8, selfDeliveryIncludedKm: 2 })));
 await t("admin sets the cap", () => assertSucceeds(updateDoc(doc(admin, "chefs", CHEF), { maxDeliveryFee: 60 })));
+
+
+console.log("\n--- AI agent (MCP) pairing codes and connections ---");
+const pair = (db, code, over = {}) => setDoc(doc(db, "mcp_pairing", code), { uid: CUST, createdAt: serverTimestamp(), ...over });
+await t("customer creates a pairing code for themselves", () => assertSucceeds(pair(cust, "K7P2M9QX")));
+await t("nobody can read a code back, not even its owner", () => assertFails(getDoc(doc(cust, "mcp_pairing", "K7P2M9QX"))));
+await t("someone else cannot read a code", () => assertFails(getDoc(doc(chef, "mcp_pairing", "K7P2M9QX"))));
+await t("a code for another user's account", () => assertFails(pair(chef, "A2B3C4D5")));
+await t("a code that doesn't look like one (lowercase, 0/O/1/I/L)", () => assertFails(pair(cust, "k0o1il23")));
+await t("a code with a forged createdAt", () => assertFails(pair(cust, "B2C3D4E5", { createdAt: Timestamp.fromMillis(Date.now() + 3600000) })));
+await t("a code with extra fields", () => assertFails(pair(cust, "C2D3E4F5", { trusted: true })));
+await t("signed out: no codes", () => assertFails(pair(anon, "D2E3F4G5")));
+await t("owner cancels their own code", () => assertSucceeds(deleteDoc(doc(cust, "mcp_pairing", "K7P2M9QX"))));
+await t("someone else cannot cancel it", async () => {
+  await pair(cust, "E2F3G4H5");
+  await assertFails(deleteDoc(doc(chef, "mcp_pairing", "E2F3G4H5")));
+});
+
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), "users", CUST, "agent_connections", "conn1"), { clientName: "Claude", createdAt: 1 });
+});
+const conn = (db) => doc(db, "users", CUST, "agent_connections", "conn1");
+await t("owner sees their connected agents", () => assertSucceeds(getDoc(conn(cust))));
+await t("other users cannot see them", () => assertFails(getDoc(conn(chef))));
+await t("a client cannot fake a connection", () => assertFails(setDoc(doc(cust, "users", CUST, "agent_connections", "fake"), { clientName: "x" })));
+await t("a client cannot edit a connection", () => assertFails(updateDoc(conn(cust), { clientName: "renamed" })));
+await t("admin can view a user's agents", () => assertSucceeds(getDoc(conn(admin))));
+await t("owner disconnects an agent", () => assertSucceeds(deleteDoc(conn(cust))));
+
+await t("customer cannot unblock themselves", () => assertFails(setDoc(doc(cust, "mcp_blocks", CUST), { blocked: false })));
+await t("admin blocks a customer's AI agent access", () => assertSucceeds(setDoc(doc(admin, "mcp_blocks", CUST), { blocked: true })));
+await t("customer can see they are blocked", () => assertSucceeds(getDoc(doc(cust, "mcp_blocks", CUST))));
+await t("customer cannot remove the block", () => assertFails(deleteDoc(doc(cust, "mcp_blocks", CUST))));
+await t("app_config MCP switch is admin-only", () => assertFails(setDoc(doc(cust, "app_config", "settings"), { mcpEnabled: true }, { merge: true })));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();

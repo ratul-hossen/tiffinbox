@@ -4,6 +4,20 @@ All notable changes to the TiffinBox Android app. Versions follow
 [Semantic Versioning](https://semver.org): MAJOR.MINOR.PATCH.
 How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
 
+## [Unreleased]
+
+### Added
+- **AI Agent (MCP), phase A:** customers can connect their own AI agent
+  (Claude, ChatGPT or another MCP client) from Profile → **AI Agent (MCP)**.
+  The agent can search kitchens, read menus and check delivery fees. It signs
+  in with a one-time 8-letter code from the app; no password is typed on the
+  web. Ordering through an agent comes in phase B.
+  - New `mcp-server/` (Cloudflare Worker, free plan).
+  - admin-web: an on/off switch, the server address and a daily read budget in
+    App Settings; per-user Disconnect and Block in User Details.
+  - New Firestore rules: `mcp_pairing`, `mcp_blocks`,
+    `users/{uid}/agent_connections`. Re-paste the rules in Firebase Console.
+
 ## [1.2.1] - 2026-11-18
 
 ### Changed

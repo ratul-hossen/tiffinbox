@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,7 +47,8 @@ fun ProfileScreen(
     onEditProfileClick: () -> Unit = {},
     onMyOrdersClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
-    onRewardsClick: () -> Unit = {}
+    onRewardsClick: () -> Unit = {},
+    onAgentMcpClick: () -> Unit = {}
 ) {
     val fallbackName = stringResource(R.string.profile_demo_user_name)
     val user = FirebaseAuthRepository.currentUser
@@ -63,6 +65,7 @@ fun ProfileScreen(
         ProfileMenuItem(Icons.Filled.LocationOn, stringResource(R.string.profile_menu_address_management), onEditProfileClick),
         ProfileMenuItem(Icons.Filled.Payment, stringResource(R.string.profile_menu_payment_method), onPaymentMethodClick),
         ProfileMenuItem(Icons.Filled.Notifications, stringResource(R.string.profile_menu_notifications), onNotificationsClick),
+        ProfileMenuItem(Icons.Filled.SmartToy, stringResource(R.string.agent_mcp_menu), onAgentMcpClick),
         ProfileMenuItem(Icons.Filled.Settings, stringResource(R.string.profile_menu_settings), onSettingsClick)
     )
 

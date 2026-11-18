@@ -1,0 +1,33 @@
+// TiffinBox MCP server - Cloudflare Workers config. See README.md for setup.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tiffinbox-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // OAuth clients, grants and tokens (managed by @cloudflare/workers-oauth-provider).
+  // Create with: npx wrangler kv namespace create OAUTH_KV  -> paste the id here.
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }],
+
+  // Daily counters, read budget and pairing lockouts (one small Durable Object).
+  "durable_objects": { "bindings": [{ "name": "GUARD", "class_name": "Guard" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Guard"] }],
+
+  // Per-minute limits, enforced at Cloudflare's edge before any Firestore read.
+  "ratelimits": [
+    { "name": "IP_LIMITER", "namespace_id": "4101", "simple": { "limit": 60, "period": 60 } },
+    { "name": "TOKEN_LIMITER", "namespace_id": "4102", "simple": { "limit": 30, "period": 60 } }
+  ],
+
+  "vars": {
+    // This Worker's public address (after the first deploy wrangler prints it).
+    "PUBLIC_URL": "https://tiffinbox-mcp.REPLACE_WITH_ACCOUNT.workers.dev",
+    "FIREBASE_PROJECT_ID": "tiffinbox-2cb8b",
+    // Optional Cloudflare Turnstile site key for the code page ("" = off).
+    "TURNSTILE_SITE_KEY": ""
+  }
+  // Secrets (never in this file):
+  //   npx wrangler secret put FIREBASE_SERVICE_ACCOUNT   (the JSON key, one line)
+  //   npx wrangler secret put TURNSTILE_SECRET_KEY       (only if Turnstile is on)
+}
