@@ -65,8 +65,9 @@ await put("meals/m1", { name: "Chicken Biryani", chefId: "chefA", price: 180, ca
 await put("meals/m2", { name: "Khichuri", chefId: "chefA", price: 120, category: "Dinner", isVeg: true, availableQuantity: 0 });
 await put("meals/m3", { name: "Hidden Pulao", chefId: "chefA", price: 150, isAvailable: false });
 await put("meals/m4", { name: "Secret Biryani", chefId: "chefB", price: 100 });
-await put("users/cust1", { role: "customer", name: "C", savedAddresses: [{ label: "Home", address: "Mirpur 10", latitude: 23.8069, longitude: 90.3687 }], defaultAddressIndex: 0, phoneNumber: "01799999999" });
-await put("users/chefuser", { role: "chef", name: "Chef" });
+await put("users/cust1", { role: "CUSTOMER", // exactly what the app writes
+  name: "C", savedAddresses: [{ label: "Home", address: "Mirpur 10", latitude: 23.8069, longitude: 90.3687 }], defaultAddressIndex: 0, phoneNumber: "01799999999" });
+await put("users/chefuser", { role: "CHEF", name: "Chef" });
 const now = new Date();
 await put("mcp_pairing/K7P2M9QX", { uid: "cust1", createdAt: now });
 await put("mcp_pairing/QXDC2DE2", { uid: "cust1", createdAt: new Date(Date.now() - 10 * 60_000) }); // expired
