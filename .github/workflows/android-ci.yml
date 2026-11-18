@@ -1,12 +1,13 @@
-# Every push to a branch and every pull request: make sure the Android app
-# still builds and its unit tests pass, so a broken build is caught before
-# it is merged. Needs no secrets (the build works without google-services.json).
+# Makes sure the Android app still builds and its unit tests pass, so a
+# broken build is caught before it is merged. Needs no secrets (the build works without google-services.json).
 name: Android CI
 
+# Once per pull request (not again for the same commit's branch push), plus
+# every merge into main so a broken main is noticed.
 on:
   pull_request:
   push:
-    branches-ignore:
+    branches:
       - main
 
 jobs:
@@ -20,7 +21,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # Accepts the SDK licences. Its default also installs the old "tools"
+      # package, which Google removed - sdkmanager then fails the whole job.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - uses: gradle/actions/setup-gradle@v4
 
