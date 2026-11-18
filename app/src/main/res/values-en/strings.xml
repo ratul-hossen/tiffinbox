@@ -761,4 +761,19 @@
     <string name="agent_mcp_blocked">AI agent access is turned off for your account. Contact support if you think this is a mistake.</string>
     <string name="agent_mcp_safety_title">Stay safe</string>
     <string name="agent_mcp_safety_body">Agents can see kitchens, menus and your saved addresses. They can\'t order, pay or see your orders yet. Disconnect any agent you don\'t recognise.</string>
+    <string name="agent_orders_title">AI agent orders</string>
+    <string name="agent_orders_by">Prepared by %1$s · #%2$s</string>
+    <string name="agent_orders_confirm_hint">Check it, then tap Confirm. It is cancelled automatically in %1$s.</string>
+    <string name="agent_orders_confirm">Confirm order</string>
+    <string name="agent_orders_cancel">Cancel</string>
+    <string name="agent_orders_pay_title">Pay in advance (no cash on delivery)</string>
+    <string name="agent_orders_pay_steps">Send Money ৳%1$d by bKash or Nagad to the TiffinBox number below, then type the TrxID from the confirmation SMS.</string>
+    <string name="agent_orders_pay_deadline">Pay within %1$s or the order is cancelled.</string>
+    <string name="agent_orders_txn_label">Transaction ID (TrxID)</string>
+    <string name="agent_orders_pay_submit">Submit payment</string>
+    <string name="agent_orders_verifying">%1$s TrxID %2$s received. TiffinBox is checking the payment; the kitchen gets your order once it is verified.</string>
+    <string name="agent_orders_txn_invalid">That doesn\'t look like a TrxID (8-12 letters and digits).</string>
+    <string name="agent_orders_txn_used">Couldn\'t submit it. This TrxID may already have been used, or the payment time is over.</string>
+    <string name="agent_orders_action_failed">Couldn\'t update the order. Check your internet and try again.</string>
+    <string name="chat_via_agent_label">🤖 Sent via AI agent</string>
 </resources>

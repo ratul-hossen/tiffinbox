@@ -17,7 +17,14 @@ import type { Guard } from "./guard";
 import { LIMITS } from "./limits";
 
 export const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-export const SCOPES = ["menu:read"];
+/**
+ * What a new connection may do. "menu:read" alone is what phase A connections
+ * got; phase B tools (account, orders, chat) check the connection's own
+ * stored scopes, so an old browsing-only connection must be reconnected.
+ */
+export const SCOPES = ["menu:read", "account", "orders", "chat"];
+/** Advertised to MCP clients as the minimum for basic use (unchanged, so old tokens keep working). */
+export const REQUIRED_SCOPES = ["menu:read"];
 
 export function normalizeCode(raw: string): string | null {
   const code = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -67,7 +74,14 @@ function codeForm(env: Env, clientName: string, action: string, error = ""): Res
   return page(
     "Connect to TiffinBox",
     `<h1>Connect ${escapeHtml(clientName)}</h1>
-<p><b>${escapeHtml(clientName)}</b> wants to browse TiffinBox kitchens and menus for you.</p>
+<p><b>${escapeHtml(clientName)}</b> wants to use TiffinBox for you. It will be able to:</p>
+<ul style="color:var(--muted);padding-left:20px;margin:8px 0">
+<li>find kitchens and read menus;</li>
+<li>see your name, email, saved addresses, orders, chats, notifications and points;</li>
+<li>prepare orders - <b>each one needs your Confirm in the app</b> and advance payment (no cash on delivery);</li>
+<li>send messages you ask for to kitchens you've ordered from.</li>
+</ul>
+<p>It can't change your profile or addresses, and never sees your phone or payment PIN.</p>
 <ol><li>Open the TiffinBox app.</li><li>Profile → <b>AI Agent (MCP)</b> → <b>Connect a new agent</b>.</li><li>Type the 8-letter code here.</li></ol>
 <p>অ্যাপে Profile → AI Agent (MCP) → নতুন এজেন্ট যুক্ত করুন — তারপর কোডটি এখানে লিখুন।</p>
 ${error ? `<p class="err">${escapeHtml(error)}</p>` : ""}

@@ -67,13 +67,80 @@ export class Guard extends DurableObject {
     return (await this.bump(`reg:${quotaDay()}:${ip}`)) <= LIMITS.registrationsPerIpPerDay;
   }
 
+  // ---- phase B: quotes, idempotency, per-customer order and message limits ----
+
+  /** Stores a prepare_order quote until [expiresAt]. */
+  async putQuote(id: string, quote: unknown, expiresAt: number): Promise<void> {
+    await this.ctx.storage.put(`quote:${id}`, { quote, expiresAt });
+  }
+
+  async getQuote<T>(id: string): Promise<T | null> {
+    const hit = await this.ctx.storage.get<{ quote: T; expiresAt: number }>(`quote:${id}`);
+    if (!hit) return null;
+    if (hit.expiresAt < Date.now()) {
+      await this.ctx.storage.delete(`quote:${id}`);
+      return null;
+    }
+    return hit.quote;
+  }
+
+  async dropQuote(id: string): Promise<void> {
+    await this.ctx.storage.delete(`quote:${id}`);
+  }
+
+  /** The order an idempotency key already produced, so a retried place_order never orders twice. */
+  async idempotentOrder(uid: string, key: string): Promise<string | null> {
+    return (await this.ctx.storage.get<{ orderId: string }>(`idem:${uid}:${key}`))?.orderId ?? null;
+  }
+
+  async rememberIdempotent(uid: string, key: string, orderId: string): Promise<void> {
+    await this.ctx.storage.put(`idem:${uid}:${key}`, { orderId, at: Date.now() });
+  }
+
+  /**
+   * Checks and records a send: at most [perDay] per day and one per
+   * [cooldownMs]. [kind] keeps orders and messages apart. Only counts when allowed.
+   */
+  async takeSlot(
+    kind: "order" | "msg",
+    uid: string,
+    perDay: number,
+    cooldownMs: number,
+  ): Promise<{ ok: true } | { ok: false; reason: "daily" | "cooldown"; retryAfterSec: number }> {
+    const day = quotaDay();
+    const countKey = `${kind}:${day}:${uid}`;
+    const lastKey = `${kind}last:${uid}`;
+    const now = Date.now();
+    const last = (await this.ctx.storage.get<number>(lastKey)) ?? 0;
+    if (now - last < cooldownMs) return { ok: false, reason: "cooldown", retryAfterSec: Math.ceil((cooldownMs - (now - last)) / 1000) };
+    const count = (await this.ctx.storage.get<number>(countKey)) ?? 0;
+    if (count >= perDay) return { ok: false, reason: "daily", retryAfterSec: 0 };
+    await this.ctx.storage.put(countKey, count + 1);
+    await this.ctx.storage.put(lastKey, now);
+    return { ok: true };
+  }
+
+  /** Gives back a slot taken by [takeSlot] when the write that followed failed. */
+  async returnSlot(kind: "order" | "msg", uid: string): Promise<void> {
+    const countKey = `${kind}:${quotaDay()}:${uid}`;
+    const count = (await this.ctx.storage.get<number>(countKey)) ?? 0;
+    if (count > 0) await this.ctx.storage.put(countKey, count - 1);
+    await this.ctx.storage.delete(`${kind}last:${uid}`);
+  }
+
   /** Old day-keyed counters are dropped once a day so storage doesn't grow forever. */
   async alarm(): Promise<void> {
     const today = quotaDay();
-    const all = await this.ctx.storage.list<number>();
-    const stale = [...all.keys()].filter(
-      (k) => /^(calls|reads|reg):/.test(k) && !k.includes(today),
-    );
+    const all = await this.ctx.storage.list<unknown>();
+    const now = Date.now();
+    const stale = [...all.entries()]
+      .filter(([k, v]) => {
+        if (/^(calls|reads|reg|order|msg):/.test(k)) return !k.includes(today);
+        if (k.startsWith("quote:")) return ((v as { expiresAt?: number })?.expiresAt ?? 0) < now;
+        if (k.startsWith("idem:")) return ((v as { at?: number })?.at ?? 0) < now - 2 * 24 * 3600_000;
+        return false;
+      })
+      .map(([k]) => k);
     for (let i = 0; i < stale.length; i += 128) await this.ctx.storage.delete(stale.slice(i, i + 128));
     await this.ctx.storage.setAlarm(Date.now() + 24 * 3600_000);
   }

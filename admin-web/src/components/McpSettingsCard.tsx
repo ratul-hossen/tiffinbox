@@ -12,6 +12,8 @@ import { logActivity } from "../lib/activityLog";
  *    whole project ~50,000; when MCP hits this, only MCP stops - never the app.
  */
 const DEFAULT_BUDGET = 15000;
+/** bKash/Nagad number agent orders are paid to (same default as mcp-server and the app). */
+const DEFAULT_PAYMENT_NUMBER = "01304376749";
 const BUDGET_MIN = 100;
 const BUDGET_MAX = 40000;
 
@@ -22,6 +24,8 @@ export default function McpSettingsCard() {
   const [enabled, setEnabled] = useState(true);
   const [savedUrl, setSavedUrl] = useState("");
   const [savedBudget, setSavedBudget] = useState(DEFAULT_BUDGET);
+  const [savedNumber, setSavedNumber] = useState(DEFAULT_PAYMENT_NUMBER);
+  const [payNumber, setPayNumber] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [budget, setBudget] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,6 +41,9 @@ export default function McpSettingsCard() {
         setEnabled(d.mcpEnabled !== false);
         setSavedUrl(nextUrl);
         setSavedBudget(nextBudget);
+        const n = typeof d.agentPaymentNumber === "string" && /^01[3-9]\d{8}$/.test(d.agentPaymentNumber) ? d.agentPaymentNumber : DEFAULT_PAYMENT_NUMBER;
+        setSavedNumber(n);
+        setPayNumber((v) => v ?? n);
         setUrl((u) => u ?? nextUrl);
         setBudget((v) => v ?? String(nextBudget));
       }),
@@ -65,7 +72,9 @@ export default function McpSettingsCard() {
   const urlOk = trimmedUrl === "" || /^https:\/\/[^\s/]+\.[^\s]+\/mcp$/.test(trimmedUrl);
   const budgetNum = Number(budget);
   const budgetOk = Number.isInteger(budgetNum) && budgetNum >= BUDGET_MIN && budgetNum <= BUDGET_MAX;
-  const changed = trimmedUrl !== savedUrl || budgetNum !== savedBudget;
+  const trimmedNumber = (payNumber ?? "").trim();
+  const numberOk = /^01[3-9]\d{8}$/.test(trimmedNumber);
+  const changed = trimmedUrl !== savedUrl || budgetNum !== savedBudget || trimmedNumber !== savedNumber;
 
   return (
     <div className="bg-apple-surface rounded-2xl border border-apple-border shadow-card p-5 space-y-4">
@@ -114,6 +123,10 @@ export default function McpSettingsCard() {
           onChange={(e) => setBudget(e.target.value)}
         />
       </label>
+      <label className="block text-xs text-apple-secondary">
+        bKash/Nagad number customers pay agent orders to (Send Money)
+        <input className={inputClass} inputMode="tel" value={payNumber ?? ""} onChange={(e) => setPayNumber(e.target.value)} />
+      </label>
       <p className="text-xs text-apple-secondary">
         The free plan allows about 50,000 reads a day for the whole app. When agents use up this budget, only agent
         access pauses until the next day; the app keeps working.
@@ -121,9 +134,13 @@ export default function McpSettingsCard() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          disabled={busy || !changed || !urlOk || !budgetOk}
+          disabled={busy || !changed || !urlOk || !budgetOk || !numberOk}
           onClick={() =>
-            write({ mcpServerUrl: trimmedUrl, mcpDailyReadBudget: budgetNum }, "update_mcp_settings", "Saved.")
+            write(
+              { mcpServerUrl: trimmedUrl, mcpDailyReadBudget: budgetNum, agentPaymentNumber: trimmedNumber },
+              "update_mcp_settings",
+              "Saved.",
+            )
           }
           className="text-sm bg-apple-blue text-white rounded-lg px-4 py-2 font-medium disabled:opacity-40"
         >
@@ -131,6 +148,7 @@ export default function McpSettingsCard() {
         </button>
         {!urlOk && <span className="text-xs text-apple-red">Use the https:// address ending in /mcp.</span>}
         {!budgetOk && <span className="text-xs text-apple-red">Budget out of range.</span>}
+        {!numberOk && <span className="text-xs text-apple-red">Use an 11-digit number like 01XXXXXXXXX.</span>}
       </div>
       {message && <p className={`text-sm ${message.ok ? "text-apple-green" : "text-apple-red"}`}>{message.text}</p>}
     </div>

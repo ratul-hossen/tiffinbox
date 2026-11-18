@@ -1303,7 +1303,37 @@ In-app assistant = later, separate decision.
   Firestore emulator), firestore-tests (MCP rule cases added; run with
   `npm install --legacy-peer-deps` - firebase 13 vs rules-unit-testing's
   peer ^12).
-- **Phase B (not built):** prepare_order/place_order, COD only,
-  `AwaitingConfirmation` status confirmed in the app, trust levels (new 1/day
-  ৳500, regular 3/day ৳1000, trusted 5/day ৳2000, hard cap 5/day ৳3000),
-  2-min cooldown, idempotency keys, chef "COD not collected" button.
+- **Phase B - BUILT (2026-11-19, branch feat/mcp-orders, v1.4.0).** Owner's
+  rules: build all of it in one go; **no COD for agent orders** - advance
+  bKash/Nagad Send Money to TiffinBox's number (`app_config/settings.
+  agentPaymentNumber`, default 01304376749), TrxID via agent (`submit_payment`)
+  or the app, **admin verifies by hand** (admin-web Agent Payments) before the
+  chef sees the order; chef paid personally later, outside the app. Every
+  order needs the customer's Confirm in the app. Agent may read orders/chats/
+  notifications/points/name/email; profile & addresses read-only; it may
+  message kitchens the customer ordered from (`viaAgent: true`, chat label).
+  - Statuses: AwaitingConfirmation (15 min, `confirmBy`) -> AwaitingPayment
+    (60 min, `payBy`) -> PaymentSubmitted -> admin Approve = "Placed" (placedAt
+    reset so the chef's 12h window starts) / Reject = Cancelled + rejectReason.
+    Orders carry `source: "agent"`, `agentClientName`. Chef app and revenue
+    ignore the pending states; a verified agent order can't be self-cancelled
+    (refund via support). Late orders are cancelled lazily by server/app.
+  - Server: `src/orders.ts` (quote = server-priced, stored in the Guard DO 10
+    min; plates reserved in one commit with updateTime preconditions;
+    `payment_txn_ids/{METHOD}_{TXN}` claimed atomically), `src/chat.ts`,
+    `src/rewards.ts` (port of Rewards.kt + test), `src/coupons.ts` (port of
+    FirestoreCouponRepository.validate/discountFor + test). Coupons: tool
+    `find_coupons` (live coupons at approved kitchens only, best first, no
+    counters exposed), counts in search_kitchens, list in get_menu,
+    `prepare_order` takes `couponCode` and *suggests* the best one (never
+    auto-applies); re-checked at place_order; `usedCount` is incremented by
+    admin-web when the payment is approved. Spending points not via agents
+    yet. Trust tiers in `src/limits.ts`.
+  - Scopes: new connections get `menu:read account orders chat`; phase-A
+    connections (stored `scopes: ["menu:read"]`) must reconnect for phase B.
+  - App: `AgentOrdersSection.kt` on Orders; `FirestoreOrderRepository`
+    listen/confirm/submitAgentPayment/cancelAgentOrder. admin-web:
+    `AgentPaymentsPage.tsx` (+ sidebar count), payment number in
+    `McpSettingsCard.tsx`.
+  - Tests: firestore-tests 66, mcp vitest 46, e2e 79 (`--slow` adds the
+    1-minute cache checks; the e2e pauses twice for the 30/min agent limit).

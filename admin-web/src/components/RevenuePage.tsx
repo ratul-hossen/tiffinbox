@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Order } from "../types";
+import { AGENT_PENDING_STATUSES } from "../types";
 import { formatCurrency } from "../lib/format";
 import StatCard from "./StatCard";
 
@@ -52,7 +53,11 @@ export default function RevenuePage() {
     return orders.filter((o) => (o.placedAt ?? 0) >= cutoff);
   }, [orders, range]);
 
-  const completed = useMemo(() => inRange.filter((o) => o.status !== "Cancelled"), [inRange]);
+  // Unverified agent orders aren't sales yet.
+  const completed = useMemo(
+    () => inRange.filter((o) => o.status !== "Cancelled" && !AGENT_PENDING_STATUSES.includes(String(o.status))),
+    [inRange],
+  );
   const cancelledCount = inRange.length - completed.length;
 
   const totals = useMemo(() => {

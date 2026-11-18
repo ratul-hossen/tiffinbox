@@ -154,7 +154,14 @@ export type OrderStatus =
   | "Cooking"
   | "OutForDelivery"
   | "Delivered"
-  | "Cancelled";
+  | "Cancelled"
+  // AI agent orders before the advance payment is verified (mcp-server, AgentPaymentsPage).
+  | "AwaitingConfirmation"
+  | "AwaitingPayment"
+  | "PaymentSubmitted";
+
+/** Agent-order states that aren't real orders yet: not counted in sales, not shown to the chef. */
+export const AGENT_PENDING_STATUSES: string[] = ["AwaitingConfirmation", "AwaitingPayment", "PaymentSubmitted"];
 
 export const ORDER_STATUSES: OrderStatus[] = [
   "Placed",
@@ -198,6 +205,18 @@ export interface Order {
   mealQuantities?: Record<string, number>;
   platesReserved?: boolean;
   platesRestored?: boolean;
+  // AI agent orders (mcp-server): prepaid by bKash/Nagad to TiffinBox, verified here.
+  source?: "agent" | string;
+  agentClientName?: string;
+  customerName?: string;
+  customerPhone?: string;
+  confirmBy?: number;
+  payBy?: number;
+  paymentSubmittedAt?: number;
+  paymentSubmittedVia?: "agent" | "app" | string;
+  paymentVerifiedAt?: number;
+  paymentVerifiedBy?: string;
+  rejectReason?: string;
 }
 
 export interface Review {

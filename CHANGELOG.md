@@ -4,6 +4,28 @@ All notable changes to the TiffinBox Android app. Versions follow
 [Semantic Versioning](https://semver.org): MAJOR.MINOR.PATCH.
 How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.4.0] - 2026-11-19
+
+### Added
+- **AI agents can order for you (MCP phase B).** Your own AI agent (Claude,
+  ChatGPT...) can now see your orders, chats, notifications and points,
+  prepare and place orders, and message kitchens you've ordered from.
+  - Every agent order shows up under **Orders → AI agent orders**. Tap
+    **Confirm** within 15 minutes, then pay in advance: bKash/Nagad **Send
+    Money** to TiffinBox's number and type the TrxID (or tell your agent).
+    **No cash on delivery** for agent orders.
+  - TiffinBox checks the payment, then the order goes to the kitchen.
+  - Messages your agent sends are marked "🤖 Sent via AI agent" in the chat.
+  - **Coupons:** your agent can find the coupons you can use right now (and
+    which kitchen offers them), tells you the best one for your order, and
+    applies it if you agree - with exactly the same rules as Checkout.
+  - Connected before this version? Disconnect and connect your agent again
+    to allow ordering.
+- admin-web: **Agent Payments** page (check payment → Approve / Reject) and the
+  payment number in App Settings → AI agents.
+- New Firestore rules: agent order states, `payment_txn_ids`. **Re-paste the
+  rules in Firebase Console** before releasing.
+
 ## [1.3.0] - 2026-11-19
 
 ### Added

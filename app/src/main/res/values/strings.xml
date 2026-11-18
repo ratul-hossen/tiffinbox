@@ -804,4 +804,19 @@
     <string name="agent_mcp_blocked">আপনার অ্যাকাউন্টে AI এজেন্ট সুবিধা বন্ধ করা হয়েছে। ভুল মনে হলে সাপোর্টে যোগাযোগ করুন।</string>
     <string name="agent_mcp_safety_title">নিরাপদ থাকুন</string>
     <string name="agent_mcp_safety_body">এজেন্ট শুধু কিচেন, মেনু আর আপনার সেভ করা ঠিকানা দেখতে পারে। এখনো অর্ডার, পেমেন্ট বা আপনার অর্ডারের তালিকা দেখতে পারে না। অচেনা কোনো এজেন্ট দেখলে বিচ্ছিন্ন করে দিন।</string>
+    <string name="agent_orders_title">AI এজেন্টের অর্ডার</string>
+    <string name="agent_orders_by">%1$s তৈরি করেছে · #%2$s</string>
+    <string name="agent_orders_confirm_hint">দেখে নিয়ে Confirm চাপুন। %1$s পরে নিজে থেকে বাতিল হবে।</string>
+    <string name="agent_orders_confirm">অর্ডার কনফার্ম করুন</string>
+    <string name="agent_orders_cancel">বাতিল</string>
+    <string name="agent_orders_pay_title">আগে পেমেন্ট করুন (ক্যাশ অন ডেলিভারি নেই)</string>
+    <string name="agent_orders_pay_steps">নিচের TiffinBox নম্বরে bKash বা Nagad দিয়ে ৳%1$d Send Money করুন, তারপর কনফার্মেশন SMS-এর TrxID লিখুন।</string>
+    <string name="agent_orders_pay_deadline">%1$s-এর মধ্যে পেমেন্ট না করলে অর্ডার বাতিল হবে।</string>
+    <string name="agent_orders_txn_label">ট্রানজ্যাকশন আইডি (TrxID)</string>
+    <string name="agent_orders_pay_submit">পেমেন্ট জমা দিন</string>
+    <string name="agent_orders_verifying">%1$s TrxID %2$s পাওয়া গেছে। TiffinBox পেমেন্ট যাচাই করছে; যাচাই হলেই অর্ডার কিচেনে যাবে।</string>
+    <string name="agent_orders_txn_invalid">এটা TrxID মনে হচ্ছে না (৮-১২টি অক্ষর ও সংখ্যা)।</string>
+    <string name="agent_orders_txn_used">জমা দেওয়া যায়নি। এই TrxID হয়তো আগে ব্যবহার হয়েছে, অথবা পেমেন্টের সময় শেষ।</string>
+    <string name="agent_orders_action_failed">অর্ডার আপডেট করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।</string>
+    <string name="chat_via_agent_label">🤖 AI এজেন্টের মাধ্যমে পাঠানো</string>
 </resources>
