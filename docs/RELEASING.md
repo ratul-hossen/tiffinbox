@@ -54,5 +54,5 @@ Google Sign-In won't work in release builds.
 
 ## Pull request checks
 
-`.github/workflows/android-ci.yml` builds the app and runs the unit tests on
-every pull request and branch push. It needs no secrets.
+`.github/workflows/android-ci.yml` builds the app and runs the unit tests once
+per pull request and on every merge into `main`. It needs no secrets.

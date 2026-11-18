@@ -31,7 +31,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # Accepts the SDK licences. Its default also installs the old "tools"
+      # package, which Google removed - sdkmanager then fails the whole job.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - uses: gradle/actions/setup-gradle@v4
 
