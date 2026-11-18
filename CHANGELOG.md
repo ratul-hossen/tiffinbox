@@ -4,7 +4,7 @@ All notable changes to the TiffinBox Android app. Versions follow
 [Semantic Versioning](https://semver.org): MAJOR.MINOR.PATCH.
 How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
 
-## [Unreleased]
+## [1.3.0] - 2026-11-19
 
 ### Added
 - **AI Agent (MCP), phase A:** customers can connect their own AI agent
