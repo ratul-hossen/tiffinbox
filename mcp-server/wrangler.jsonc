@@ -5,6 +5,9 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Served only at https://tiffinbox-mcp.<subdomain>.workers.dev; no per-version preview URLs.
+  "workers_dev": true,
+  "preview_urls": false,
 
   // OAuth clients, grants and tokens (managed by @cloudflare/workers-oauth-provider).
   // Create with: npx wrangler kv namespace create OAUTH_KV  -> paste the id here.
