@@ -23,8 +23,13 @@ object FirestoreAppConfigRepository {
         val deliveryMaxFee: Int = 0,
         val platformFee: Int = AppConfigStore.DEFAULT_PLATFORM_FEE,
         val preOrderMaxPlates: Int = AppConfigStore.DEFAULT_PRE_ORDER_MAX_PLATES,
-        val fewPlatesThreshold: Int = AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD
+        val fewPlatesThreshold: Int = AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD,
+        /** bKash/Nagad number agent orders are paid to (admin-web App Settings). */
+        val agentPaymentNumber: String = DEFAULT_AGENT_PAYMENT_NUMBER
     )
+
+    /** Owner's TiffinBox number; same default as mcp-server/src/catalog.ts. */
+    const val DEFAULT_AGENT_PAYMENT_NUMBER = "01304376749"
 
     /**
      * How long a loaded config is reused before the next read refreshes it.
@@ -58,7 +63,9 @@ object FirestoreAppConfigRepository {
                 preOrderMaxPlates = doc.getLong("preOrderMaxPlates")?.toInt()?.takeIf { it in 1..50 }
                     ?: AppConfigStore.DEFAULT_PRE_ORDER_MAX_PLATES,
                 fewPlatesThreshold = doc.getLong("fewPlatesThreshold")?.toInt()?.takeIf { it in 1..20 }
-                    ?: AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD
+                    ?: AppConfigStore.DEFAULT_FEW_PLATES_THRESHOLD,
+                agentPaymentNumber = doc.getString("agentPaymentNumber")?.trim()
+                    ?.takeIf { Regex("^01[3-9]\\d{8}$").matches(it) } ?: DEFAULT_AGENT_PAYMENT_NUMBER
             ).also {
                 cached = it
                 cachedAt = System.currentTimeMillis()

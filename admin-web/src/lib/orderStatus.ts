@@ -9,6 +9,9 @@ export const STATUS_BADGE_TONE: Record<OrderStatus, BadgeTone> = {
   OutForDelivery: "amber",
   Delivered: "green",
   Cancelled: "red",
+  AwaitingConfirmation: "neutral",
+  AwaitingPayment: "amber",
+  PaymentSubmitted: "amber",
 };
 
 /**
@@ -24,6 +27,9 @@ export const STATUS_CHART_COLOR: Record<OrderStatus, string> = {
   OutForDelivery: "#1baf7a",
   Delivered: "#008300",
   Cancelled: "#e34948",
+  AwaitingConfirmation: "#8a8a8e",
+  AwaitingPayment: "#c98a00",
+  PaymentSubmitted: "#a05a00",
 };
 
 /** The normal (non-cancelled) happy-path sequence, used for the order detail stepper. */

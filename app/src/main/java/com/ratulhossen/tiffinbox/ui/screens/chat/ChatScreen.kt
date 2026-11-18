@@ -417,6 +417,15 @@ private fun ChatScreenContent(
                                 modifier = Modifier.padding(bottom = 2.dp, end = 2.dp)
                             )
                         }
+                        if (message.viaAgent) {
+                            // Sent by the customer's AI agent (mcp-server), so the chef knows.
+                            Text(
+                                stringResource(R.string.chat_via_agent_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 2.dp, start = 2.dp, end = 2.dp)
+                            )
+                        }
 
                         when (message.type) {
                             "payment_request" -> {

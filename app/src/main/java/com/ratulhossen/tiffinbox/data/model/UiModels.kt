@@ -184,11 +184,13 @@ data class PastOrderUi(
     /** Pre-order slot (epoch millis); 0 = "as soon as possible". */
     val scheduledFor: Long = 0L,
     /** mealId -> quantity, for "Order again". */
-    val mealQuantities: Map<String, Int> = emptyMap()
+    val mealQuantities: Map<String, Int> = emptyMap(),
+    /** Placed by the customer's AI agent and prepaid: cancelling needs TiffinBox support (refund). */
+    val viaAgent: Boolean = false
 ) {
     /** Milliseconds left in the customer's cancel window (0 = can't cancel any more). */
     fun cancelMillisLeft(now: Long = System.currentTimeMillis()): Long =
-        if (status != OrderStage.PLACED || placedAtMillis <= 0) 0L
+        if (status != OrderStage.PLACED || placedAtMillis <= 0 || viaAgent) 0L
         else (placedAtMillis + CUSTOMER_CANCEL_WINDOW_MS - now).coerceAtLeast(0L)
 
     /** A customer may cancel only within 5 minutes of placing, and only before the chef accepts. */

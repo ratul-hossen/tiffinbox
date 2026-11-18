@@ -1,11 +1,13 @@
 # TiffinBox MCP server
 
-Lets a customer's own AI agent (Claude, ChatGPT, or any MCP client) browse
-TiffinBox for them: find kitchens, read menus, check delivery fees. It runs as
-a **Cloudflare Worker on the free plan**. It has no AI of its own, so it adds no
-AI cost: the agent's provider does the thinking.
+Lets a customer's own AI agent (Claude, ChatGPT, or any MCP client) use
+TiffinBox for them: find kitchens, read menus, check delivery fees, see their
+orders, chats, notifications and points, place prepaid orders and message
+kitchens. It runs as a **Cloudflare Worker on the free plan**. It has no AI of
+its own, so it adds no AI cost: the agent's provider does the thinking.
 
-**Phase A (this folder today): browsing only.** Ordering (phase B) comes later.
+Phase A was browsing; **phase B adds the account, ordering, payment and chat
+tools** below. Profile and addresses stay read-only.
 
 ## How a customer connects
 
@@ -30,6 +32,44 @@ the app.
 | `list_my_addresses` | The user's saved addresses (labels and text only) |
 | `list_areas` | Area names the server understands (Dhaka and nearby, English + Bengali) |
 
+### Phase B (connections made after phase B; older ones must reconnect)
+
+| Tool | What it does |
+|---|---|
+| `get_my_profile` | Name, email, saved addresses, points, rank, agent-order level. Never the phone number. |
+| `get_my_rewards` | Points balance, rank and its discount, next rank |
+| `list_my_orders` / `get_order_status` | Orders and their status, with the next step. Full id or `#ABC123`. |
+| `list_my_notifications` | Latest in-app notifications |
+| `list_my_chats` / `read_chat` | Chats with kitchens (kitchen text is marked as data) |
+| `send_message_to_kitchen` | Sends the customer's words to a kitchen they ordered from, marked "via AI agent". 20 a day, 500 chars, 15 s apart. |
+| `prepare_order` | Server prices a cart from one kitchen: dishes, delivery fee, platform fee, rank discount. Places nothing; returns a 10-minute `quoteId`. |
+| `place_order` | Places it from the quote with an idempotency key. Plates are reserved atomically. |
+| `submit_payment` | The customer's bKash/Nagad TrxID. Each TrxID can pay one order only. |
+| `cancel_order` | Only before payment; plates go back. Paid orders need support (refund). |
+
+### The order flow (owner's rules)
+
+```
+prepare_order -> customer says yes -> place_order          status AwaitingConfirmation (chef can't see it)
+  -> customer taps Confirm in the app within 15 min        status AwaitingPayment
+  -> Send Money (bKash/Nagad) to TiffinBox's number, TrxID via agent or app, within 60 min
+                                                           status PaymentSubmitted
+  -> admin-web "Agent Payments": admin checks the money arrived
+       Approve -> "Placed": chef + customer notified, order posted in their chat
+       Reject  -> Cancelled, plates back, customer told why
+```
+
+- **No cash on delivery** for agent orders. The payment number comes from
+  admin-web App Settings (`agentPaymentNumber`, default 01304376749).
+- The chef is paid by TiffinBox personally, outside the app.
+- Late confirm or payment cancels the order automatically (whoever reads it
+  first: this server, the app or admin-web) and gives the plates back.
+- Agent-order limits by delivered orders. New (0 delivered): 1 a day, up to ৳500.
+  Regular (1+): 3 a day, ৳1000. Trusted (10+): 5 a day, ৳2000, 2 waiting at
+  once. Hard cap ৳3000. 2 minutes between orders.
+- Coupons and spending points stay in the app for now; the rank discount and
+  top-rank free delivery are applied.
+
 Delivery fees use exactly the app's formula. `src/pricing.ts` is a port of
 `DeliveryQuote.kt` / `DeliveryQuoter.kt`, and `test/pricing.test.ts` runs the
 same cases as the app's unit tests. **Change both together.**
@@ -42,7 +82,10 @@ same cases as the app's unit tests. **Change both together.**
 | Stolen token | OAuth 2.1 + PKCE (`@cloudflare/workers-oauth-provider`, tokens stored hashed). Every call checks the connection still exists, so **Disconnect** works within a minute. The user gets a notification for every new connection. |
 | Someone else's data | The uid always comes from the token. No tool takes a user id. |
 | Private kitchen data | Firestore field masks: phone, WhatsApp, bKash/Nagad, NID, addresses and photos are never even downloaded |
-| Prompt injection in kitchen text | Control/bidi characters stripped, length capped, server instructions say kitchen text is data. Ordering will need confirmation in the app (phase B). |
+| Prompt injection in kitchen text | Control/bidi characters stripped, length capped, server instructions say kitchen text is data. Every order needs the customer's Confirm in the app, and payment is the customer's own Send Money. |
+| Fake or reused payments | TrxID claimed in `payment_txn_ids` in the same atomic write (create fails if used). An admin checks every payment before the kitchen sees the order. |
+| Overselling plates | Plates are reserved in the same commit that creates the order, with an update-time precondition on each meal. |
+| Duplicate orders on retry | `place_order` needs an idempotency key; the same key returns the first order. |
 | Bots / floods | Cloudflare edge DDoS protection. 60 req/min per IP and 30/min per agent (edge rate limits). 1,000 tool calls per agent per day. 10 client registrations per IP per day. 64 KB request cap. |
 | Using up Firestore's free quota | 60-second catalog cache, plus an MCP-wide **daily read budget** (default 15,000 of Spark's ~50,000). When it runs out, only MCP pauses. The app keeps working. |
 | Emergencies | admin-web App Settings → **AI agents (MCP)** on/off switch. User Details → **Block AI agents** / **Disconnect** per account. |

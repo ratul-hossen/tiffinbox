@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.Icons
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreCatalogRepository
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.data.firebase.AgentOrderUi
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.model.OrderStage
 import com.ratulhossen.tiffinbox.data.model.PastOrderUi
@@ -50,6 +53,21 @@ fun OrdersScreen(onOrderAgain: () -> Unit = {}) {
     var cancelFailed by remember { mutableStateOf(false) }
     var reorderUnavailable by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var agentOrders by remember { mutableStateOf<List<AgentOrderUi>>(emptyList()) }
+    var paymentNumber by remember { mutableStateOf(FirestoreAppConfigRepository.DEFAULT_AGENT_PAYMENT_NUMBER) }
+
+    // Orders the customer's AI agent prepared: live, so Confirm / payment show up at once.
+    DisposableEffect(Unit) {
+        var known = -1
+        val registration = FirestoreOrderRepository.listenMyAgentOrders { list ->
+            // One left the list (verified or cancelled): refresh the history below.
+            if (known >= 0 && list.size < known) reloadKey++
+            known = list.size
+            agentOrders = list
+        }
+        onDispose { registration?.remove() }
+    }
+    LaunchedEffect(Unit) { paymentNumber = FirestoreAppConfigRepository.config().agentPaymentNumber }
 
     LaunchedEffect(reloadKey) {
         val firestoreOrders = FirestoreOrderRepository.getMyOrders()
@@ -90,7 +108,7 @@ fun OrdersScreen(onOrderAgain: () -> Unit = {}) {
         )
     }
 
-    if (!isLoading && orders.isEmpty()) {
+    if (!isLoading && orders.isEmpty() && agentOrders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             PhotoEmptyState(resId = R.drawable.empty_orders, title = stringResource(R.string.orders_empty_message))
         }
@@ -101,6 +119,12 @@ fun OrdersScreen(onOrderAgain: () -> Unit = {}) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        if (agentOrders.isNotEmpty()) {
+            item(key = "agent_orders") {
+                AgentOrdersSection(agentOrders, paymentNumber)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile(

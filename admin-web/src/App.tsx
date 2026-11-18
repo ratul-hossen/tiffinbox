@@ -3,6 +3,7 @@ import { signOut } from "firebase/auth";
 import {
   BadgeCheck,
   Bike,
+  Bot,
   ChefHat,
   ExternalLink,
   History,
@@ -38,6 +39,7 @@ import RevenuePage from "./components/RevenuePage";
 import CouponsPage from "./components/CouponsPage";
 import ChefApprovalsPage from "./components/ChefApprovalsPage";
 import PendingApprovalsCount from "./components/PendingApprovalsCount";
+import AgentPaymentsPage, { AgentPaymentsCount } from "./components/AgentPaymentsPage";
 import MealsPage from "./components/MealsPage";
 import UsersPage from "./components/UsersPage";
 import OrdersPage from "./components/OrdersPage";
@@ -56,6 +58,7 @@ import SearchInput from "./components/ui/SearchInput";
 
 type Tab =
   | "dashboard"
+  | "agentPayments"
   | "revenue"
   | "coupons"
   | "chefApprovals"
@@ -141,6 +144,14 @@ const TABS: TabMeta[] = [
     group: "Operations",
     searchPlaceholder: "Search orders…",
     description: "Track status, payment proof, and delivery handling.",
+  },
+  {
+    key: "agentPayments",
+    label: "Agent Payments",
+    icon: Bot,
+    group: "Operations",
+    searchPlaceholder: "Search TrxID, customer, kitchen…",
+    description: "AI agent orders are prepaid by bKash/Nagad - check each payment, then approve to send it to the kitchen.",
   },
   {
     key: "coupons",
@@ -341,6 +352,7 @@ export default function App() {
                       <Icon size={16} strokeWidth={2} className={active ? "text-apple-blue" : undefined} />
                       {t.label}
                       {t.key === "chefApprovals" && <PendingApprovalsCount />}
+                      {t.key === "agentPayments" && <AgentPaymentsCount />}
                     </button>
                   );
                 })}
@@ -411,6 +423,7 @@ export default function App() {
           {tab === "meals" && <MealsPage search={search} />}
           {tab === "users" && <UsersPage search={search} />}
           {tab === "orders" && <OrdersPage search={search} />}
+          {tab === "agentPayments" && <AgentPaymentsPage search={search} />}
           {tab === "reviews" && <ReviewsPage search={search} />}
           {tab === "subscriptions" && <SubscriptionsPage search={search} />}
           {tab === "activity" && <ActivityLogPage search={search} />}

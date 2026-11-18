@@ -22,7 +22,9 @@ data class ChatMessageUi(
     val paymentFor: String = "",
     val paymentStatus: String = "pending", // "pending", "paid"
     val paymentTransactionId: String = "",
-    val subscriptionId: String = ""
+    val subscriptionId: String = "",
+    /** Sent by the customer's AI agent through the MCP server. */
+    val viaAgent: Boolean = false
 )
 
 data class ChatThreadUi(
@@ -312,6 +314,7 @@ object FirestoreChatRepository {
                         val paymentStatus = doc.getString("paymentStatus") ?: "pending"
                         val paymentTransactionId = doc.getString("paymentTransactionId") ?: ""
                         val subscriptionId = doc.getString("subscriptionId") ?: ""
+                        val viaAgent = doc.getBoolean("viaAgent") ?: false
 
                         ChatMessageUi(
                             id = doc.id,
@@ -328,7 +331,8 @@ object FirestoreChatRepository {
                             paymentFor = paymentFor,
                             paymentStatus = paymentStatus,
                             paymentTransactionId = paymentTransactionId,
-                            subscriptionId = subscriptionId
+                            subscriptionId = subscriptionId,
+                            viaAgent = viaAgent
                         )
                     } ?: emptyList()
                     onUpdate(messages)

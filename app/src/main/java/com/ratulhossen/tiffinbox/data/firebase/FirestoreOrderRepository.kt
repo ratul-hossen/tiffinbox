@@ -28,6 +28,38 @@ import java.util.Locale
 /** Statuses of an order the chef has accepted but not yet delivered, in order. */
 val ACTIVE_ORDER_STATUSES = listOf("Accepted", "Cooking", "OutForDelivery")
 
+/**
+ * AI agent orders (mcp-server) before TiffinBox has verified their advance
+ * payment. They live in the Orders tab's "AI agent orders" section, not in
+ * the history, and never count as a chef's order or earnings.
+ */
+const val AGENT_AWAITING_CONFIRMATION = "AwaitingConfirmation"
+const val AGENT_AWAITING_PAYMENT = "AwaitingPayment"
+const val AGENT_PAYMENT_SUBMITTED = "PaymentSubmitted"
+val AGENT_PENDING_STATUSES = listOf(AGENT_AWAITING_CONFIRMATION, AGENT_AWAITING_PAYMENT, AGENT_PAYMENT_SUBMITTED)
+
+/** After confirming, the customer has this long to pay (matches mcp-server LIMITS.paymentWindowMs). */
+const val AGENT_PAYMENT_WINDOW_MS = 60L * 60 * 1000
+
+/** One agent order waiting on the customer or on TiffinBox. */
+data class AgentOrderUi(
+    val id: String,
+    val kitchenName: String,
+    val itemsSummary: String,
+    val total: Int,
+    val status: String,
+    val agentName: String,
+    val confirmBy: Long,
+    val payBy: Long,
+    val paymentMethod: String,
+    val paymentTransactionId: String
+) {
+    val shortId: String get() = id.takeLast(6).uppercase()
+}
+
+/** What happened when the customer typed a TrxID in the app. */
+enum class AgentPaymentResult { OK, INVALID, ALREADY_USED_OR_FAILED }
+
 /** A "Placed" order the chef hasn't accepted within this window is cancelled automatically. */
 const val ORDER_ACCEPT_TIMEOUT_MS = 12L * 60 * 60 * 1000
 
@@ -46,6 +78,17 @@ object FirestoreOrderRepository {
     private fun effectiveStatus(doc: DocumentSnapshot): String {
         val status = doc.getString("status") ?: "Placed"
         val placedAt = doc.getLong("placedAt") ?: 0L
+        // An agent order the customer didn't confirm / pay in time (no Cloud Functions:
+        // whoever reads it first cancels it; the MCP server does the same).
+        val agentDeadline = when (status) {
+            AGENT_AWAITING_CONFIRMATION -> doc.getLong("confirmBy") ?: 0L
+            AGENT_AWAITING_PAYMENT -> doc.getLong("payBy") ?: 0L
+            else -> 0L
+        }
+        if (agentDeadline > 0 && System.currentTimeMillis() > agentDeadline) {
+            cancelInTransaction(doc.reference, "auto_expired") { it.getString("status") == status }
+            return "Cancelled"
+        }
         // A pre-order isn't "late" before its own slot either.
         val deadline = maxOf(placedAt + ORDER_ACCEPT_TIMEOUT_MS, doc.getLong("scheduledFor") ?: 0L)
         if (status == "Placed" && placedAt > 0 && System.currentTimeMillis() > deadline) {
@@ -370,7 +413,7 @@ object FirestoreOrderRepository {
     suspend fun getUpcomingPreOrders(chefId: String): List<ChefOrderUi> {
         val now = System.currentTimeMillis()
         return fetchRecentOrders(chefId)
-            .filter { it.scheduledFor > now && it.status != "Cancelled" && it.status != "Delivered" }
+            .filter { it.scheduledFor > now && it.status != "Cancelled" && it.status != "Delivered" && it.status !in AGENT_PENDING_STATUSES }
             .sortedBy { it.scheduledFor }
     }
 
@@ -394,7 +437,7 @@ object FirestoreOrderRepository {
     }
 
     suspend fun getEarningsSummary(chefId: String, chartDays: Int = 14): EarningsSummary {
-        val orders = fetchRecentOrders(chefId).filter { it.status != "Cancelled" }
+        val orders = fetchRecentOrders(chefId).filter { it.status != "Cancelled" && it.status !in AGENT_PENDING_STATUSES }
         val dayFormat = SimpleDateFormat("MM/dd", Locale.US)
         val now = System.currentTimeMillis()
         val dayMillis = 24L * 60 * 60 * 1000
@@ -441,6 +484,8 @@ object FirestoreOrderRepository {
 
             snapshot.documents
                 .sortedByDescending { it.getLong("placedAt") ?: 0L }
+                // Agent orders still waiting for confirm/payment are shown in their own section.
+                .filter { (it.getString("status") ?: "") !in AGENT_PENDING_STATUSES }
                 .mapNotNull { doc ->
                     val chefId = doc.getString("chefId") ?: return@mapNotNull null
                     val (chefName, chefEmoji) = chefCache.getOrPut(chefId) {
@@ -475,7 +520,8 @@ object FirestoreOrderRepository {
                                 id to ((row["quantity"] as? Number)?.toInt() ?: 1)
                             }
                             .groupBy({ it.first }, { it.second })
-                            .mapValues { (_, q) -> q.sum() }
+                            .mapValues { (_, q) -> q.sum() },
+                        viaAgent = doc.getString("source") == "agent"
                     )
                 }
         } catch (e: Exception) {
@@ -532,6 +578,101 @@ object FirestoreOrderRepository {
         } catch (e: Exception) {
             emptyMap<String, Int>() to emptySet()
         }
+    }
+
+    // ---------------------------------------------------------- AI agent orders
+
+    /** Live list of this customer's agent orders that are waiting on them or on TiffinBox. */
+    fun listenMyAgentOrders(onUpdate: (List<AgentOrderUi>) -> Unit): ListenerRegistration? {
+        val uid = FirebaseAuthRepository.currentUser?.uid ?: return null
+        return try {
+            FirebaseFirestore.getInstance().collection("orders")
+                .whereEqualTo("customerId", uid)
+                .whereEqualTo("source", "agent")
+                .addSnapshotListener { snapshot, _ ->
+                    val list = snapshot?.documents.orEmpty()
+                        .filter { (it.getString("status") ?: "") in AGENT_PENDING_STATUSES }
+                        .filter { effectiveStatus(it) != "Cancelled" }
+                        .sortedByDescending { it.getLong("placedAt") ?: 0L }
+                        .map { doc ->
+                            val items = (doc.get("items") as? List<*>).orEmpty().mapNotNull { it as? Map<*, *> }
+                            AgentOrderUi(
+                                id = doc.id,
+                                kitchenName = FirestoreCatalogRepository.getCachedChefs()
+                                    .find { it.id == doc.getString("chefId") }?.kitchenName ?: "",
+                                itemsSummary = items.joinToString(", ") {
+                                    "${it["mealName"] as? String ?: "-"} ×${(it["quantity"] as? Number)?.toInt() ?: 1}"
+                                },
+                                total = (doc.getLong("totalPrice") ?: 0L).toInt(),
+                                status = doc.getString("status").orEmpty(),
+                                agentName = doc.getString("agentClientName").orEmpty().ifBlank { "AI agent" },
+                                confirmBy = doc.getLong("confirmBy") ?: 0L,
+                                payBy = doc.getLong("payBy") ?: 0L,
+                                paymentMethod = doc.getString("paymentMethod").orEmpty(),
+                                paymentTransactionId = doc.getString("paymentTransactionId").orEmpty()
+                            )
+                        }
+                    onUpdate(list)
+                }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** The customer approves their agent's order; the payment clock starts now. */
+    suspend fun confirmAgentOrder(orderId: String): Boolean = try {
+        val now = System.currentTimeMillis()
+        FirebaseFirestore.getInstance().collection("orders").document(orderId)
+            .update(mapOf("status" to AGENT_AWAITING_PAYMENT, "confirmedAt" to now, "payBy" to now + AGENT_PAYMENT_WINDOW_MS))
+            .await()
+        true
+    } catch (e: Exception) {
+        false
+    }
+
+    /**
+     * Records the bKash/Nagad TrxID for an agent order. The TrxID is claimed in
+     * payment_txn_ids in the same batch, so the rules refuse one that already
+     * paid for another order.
+     */
+    suspend fun submitAgentPayment(orderId: String, method: String, rawTxnId: String): AgentPaymentResult {
+        val txn = rawTxnId.uppercase().filter { it.isLetterOrDigit() }
+        if (method !in listOf("BKASH", "NAGAD") || !Regex("^[A-Z0-9]{8,12}$").matches(txn)) return AgentPaymentResult.INVALID
+        val uid = FirebaseAuthRepository.currentUser?.uid ?: return AgentPaymentResult.ALREADY_USED_OR_FAILED
+        return try {
+            val db = FirebaseFirestore.getInstance()
+            val now = System.currentTimeMillis()
+            db.batch()
+                .set(
+                    db.collection("payment_txn_ids").document("${method}_$txn"),
+                    mapOf("orderId" to orderId, "customerId" to uid, "method" to method, "createdAt" to now)
+                )
+                .update(
+                    db.collection("orders").document(orderId),
+                    mapOf(
+                        "status" to AGENT_PAYMENT_SUBMITTED,
+                        "paymentMethod" to method,
+                        "paymentTransactionId" to txn,
+                        "paymentSubmittedAt" to now,
+                        "paymentSubmittedVia" to "app"
+                    )
+                )
+                .commit()
+                .await()
+            AgentPaymentResult.OK
+        } catch (e: Exception) {
+            AgentPaymentResult.ALREADY_USED_OR_FAILED
+        }
+    }
+
+    /** Cancels an agent order that isn't paid yet; its plates go back to the menu. */
+    suspend fun cancelAgentOrder(orderId: String): Boolean = try {
+        val ref = FirebaseFirestore.getInstance().collection("orders").document(orderId)
+        cancelInTransaction(ref, "customer") {
+            it.getString("status") == AGENT_AWAITING_CONFIRMATION || it.getString("status") == AGENT_AWAITING_PAYMENT
+        }.await() != null
+    } catch (e: Exception) {
+        false
     }
 
     fun updateOrderStatus(orderId: String, status: String, customerId: String? = null) {
