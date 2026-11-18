@@ -253,6 +253,7 @@ export function loadUser(db: Firestore, uid: string): Promise<UserInfo> {
     } else if (typeof d.latitude === "number" && typeof d.longitude === "number") {
       addresses = [{ label: "Home", address: cleanText(d.address, 200), latitude: d.latitude, longitude: d.longitude }];
     }
-    return { exists: true, role: str(d.role), mcpBlocked, addresses, defaultAddressIndex };
+    // The app writes "CUSTOMER" / "CHEF" (RoleCache, FirestoreUserRepository); compare case-insensitively.
+    return { exists: true, role: str(d.role).trim().toLowerCase(), mcpBlocked, addresses, defaultAddressIndex };
   });
 }
