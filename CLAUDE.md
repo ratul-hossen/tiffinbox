@@ -1225,3 +1225,42 @@ meal plan highlights, pre-orders, plates-left enforcement, and review leftovers.
   thumbnail), chef name, submission date, approve/reject buttons. Approve
   writes `nidVerified: true` on the `chefs/{uid}` doc (admin-only field).
   Sidebar `App.tsx` wired to route `/verifications`.
+
+## Tester feedback round + release system (v1.2.0, 2026-11-18)
+
+Worked on branch `feat/parvej-work` (a teammate's branch; the admin merges PRs).
+- **Auth:** `ui/components/AuthFields.kt` - `EmailField` / `PasswordField` (eye
+  toggle + autofill `ContentType`), `offerToSavePassword()` (Credential Manager
+  `CreatePasswordRequest` after login/sign-up). `data/RoleCache.kt` keeps the
+  last confirmed role per uid; Splash and login fall back to it when the
+  Firestore role read fails (it used to fall back to CUSTOMER). Google sign-in
+  uses `FirestoreUserRepository.lookupRole()` (Found / NotFound / Failed) and
+  refuses a role mismatch with a message instead of opening the other home.
+- **Not reproduced:** "logged out again and again" - no code path signs a user
+  out except the Logout buttons. Held for tester details.
+- **Navigation:** `MainScreen` tab is `rememberSaveable` + `BackHandler` to Home.
+- **Order flow without riders:** chef dashboard "Active orders"
+  (`FirestoreOrderRepository.getActiveOrders`, `ACTIVE_ORDER_STATUSES`):
+  Accepted -> Cooking -> OutForDelivery -> Delivered, COD cash reminder.
+- **Phone notifications (free):** `notifications/InAppNotificationWatcher.kt`
+  listens to `notifications/{uid}/items` (createdAt > last seen) while the
+  process lives and posts a local notification; started from
+  `MainActivity`'s AuthStateListener. True push when the app is killed still
+  needs a server (Blaze) - not done.
+- **Favorites:** `FavoritesStore` now has `chefIds` + `mealIds`, saved in
+  SharedPreferences and `users/{uid}.favoriteChefIds/favoriteMealIds`.
+  Favorites screen has Food / Kitchens tabs; `FavoriteHeartButton` on MealCard
+  and Meal Details.
+- **Chat unread:** `chats/{id}.unreadForCustomer/unreadForChef` incremented
+  per message, reset by `markRead()` when the thread is open;
+  `UnreadCountBadge` / `rememberCustomerUnreadChatCount()` on Home, the Main
+  top bar, chat lists and the chef dashboard Messages button.
+- **Edge-to-edge insets:** bottom bars use `navigationBarsPadding()` (Chat
+  also `imePadding()`); non-Scaffold screens use `systemBarsPadding()`.
+- **Release system:** `version.properties` (VERSION_NAME, versionCode =
+  major*10000+minor*100+patch), `CHANGELOG.md`, `docs/RELEASING.md`,
+  `.github/workflows/release.yml` (tag `v*` -> APK + GitHub Release; needs
+  secret `GOOGLE_SERVICES_JSON`, optional keystore secrets) and
+  `android-ci.yml` (build + unit tests on PRs). Settings shows the version.
+- **Local build on this Windows PC:** `JAVA_HOME="D:\C Drive Replica\android-studio\jbr"`;
+  `git config core.fileMode false` is set locally (keeps gradlew's exec bit out of diffs).

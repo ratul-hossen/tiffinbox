@@ -157,7 +157,11 @@ private fun ChatScreenContent(
     var showPaymentRequestDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(chatId) {
-        val registration = FirestoreChatRepository.listenMessages(chatId) { messages = it }
+        val registration = FirestoreChatRepository.listenMessages(chatId) {
+            messages = it
+            // Open on screen = read; clears this side's unread badge.
+            FirestoreChatRepository.markRead(chatId, asChef = isChef)
+        }
         onDispose {
             registration?.remove()
             voicePlayer.stop()
@@ -245,7 +249,8 @@ private fun ChatScreenContent(
             )
         },
         bottomBar = {
-            Surface(shadowElevation = 8.dp) {
+            // Above the phone's nav buttons and, while typing, above the keyboard.
+            Surface(shadowElevation = 8.dp, modifier = Modifier.navigationBarsPadding().imePadding()) {
                 if (isRecording) {
                     // Recording bar
                     Row(

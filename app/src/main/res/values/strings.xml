@@ -751,4 +751,25 @@
     <string name="subscribe_slot_dinner">রাত: ৳%1$d</string>
     <string name="meal_plans_how">একবার সাবস্ক্রাইব করলে প্রতিদিন নির্দিষ্ট সময়ে খাবার আসবে — প্রতিবার আলাদা করে অর্ডার করতে হবে না।</string>
     <string name="meal_plans_per_week">প্রতি সপ্তাহে</string>
+
+    <!-- 2026-11 tester fixes -->
+    <string name="password_show">পাসওয়ার্ড দেখান</string>
+    <string name="password_hide">পাসওয়ার্ড লুকান</string>
+    <string name="role_name_chef">Home Chef</string>
+    <string name="role_name_customer">Customer</string>
+    <string name="login_google_role_mismatch">এই Google account টি %1$s হিসেবে রেজিস্টার করা। আগের পেজে গিয়ে %1$s বেছে নিন, অথবা অন্য Google account ব্যবহার করুন।</string>
+    <string name="login_google_network_error">Server-এ পৌঁছানো যাচ্ছে না। Internet সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="chef_active_orders_title">চলমান অর্ডার</string>
+    <string name="chef_active_orders_subtitle">Accept করা অর্ডার ধাপে ধাপে Delivered পর্যন্ত এগিয়ে নিন। প্রতিটি ধাপে Customer notification পাবেন।</string>
+    <string name="chef_active_orders_empty">এখন কোনো চলমান অর্ডার নেই</string>
+    <string name="chef_active_order_collect_cash">ডেলিভারির সময় Customer থেকে ৳%1$d ক্যাশ নিন</string>
+    <string name="chef_active_order_start_cooking">রান্না শুরু করুন</string>
+    <string name="chef_active_order_out_for_delivery">ডেলিভারিতে পাঠান</string>
+    <string name="chef_active_order_delivered">Delivered হয়েছে</string>
+    <string name="chef_active_order_delivered_cash">Delivered ও ক্যাশ পেয়েছি</string>
+    <string name="favorites_tab_food">খাবার (%1$d)</string>
+    <string name="favorites_tab_kitchen">Kitchen (%1$d)</string>
+    <string name="favorites_food_empty_title">এখনো কোনো পছন্দের খাবার নেই</string>
+    <string name="favorites_food_empty_subtitle">যেকোনো খাবারের ছবিতে ♥ চাপুন, খাবারটি এখানে জমা থাকবে</string>
+    <string name="settings_app_version">TiffinBox সংস্করণ %1$s</string>
 </resources>

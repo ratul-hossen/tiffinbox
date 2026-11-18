@@ -105,6 +105,10 @@ fun LocationSetupScreen(uid: String, role: String, onLocationSaved: () -> Unit) 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Edge-to-edge: keep content clear of the status bar, the phone's
+            // back/home buttons and the keyboard.
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.Center

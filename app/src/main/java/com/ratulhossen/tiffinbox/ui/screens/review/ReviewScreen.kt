@@ -51,6 +51,9 @@ fun ReviewScreen(chefId: String, onSubmitted: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Edge-to-edge: keep content clear of the system bars and the keyboard.
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {

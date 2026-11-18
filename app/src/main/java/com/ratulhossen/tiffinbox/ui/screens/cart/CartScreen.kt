@@ -63,7 +63,8 @@ fun CartScreen(
         bottomBar = {
             if (items.isNotEmpty()) {
                 Surface(shadowElevation = 8.dp) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    // navigationBarsPadding: stay above the phone's back/home buttons.
+                    Column(modifier = Modifier.navigationBarsPadding().padding(16.dp)) {
                         SummaryRow(stringResource(R.string.cart_summary_subtotal), CartStore.subtotal)
                         SummaryRow(stringResource(R.string.cart_summary_delivery_fee), CartStore.deliveryFee)
                         etaMinutes?.let {

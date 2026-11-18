@@ -27,6 +27,12 @@ data class SavedAddress(
 
 const val MAX_SAVED_ADDRESSES = 2
 
+sealed class RoleLookup {
+    data class Found(val role: String) : RoleLookup()
+    object NotFound : RoleLookup()
+    object Failed : RoleLookup()
+}
+
 object FirestoreUserRepository {
 
     private val db: FirebaseFirestore
@@ -68,6 +74,21 @@ object FirestoreUserRepository {
             )
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
+        }
+    }
+
+    /**
+     * Like [getRole] but tells "no profile yet" (a brand-new Google sign-up)
+     * apart from "couldn't read it" (offline / error), so a network hiccup
+     * isn't mistaken for a new account.
+     */
+    suspend fun lookupRole(uid: String): RoleLookup {
+        return try {
+            val doc = db.collection("users").document(uid).get().await()
+            val role = doc.getString("role")
+            if (doc.exists() && !role.isNullOrBlank()) RoleLookup.Found(role) else RoleLookup.NotFound
+        } catch (e: Exception) {
+            RoleLookup.Failed
         }
     }
 

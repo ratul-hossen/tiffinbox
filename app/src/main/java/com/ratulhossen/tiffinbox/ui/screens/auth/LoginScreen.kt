@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
@@ -34,11 +33,16 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.RoleCache
 import com.ratulhossen.tiffinbox.data.firebase.AuthResult
+import com.ratulhossen.tiffinbox.data.firebase.RoleLookup
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChefRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
+import com.ratulhossen.tiffinbox.ui.components.EmailField
 import com.ratulhossen.tiffinbox.ui.components.KitchenTypeDropdown
+import com.ratulhossen.tiffinbox.ui.components.PasswordField
+import com.ratulhossen.tiffinbox.ui.components.offerToSavePassword
 import com.ratulhossen.tiffinbox.ui.components.PhoneAndWhatsappFields
 import com.ratulhossen.tiffinbox.ui.components.effectiveWhatsapp
 import com.ratulhossen.tiffinbox.ui.screens.roleselect.UserRole
@@ -92,6 +96,7 @@ fun LoginScreen(
     val kitchenNameRequiredMessage = stringResource(R.string.login_kitchen_name_required)
     val googleSignInFailedMessage = stringResource(R.string.login_google_signin_failed)
     val googleSignInCancelledMessage = stringResource(R.string.login_google_signin_cancelled)
+    val googleNetworkErrorMessage = stringResource(R.string.login_google_network_error)
     val isChefRole = role == UserRole.CHEF.name
 
     fun submit() {
@@ -127,7 +132,8 @@ fun LoginScreen(
                 is AuthResult.Success -> {
                     val uid = result.user.uid
                     if (isLoginMode) {
-                        val storedRole = FirestoreUserRepository.getRole(uid) ?: role
+                        val storedRole = FirestoreUserRepository.getRole(uid)
+                            ?: RoleCache.read(context, uid) ?: role
                         if (storedRole == UserRole.CHEF.name && !FirestoreChefRepository.chefProfileExists(uid)) {
                             // Self-heal: an account created before chef-profile
                             // creation existed (or whose profile write failed)
@@ -140,7 +146,9 @@ fun LoginScreen(
                             )
                         }
                         FirestoreUserRepository.registerFcmToken(uid)
+                        RoleCache.write(context, uid, storedRole)
                         isLoading = false
+                        offerToSavePassword(context, email.trim(), password)
                         onLoginSuccess(storedRole)
                     } else {
                         FirestoreUserRepository.upsertProfile(
@@ -165,7 +173,9 @@ fun LoginScreen(
                             )
                         }
                         FirestoreUserRepository.registerFcmToken(uid)
+                        RoleCache.write(context, uid, role)
                         isLoading = false
+                        offerToSavePassword(context, email.trim(), password)
                         onSignupComplete(uid, role)
                     }
                 }
@@ -212,8 +222,36 @@ fun LoginScreen(
                 when (authResult) {
                     is AuthResult.Success -> {
                         val uid = authResult.user.uid
-                        val existingRole = FirestoreUserRepository.getRole(uid)
+                        val lookup = FirestoreUserRepository.lookupRole(uid)
+                        val existingRole = when (lookup) {
+                            is RoleLookup.Found -> lookup.role
+                            RoleLookup.NotFound -> null
+                            // Couldn't read the profile (offline / slow network): use the
+                            // role saved on this phone, else stop instead of treating an
+                            // existing account as a brand-new sign-up.
+                            RoleLookup.Failed -> RoleCache.read(context, uid) ?: run {
+                                FirebaseAuthRepository.signOut()
+                                isLoading = false
+                                errorMessage = googleNetworkErrorMessage
+                                return@launch
+                            }
+                        }
+                        if (existingRole != null && existingRole != role) {
+                            // e.g. a customer's Google account tapped "Chef": it used to open
+                            // the customer home silently, which looked like chef login failing.
+                            FirebaseAuthRepository.signOut()
+                            isLoading = false
+                            errorMessage = context.getString(
+                                R.string.login_google_role_mismatch,
+                                context.getString(
+                                    if (existingRole == UserRole.CHEF.name) R.string.role_name_chef
+                                    else R.string.role_name_customer
+                                )
+                            )
+                            return@launch
+                        }
                         if (existingRole != null) {
+                            RoleCache.write(context, uid, existingRole)
                             if (existingRole == UserRole.CHEF.name && !FirestoreChefRepository.chefProfileExists(uid)) {
                                 val displayName = googleIdTokenCredential.displayName
                                     ?: authResult.user.displayName.orEmpty()
@@ -291,6 +329,10 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Edge-to-edge: keep content clear of the status bar, the phone's
+            // back/home buttons and the keyboard.
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
@@ -357,21 +399,17 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        OutlinedTextField(
+        EmailField(
             value = email,
             onValueChange = { email = it },
-            label = { Text(stringResource(R.string.login_email_label)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            isNewAccount = !isLoginMode,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
+        PasswordField(
             value = password,
             onValueChange = { password = it },
-            label = { Text(stringResource(R.string.login_password_label)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            isNewPassword = !isLoginMode,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -461,6 +499,10 @@ private fun ChefSignupStepper(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Edge-to-edge: keep content clear of the status bar, the phone's
+            // back/home buttons and the keyboard.
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
@@ -520,21 +562,17 @@ private fun ChefSignupStepper(
                     onWhatsappSameAsPhoneChange = onWhatsappSameAsPhoneChange
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
+                EmailField(
                     value = email,
                     onValueChange = onEmailChange,
-                    label = { Text(stringResource(R.string.login_email_label)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    isNewAccount = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
+                PasswordField(
                     value = password,
                     onValueChange = onPasswordChange,
-                    label = { Text(stringResource(R.string.login_password_label)) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    isNewPassword = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

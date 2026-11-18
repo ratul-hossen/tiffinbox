@@ -63,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.rememberCustomerUnreadChatCount
 import com.ratulhossen.tiffinbox.data.DeliveryContext
 import com.ratulhossen.tiffinbox.data.DeliveryQuoter
 import com.ratulhossen.tiffinbox.ui.components.LightStatusBarIcons
@@ -337,22 +338,24 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f)
                     )
                     HeaderCircleButton(onClick = onChatClick) {
-                        Box(contentAlignment = Alignment.Center) {
+                        // Red count of unread messages (was an always-on green dot
+                        // that looked like a new message even when there was none).
+                        val unreadChats = rememberCustomerUnreadChatCount()
+                        BadgedBox(
+                            badge = {
+                                if (unreadChats > 0) {
+                                    Badge(
+                                        containerColor = Color(0xFFE53935),
+                                        contentColor = Color.White
+                                    ) { Text(if (unreadChats > 99) "99+" else "$unreadChats") }
+                                }
+                            }
+                        ) {
                             Icon(
                                 Icons.Filled.Chat,
                                 contentDescription = stringResource(R.string.content_description_chat),
                                 tint = Color.White,
                                 modifier = Modifier.size(22.dp)
-                            )
-                            // Keeps chat's familiar green without a green icon
-                            // fighting the red header (UI_UX_REVIEW H8).
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 3.dp, y = (-2).dp)
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF25D366))
                             )
                         }
                     }

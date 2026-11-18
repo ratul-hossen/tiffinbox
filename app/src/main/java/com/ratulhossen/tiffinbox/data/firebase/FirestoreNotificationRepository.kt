@@ -1,6 +1,7 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.ratulhossen.tiffinbox.data.model.NotificationUi
 import kotlinx.coroutines.tasks.await
 
@@ -33,7 +34,10 @@ object FirestoreNotificationRepository {
 
     suspend fun getNotifications(uid: String): List<NotificationUi> {
         return try {
+            // Newest 100 - without the orderBy, limit(100) returned an arbitrary
+            // 100 and new notifications could be missing once a user had more.
             db.collection("notifications").document(uid).collection("items")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .limit(100)
                 .get()
                 .await()

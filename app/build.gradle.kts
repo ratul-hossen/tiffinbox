@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // No separate org.jetbrains.kotlin.android plugin here: AGP 9.0+ has
@@ -5,6 +7,20 @@ plugins {
     // ("Cannot add extension with name 'kotlin'").
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// Release version lives in /version.properties (see docs/RELEASING.md).
+val versionProps = Properties().apply {
+    rootProject.file("version.properties").inputStream().use { load(it) }
+}
+val appVersionName: String = versionProps.getProperty("VERSION_NAME").trim()
+val appVersionCode: Int = appVersionName.split(".").map { it.toInt() }.let { (major, minor, patch) ->
+    major * 10000 + minor * 100 + patch
+}
+
+// Release signing comes from environment variables (GitHub Actions secrets or
+// your own shell), never from a file in the repo. Without them a release build
+// is simply unsigned and the workflow ships the debug-signed APK instead.
+val releaseKeystorePath: String? = System.getenv("TIFFINBOX_KEYSTORE_PATH")
 
 android {
     namespace = "com.ratulhossen.tiffinbox"
@@ -19,16 +35,28 @@ android {
         applicationId = "com.ratulhossen.tiffinbox"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         vectorDrawables {
             useSupportLibrary = true
         }
     }
 
+    signingConfigs {
+        if (releaseKeystorePath != null && file(releaseKeystorePath).exists()) {
+            create("release") {
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("TIFFINBOX_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("TIFFINBOX_KEY_ALIAS")
+                keyPassword = System.getenv("TIFFINBOX_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

@@ -180,7 +180,8 @@ fun CheckoutScreen(
         },
         bottomBar = {
             Surface(shadowElevation = 8.dp) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                // navigationBarsPadding: stay above the phone's back/home buttons.
+                Column(modifier = Modifier.navigationBarsPadding().padding(16.dp)) {
                     if (errorMessage != null) {
                         Text(
                             errorMessage.orEmpty(),

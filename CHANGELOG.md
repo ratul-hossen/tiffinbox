@@ -1,0 +1,56 @@
+# Changelog
+
+All notable changes to the TiffinBox Android app. Versions follow
+[Semantic Versioning](https://semver.org): MAJOR.MINOR.PATCH.
+How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
+
+## [1.2.0] - 2026-11-18
+
+First tagged release. Fixes from the tester feedback round.
+
+### Fixed
+- **Login:** the password field now has a show/hide (eye) button, also on
+  Change Password.
+- **Saved passwords:** email and password fields are tagged for autofill, and
+  after a successful login or sign-up the phone offers to save the password,
+  so it can be filled in next time.
+- **Chef stays a chef on reopen:** if the role couldn't be read from the server
+  at start-up (slow or no internet), the app opened the customer home. It now
+  uses the role last seen on the phone.
+- **Chef "Continue with Google":** a Google account already registered as a
+  customer used to open the customer home without saying why. It now explains
+  which role the account belongs to. A network error no longer treats an
+  existing account as a brand-new sign-up.
+- **Back button from Profile pages:** going back from Settings, Edit Profile
+  and other screens opened from a tab now returns to that tab instead of Home.
+  The system back button on any other tab goes to Home first.
+- **Kitchen search** now searches all kitchens by default ("Nearby" is
+  optional), because map/location features are not complete yet.
+- **Chat button:** the always-on green dot is replaced by a red count of
+  unread messages. Chat lists and the chef dashboard show unread counts too.
+- **Buttons hidden behind the phone's navigation bar:** the bottom bars on
+  Meal Details, Cart, Checkout and Chat, plus the login, sign-up, location,
+  order tracking, review and chef dashboard screens, now stay above the
+  system back/home buttons and the keyboard.
+- The Notifications list now always shows the newest 100 items.
+
+### Added
+- **Order notifications on the phone:** customers get a notification when an
+  order is placed, accepted, cooking, on the way and delivered. Chefs get one
+  for each new order. This works while the app is open or in the background.
+- **Chef order progress (no rider needed):** an accepted order now moves to
+  "Active orders" on the chef dashboard. The chef takes it through
+  Start cooking, Send out for delivery and Delivered. For cash-on-delivery
+  orders the chef is reminded to collect the cash. Before this, an order got
+  stuck once accepted.
+- **Favourite food:** a heart on every dish (meal cards and Meal Details).
+  Favourites has two tabs, **Food** and **Kitchens**. Favourites are now
+  saved to the account and kept after the app restarts.
+- **Release system:** version lives in `version.properties`, and a
+  `CHANGELOG.md`. A GitHub Actions workflow builds the APK and publishes a
+  GitHub Release for every `v*` tag. Another workflow builds and tests every
+  pull request.
+
+## [0.1.0]
+
+Development builds before tagged releases (pull requests #1-#38).

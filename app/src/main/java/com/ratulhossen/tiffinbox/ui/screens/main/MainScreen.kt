@@ -14,7 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.ui.components.rememberCustomerUnreadChatCount
 import com.ratulhossen.tiffinbox.ui.screens.favorites.FavoritesScreen
 import com.ratulhossen.tiffinbox.ui.screens.home.HomeScreen
 import com.ratulhossen.tiffinbox.ui.screens.orders.OrdersScreen
@@ -51,8 +53,13 @@ fun MainScreen(
     onOpenMapClick: () -> Unit = {},
     onLogout: () -> Unit
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    // Saveable so opening Settings / Edit Profile / any other screen from a tab
+    // and pressing back returns to that same tab (it used to reset to Home).
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    // System back on another tab goes to Home first, like most apps, instead of closing the app.
+    BackHandler(enabled = selectedTab != 0) { selectedTab = 0 }
     val cartCount = CartStore.items.sumOf { it.quantity }
+    val unreadChats = rememberCustomerUnreadChatCount()
     val tabs = listOf(
         Tab(stringResource(R.string.nav_home), Icons.Filled.Home),
         Tab(stringResource(R.string.nav_search), Icons.Filled.Search),
@@ -73,11 +80,22 @@ fun MainScreen(
                     title = { Text(stringResource(R.string.app_name)) },
                     actions = {
                         IconButton(onClick = onChatClick) {
-                            Icon(
-                                Icons.Filled.Chat,
-                                contentDescription = stringResource(R.string.content_description_chat),
-                                tint = Color(0xFF25D366)
-                            )
+                            BadgedBox(
+                                badge = {
+                                    if (unreadChats > 0) {
+                                        Badge(
+                                            containerColor = Color(0xFFE53935),
+                                            contentColor = Color.White
+                                        ) { Text(if (unreadChats > 99) "99+" else "$unreadChats") }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Filled.Chat,
+                                    contentDescription = stringResource(R.string.content_description_chat),
+                                    tint = Color(0xFF25D366)
+                                )
+                            }
                         }
                         IconButton(onClick = onCartClick) {
                             BadgedBox(
@@ -154,7 +172,7 @@ fun MainScreen(
                 )
                 1 -> SearchScreen(onMealClick = onMealClick, onChefClick = onChefClick)
                 2 -> OrdersScreen(onOrderAgain = onCartClick)
-                3 -> FavoritesScreen(onChefClick = onChefClick)
+                3 -> FavoritesScreen(onChefClick = onChefClick, onMealClick = onMealClick)
                 4 -> ProfileScreen(
                     onLogout = onLogout,
                     onSubscriptionsClick = onSubscriptionsClick,

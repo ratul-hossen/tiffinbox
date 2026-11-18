@@ -1,6 +1,7 @@
 package com.ratulhossen.tiffinbox.ui.components
 
 import com.ratulhossen.tiffinbox.data.AppConfigStore
+import com.ratulhossen.tiffinbox.data.FavoritesStore
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -56,14 +57,26 @@ fun MealCard(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Base64Thumbnail(
-                base64 = meal.photoBase64,
-                emoji = meal.emoji,
-                // Same 4:3 frame food photos are cropped to on upload.
+            Box(
                 modifier = Modifier
                     .width(108.dp)
                     .aspectRatio(ImageCompressor.MEAL_ASPECT)
-            )
+            ) {
+                Base64Thumbnail(
+                    base64 = meal.photoBase64,
+                    emoji = meal.emoji,
+                    // Same 4:3 frame food photos are cropped to on upload.
+                    modifier = Modifier.fillMaxSize()
+                )
+                // Save this dish to Favorites -> Food.
+                FavoriteHeartButton(
+                    isFavorite = FavoritesStore.isMealFavorite(meal.id),
+                    onToggle = { FavoritesStore.toggleMeal(meal.id) },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 if (meal.isTodaySpecial) {

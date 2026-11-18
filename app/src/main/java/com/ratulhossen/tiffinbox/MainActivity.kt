@@ -24,6 +24,9 @@ import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.domain.ml.MlRecommendModel
 import com.ratulhossen.tiffinbox.domain.ml.MlSearchIntentModel
 import com.ratulhossen.tiffinbox.notifications.ensureNotificationChannel
+import com.ratulhossen.tiffinbox.notifications.InAppNotificationWatcher
+import com.ratulhossen.tiffinbox.data.FavoritesStore
+import com.google.firebase.auth.FirebaseAuth
 import com.ratulhossen.tiffinbox.ui.navigation.TiffinNavGraph
 import com.ratulhossen.tiffinbox.ui.theme.ThemePreferences
 import com.ratulhossen.tiffinbox.ui.components.AnimatedGradientBackground
@@ -45,9 +48,34 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+        try {
+            FirebaseAuth.getInstance().addAuthStateListener(authListener)
+        } catch (e: Exception) {
+            // Firebase not configured in this build - nothing to watch.
+        }
         setContent {
             TiffinBoxApp()
         }
+    }
+
+    // Phone notifications for new order / status updates, for whoever is signed in.
+    private val authListener = FirebaseAuth.AuthStateListener { auth ->
+        val uid = auth.currentUser?.uid
+        if (uid != null) {
+            InAppNotificationWatcher.start(this, uid)
+            FavoritesStore.load(this, uid)
+        } else {
+            InAppNotificationWatcher.stop()
+            FavoritesStore.clear()
+        }
+    }
+
+    override fun onDestroy() {
+        try {
+            FirebaseAuth.getInstance().removeAuthStateListener(authListener)
+        } catch (e: Exception) {
+        }
+        super.onDestroy()
     }
 }
 

@@ -1,5 +1,6 @@
 package com.ratulhossen.tiffinbox.data.firebase
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
@@ -30,7 +31,9 @@ data class ChatThreadUi(
     val chefId: String,
     val chefName: String,
     val lastMessage: String,
-    val lastMessageAt: Long
+    val lastMessageAt: Long,
+    /** Messages from the other side not opened yet (for whoever is looking at the list). */
+    val unreadCount: Int = 0
 )
 
 /**
@@ -50,6 +53,29 @@ object FirestoreChatRepository {
 
     fun chefSenderId(chefId: String): String = "chef:$chefId"
 
+    /**
+     * Unread counters live on the thread doc: a customer's message bumps
+     * unreadForChef, a chef's bumps unreadForCustomer, and opening the chat
+     * sets your own back to 0. (Home's chat button used to show a green dot
+     * that was always on, whether or not anything was unread.)
+     */
+    private const val UNREAD_FOR_CUSTOMER = "unreadForCustomer"
+    private const val UNREAD_FOR_CHEF = "unreadForChef"
+
+    private fun unreadFieldForReceiver(senderId: String, customerId: String): String =
+        if (senderId == customerId) UNREAD_FOR_CHEF else UNREAD_FOR_CUSTOMER
+
+    /** Marks a thread as read for the customer ([asChef] false) or the chef. */
+    fun markRead(chatId: String, asChef: Boolean) {
+        try {
+            // update(), not set(merge): never create a half-empty thread doc here.
+            db.collection("chats").document(chatId)
+                .update(if (asChef) UNREAD_FOR_CHEF else UNREAD_FOR_CUSTOMER, 0)
+        } catch (e: Exception) {
+            // Thread doesn't exist yet / offline - nothing to clear.
+        }
+    }
+
     fun sendMessage(
         chatId: String,
         customerId: String,
@@ -60,12 +86,13 @@ object FirestoreChatRepository {
     ) {
         try {
             val chatRef = db.collection("chats").document(chatId)
-            val threadData = hashMapOf(
+            val threadData = hashMapOf<String, Any>(
                 "customerId" to customerId,
                 "chefId" to chefId,
                 "chefName" to chefName,
                 "lastMessage" to text,
-                "lastMessageAt" to System.currentTimeMillis()
+                "lastMessageAt" to System.currentTimeMillis(),
+                unreadFieldForReceiver(senderId, customerId) to FieldValue.increment(1)
             )
             chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
                 val messageData = hashMapOf(
@@ -154,12 +181,13 @@ object FirestoreChatRepository {
     ) {
         try {
             val chatRef = db.collection("chats").document(chatId)
-            val threadData = hashMapOf(
+            val threadData = hashMapOf<String, Any>(
                 "customerId" to customerId,
                 "chefId" to chefId,
                 "chefName" to chefName,
                 "lastMessage" to "🎤 Voice message ($durationSec s)",
-                "lastMessageAt" to System.currentTimeMillis()
+                "lastMessageAt" to System.currentTimeMillis(),
+                unreadFieldForReceiver(senderId, customerId) to FieldValue.increment(1)
             )
             chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
                 val messageData = hashMapOf(
@@ -191,12 +219,13 @@ object FirestoreChatRepository {
     ) {
         try {
             val chatRef = db.collection("chats").document(chatId)
-            val threadData = hashMapOf(
+            val threadData = hashMapOf<String, Any>(
                 "customerId" to customerId,
                 "chefId" to chefId,
                 "chefName" to chefName,
                 "lastMessage" to "💳 Payment Request: ৳$amount",
-                "lastMessageAt" to System.currentTimeMillis()
+                "lastMessageAt" to System.currentTimeMillis(),
+                unreadFieldForReceiver(senderId, customerId) to FieldValue.increment(1)
             )
             chatRef.set(threadData, SetOptions.merge()).addOnSuccessListener {
                 val messageData = hashMapOf(
@@ -319,7 +348,8 @@ object FirestoreChatRepository {
                         val chefName = doc.getString("chefName") ?: ""
                         val lastMessage = doc.getString("lastMessage") ?: ""
                         val lastMessageAt = doc.getLong("lastMessageAt") ?: 0L
-                        ChatThreadUi(doc.id, customerId, chefId, chefName, lastMessage, lastMessageAt)
+                        val unread = (doc.getLong(UNREAD_FOR_CHEF) ?: 0L).toInt()
+                        ChatThreadUi(doc.id, customerId, chefId, chefName, lastMessage, lastMessageAt, unread)
                     }?.sortedByDescending { it.lastMessageAt } ?: emptyList()
                     onUpdate(threads)
                 }
@@ -338,7 +368,8 @@ object FirestoreChatRepository {
                         val chefName = doc.getString("chefName") ?: ""
                         val lastMessage = doc.getString("lastMessage") ?: ""
                         val lastMessageAt = doc.getLong("lastMessageAt") ?: 0L
-                        ChatThreadUi(doc.id, customerId, chefId, chefName, lastMessage, lastMessageAt)
+                        val unread = (doc.getLong(UNREAD_FOR_CUSTOMER) ?: 0L).toInt()
+                        ChatThreadUi(doc.id, customerId, chefId, chefName, lastMessage, lastMessageAt, unread)
                     }?.sortedByDescending { it.lastMessageAt } ?: emptyList()
                     onUpdate(threads)
                 }

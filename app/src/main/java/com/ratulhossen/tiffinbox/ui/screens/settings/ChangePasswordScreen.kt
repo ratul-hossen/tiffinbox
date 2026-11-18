@@ -12,7 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.ratulhossen.tiffinbox.ui.components.PasswordField
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.firebase.AuthResult
@@ -62,30 +62,27 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                 return@Column
             }
 
-            OutlinedTextField(
+            PasswordField(
                 value = currentPassword,
                 onValueChange = { currentPassword = it },
-                label = { Text(stringResource(R.string.change_password_current_label)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                label = stringResource(R.string.change_password_current_label),
+                isNewPassword = false,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
+            PasswordField(
                 value = newPassword,
                 onValueChange = { newPassword = it },
-                label = { Text(stringResource(R.string.change_password_new_label)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                label = stringResource(R.string.change_password_new_label),
+                isNewPassword = true,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
+            PasswordField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text(stringResource(R.string.change_password_confirm_label)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                label = stringResource(R.string.change_password_confirm_label),
+                isNewPassword = true,
                 modifier = Modifier.fillMaxWidth()
             )
 

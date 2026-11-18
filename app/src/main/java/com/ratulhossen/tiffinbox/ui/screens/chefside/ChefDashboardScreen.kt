@@ -98,6 +98,7 @@ fun ChefDashboardScreen(
     var available by remember { mutableStateOf(true) }
     var orders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
     var preOrders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
+    var activeOrders by remember { mutableStateOf<List<ChefOrderUi>>(emptyList()) }
     var earnings by remember { mutableStateOf<EarningsSummary?>(null) }
     var forecastPlates by remember { mutableStateOf<Int?>(null) }
     var subscribers by remember { mutableStateOf<List<SubscriptionUi>>(emptyList()) }
@@ -183,6 +184,7 @@ fun ChefDashboardScreen(
             val dailyCounts = FirestoreOrderRepository.getDailyOrderCountsForChef(chefId)
             forecastPlates = DemandForecastEngine.forecastNextDayPlates(dailyCounts)
             orders = FirestoreOrderRepository.getIncomingOrders(chefId)
+            activeOrders = FirestoreOrderRepository.getActiveOrders(chefId)
             preOrders = FirestoreOrderRepository.getUpcomingPreOrders(chefId)
             earnings = FirestoreOrderRepository.getEarningsSummary(chefId)
             subscribers = FirestoreSubscriptionRepository.getChefSubscriptions(chefId)
@@ -190,9 +192,24 @@ fun ChefDashboardScreen(
     }
 
     fun respondToOrder(orderId: String, newStatus: String) {
-        val customerId = orders.find { it.id == orderId }?.customerId
-        FirestoreOrderRepository.updateOrderStatus(orderId, newStatus, customerId)
+        val order = orders.find { it.id == orderId }
+        FirestoreOrderRepository.updateOrderStatus(orderId, newStatus, order?.customerId)
         orders = orders.filterNot { it.id == orderId }
+        // An accepted order moves to "Active orders" so the chef can take it to Delivered.
+        if (order != null && newStatus == "Accepted") {
+            activeOrders = listOf(order.copy(status = "Accepted")) + activeOrders
+        }
+    }
+
+    /** Moves an accepted order one step on: Accepted -> Cooking -> OutForDelivery -> Delivered. */
+    fun advanceOrder(order: ChefOrderUi) {
+        val next = nextOrderStatus(order.status) ?: return
+        FirestoreOrderRepository.updateOrderStatus(order.id, next, order.customerId)
+        activeOrders = if (next == "Delivered") {
+            activeOrders.filterNot { it.id == order.id }
+        } else {
+            activeOrders.map { if (it.id == order.id) it.copy(status = next) else it }
+        }
     }
 
     var viewingScreenshotBase64 by remember { mutableStateOf<String?>(null) }
@@ -208,6 +225,7 @@ fun ChefDashboardScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -248,6 +266,9 @@ fun ChefDashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Edge-to-edge: keep content clear of the system bars and the keyboard.
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
@@ -455,6 +476,12 @@ fun ChefDashboardScreen(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(onClick = onOpenMessages, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.messages_label))
+            // How many customer messages are waiting, like the customer side's chat button.
+            val unreadChats = com.ratulhossen.tiffinbox.ui.components.rememberChefUnreadChatCount(chefId)
+            if (unreadChats > 0) {
+                Spacer(modifier = Modifier.width(8.dp))
+                com.ratulhossen.tiffinbox.ui.components.UnreadCountBadge(count = unreadChats)
+            }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -864,6 +891,31 @@ fun ChefDashboardScreen(
                     }
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(stringResource(R.string.chef_active_orders_title), style = MaterialTheme.typography.titleLarge)
+        Text(
+            stringResource(R.string.chef_active_orders_subtitle),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        if (activeOrders.isEmpty()) {
+            Text(
+                stringResource(R.string.chef_active_orders_empty),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        activeOrders.forEach { order ->
+            ActiveOrderCard(
+                order = order,
+                onAdvance = { advanceOrder(order) },
+                onCall = { phone ->
+                    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
+                },
+                onChat = { onOpenChat(order.customerId) }
+            )
         }
     }
 
@@ -1470,3 +1522,120 @@ private fun ChefMealPlanConfigCard(
         }
     }
 }
+
+/** Orders store the method's enum name (CASH_ON_DELIVERY, BKASH, ...); show it readably. */
+private fun paymentMethodLabel(method: String): String = when (method.uppercase()) {
+    "CASH_ON_DELIVERY" -> "Cash on Delivery"
+    "BKASH" -> "bKash"
+    "NAGAD" -> "Nagad"
+    "CARD" -> "Card"
+    "" -> "-"
+    else -> method
+}
+
+/** The next status a chef can move an accepted order to, or null once it's delivered. */
+private fun nextOrderStatus(status: String): String? = when (status) {
+    "Accepted" -> "Cooking"
+    "Cooking" -> "OutForDelivery"
+    "OutForDelivery" -> "Delivered"
+    else -> null
+}
+
+@Composable
+private fun ActiveOrderCard(
+    order: ChefOrderUi,
+    onAdvance: () -> Unit,
+    onCall: (String) -> Unit,
+    onChat: () -> Unit
+) {
+    val isCashOnDelivery = order.paymentMethod.contains("cash", ignoreCase = true) ||
+        order.paymentMethod.contains("\u0995\u09cd\u09af\u09be\u09b6")
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    order.itemsSummary,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        activeOrderStatusLabel(order.status),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.chef_dashboard_order_number, order.id.take(6)),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.price_tag, order.totalPrice) + " \u00b7 " + paymentMethodLabel(order.paymentMethod),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            if (order.customerName.isNotBlank() || order.deliveryAddress.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    listOf(order.customerName, order.deliveryAddress).filter { it.isNotBlank() }.joinToString(" \u00b7 "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (isCashOnDelivery && order.status == "OutForDelivery") {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.chef_active_order_collect_cash, order.totalPrice),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TiffinButton(onClick = onAdvance) {
+                    Text(
+                        stringResource(
+                            when (order.status) {
+                                "Accepted" -> R.string.chef_active_order_start_cooking
+                                "Cooking" -> R.string.chef_active_order_out_for_delivery
+                                else -> if (isCashOnDelivery) R.string.chef_active_order_delivered_cash
+                                else R.string.chef_active_order_delivered
+                            }
+                        )
+                    )
+                }
+                if (order.customerPhone.isNotBlank()) {
+                    IconButton(onClick = { onCall(order.customerPhone) }) {
+                        Icon(Icons.Filled.Call, contentDescription = null)
+                    }
+                }
+                IconButton(onClick = onChat) {
+                    Icon(Icons.Filled.Chat, contentDescription = null)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun activeOrderStatusLabel(status: String): String = stringResource(
+    when (status) {
+        "Accepted" -> R.string.order_stage_accepted
+        "Cooking" -> R.string.order_stage_cooking
+        "OutForDelivery" -> R.string.order_stage_out_for_delivery
+        else -> R.string.order_stage_delivered
+    }
+)
