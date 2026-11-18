@@ -17,7 +17,14 @@ export interface AppConfig {
   recommendRadiusKm: number;
   delivery: DeliveryPricing;
   deliveryMaxFee: number;
+  /** Added to every order, same as the app (AppConfigStore.DEFAULT_PLATFORM_FEE = 10). */
+  platformFee: number;
+  /** bKash/Nagad number agent orders are paid to (App Settings; owner's default below). */
+  agentPaymentNumber: string;
 }
+
+/** Owner's TiffinBox bKash/Nagad number for agent orders, used until App Settings sets one. */
+export const DEFAULT_AGENT_PAYMENT_NUMBER = "01304376749";
 
 export interface Kitchen extends PricedKitchen {
   id: string;
@@ -125,6 +132,10 @@ export function loadConfig(db: Firestore): Promise<AppConfig> {
         maxFee: 0,
       },
       deliveryMaxFee: Math.max(0, num(d.deliveryMaxFee, 0)),
+      platformFee: Math.min(200, Math.max(0, num(d.platformFee, 10))),
+      agentPaymentNumber: /^01[3-9]\d{8}$/.test(str(d.agentPaymentNumber).trim())
+        ? str(d.agentPaymentNumber).trim()
+        : DEFAULT_AGENT_PAYMENT_NUMBER,
     };
   });
 }
@@ -222,6 +233,10 @@ export interface SavedAddress {
 export interface UserInfo {
   exists: boolean;
   role: string;
+  name: string;
+  email: string;
+  /** For the chef's delivery only (copied onto the order like the app does) - never sent to an agent. */
+  phoneNumber: string;
   mcpBlocked: boolean;
   addresses: SavedAddress[];
   defaultAddressIndex: number;
@@ -231,12 +246,16 @@ export interface UserInfo {
 export function loadUser(db: Firestore, uid: string): Promise<UserInfo> {
   return cached(`user:${uid}`, async () => {
     const [doc, block] = await Promise.all([
-      db.get(`users/${uid}`, ["role", "savedAddresses", "defaultAddressIndex", "address", "latitude", "longitude"]),
+      db.get(`users/${uid}`, [
+        "role", "name", "email", "phoneNumber", "savedAddresses", "defaultAddressIndex", "address", "latitude", "longitude",
+      ]),
       // Admin-only collection (firestore.rules), so the user can't clear it themselves.
       db.get(`mcp_blocks/${uid}`, ["blocked"]),
     ]);
     const mcpBlocked = block?.data.blocked === true;
-    if (!doc) return { exists: false, role: "", mcpBlocked, addresses: [], defaultAddressIndex: 0 };
+    if (!doc) {
+      return { exists: false, role: "", name: "", email: "", phoneNumber: "", mcpBlocked, addresses: [], defaultAddressIndex: 0 };
+    }
     const d = doc.data;
     let addresses: SavedAddress[] = (Array.isArray(d.savedAddresses) ? d.savedAddresses : [])
       .filter((a): a is Record<string, unknown> => !!a && typeof a === "object")
@@ -254,6 +273,15 @@ export function loadUser(db: Firestore, uid: string): Promise<UserInfo> {
       addresses = [{ label: "Home", address: cleanText(d.address, 200), latitude: d.latitude, longitude: d.longitude }];
     }
     // The app writes "CUSTOMER" / "CHEF" (RoleCache, FirestoreUserRepository); compare case-insensitively.
-    return { exists: true, role: str(d.role).trim().toLowerCase(), mcpBlocked, addresses, defaultAddressIndex };
+    return {
+      exists: true,
+      role: str(d.role).trim().toLowerCase(),
+      name: cleanText(d.name, 60),
+      email: cleanText(d.email, 100),
+      phoneNumber: cleanText(d.phoneNumber, 20),
+      mcpBlocked,
+      addresses,
+      defaultAddressIndex,
+    };
   });
 }

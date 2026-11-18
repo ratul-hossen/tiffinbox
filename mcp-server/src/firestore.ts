@@ -127,6 +127,21 @@ function toDoc(raw: { name: string; fields?: Record<string, FsValue>; updateTime
 export type Filter = { field: string; op: "EQUAL" | "GREATER_THAN" | "LESS_THAN"; value: unknown };
 
 /**
+ * One write inside an atomic commit. A precondition makes the whole commit
+ * fail (nothing written) if the document changed or exists unexpectedly -
+ * that's how plates are reserved and a TrxID is kept unique without a
+ * server-side transaction runner.
+ */
+export type Write =
+  | { op: "create"; path: string; data: Record<string, unknown> }
+  | { op: "update"; path: string; data: Record<string, unknown>; ifUpdateTime?: string; increments?: Record<string, number> }
+  | { op: "merge"; path: string; data: Record<string, unknown>; increments?: Record<string, number> }
+  | { op: "delete"; path: string; ifUpdateTime?: string };
+
+/** Thrown when a commit's precondition failed (someone else changed the data first). */
+export class ConflictError extends Error {}
+
+/**
  * One client per incoming request. [reads] counts the documents this request
  * read, so the server can charge them against the daily read budget.
  */
@@ -164,10 +179,18 @@ export class Firestore {
   /** A query over one collection (optionally under [parentPath]). */
   async query(
     collection: string,
-    opts: { filters?: Filter[]; select?: string[]; limit?: number; parentPath?: string } = {},
+    opts: {
+      filters?: Filter[];
+      select?: string[];
+      limit?: number;
+      parentPath?: string;
+      /** Single-field ordering only (automatic index, no composite index needed). */
+      orderBy?: { field: string; direction: "ASCENDING" | "DESCENDING" };
+    } = {},
   ): Promise<FsDoc[]> {
     const structuredQuery: Record<string, unknown> = { from: [{ collectionId: collection }] };
     if (opts.select) structuredQuery.select = { fields: opts.select.map((f) => ({ fieldPath: f })) };
+    if (opts.orderBy) structuredQuery.orderBy = [{ field: { fieldPath: opts.orderBy.field }, direction: opts.orderBy.direction }];
     if (opts.filters?.length) {
       const fieldFilters = opts.filters.map((f) => ({
         fieldFilter: { field: { fieldPath: f.field }, op: f.op, value: encodeValue(f.value) },
@@ -184,6 +207,47 @@ export class Firestore {
     // Firestore bills an empty result as one read.
     this.reads += Math.max(1, docs.length);
     return docs;
+  }
+
+  private docName(path: string): string {
+    return `projects/${this.env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`;
+  }
+
+  /** Several writes, all or nothing. Throws [ConflictError] when a precondition fails. */
+  async commit(writes: Write[]): Promise<void> {
+    const body = writes.map((w) => {
+      const transforms = (inc?: Record<string, number>) =>
+        inc && Object.keys(inc).length
+          ? Object.entries(inc).map(([fieldPath, by]) => ({ fieldPath, increment: encodeValue(by) }))
+          : undefined;
+      switch (w.op) {
+        case "create":
+          return {
+            update: { name: this.docName(w.path), fields: encodeFields(w.data) },
+            currentDocument: { exists: false },
+          };
+        case "update":
+          return {
+            update: { name: this.docName(w.path), fields: encodeFields(w.data) },
+            updateMask: { fieldPaths: Object.keys(w.data) },
+            currentDocument: w.ifUpdateTime ? { updateTime: w.ifUpdateTime } : { exists: true },
+            updateTransforms: transforms(w.increments),
+          };
+        case "merge":
+          return {
+            update: { name: this.docName(w.path), fields: encodeFields(w.data) },
+            updateMask: { fieldPaths: Object.keys(w.data) },
+            updateTransforms: transforms(w.increments),
+          };
+        case "delete":
+          return { delete: this.docName(w.path), currentDocument: w.ifUpdateTime ? { updateTime: w.ifUpdateTime } : undefined };
+      }
+    });
+    const res = await this.call(`${this.base}:commit`, { method: "POST", body: JSON.stringify({ writes: body }) });
+    if (res.status === 400 || res.status === 409 || res.status === 412 || res.status === 404) {
+      throw new ConflictError(`commit failed (${res.status})`);
+    }
+    if (!res.ok) throw new FirestoreError(res.status, "commit failed");
   }
 
   /** Creates a document; fails (409) if it already exists. */

@@ -17,7 +17,7 @@
  */
 import OAuthProvider from "@cloudflare/workers-oauth-provider";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { SCOPES, guardStub, handleAuthorize, landingPage } from "./auth";
+import { REQUIRED_SCOPES, SCOPES, guardStub, handleAuthorize, landingPage } from "./auth";
 import { loadConfig, loadUser } from "./catalog";
 import type { AgentProps, Env } from "./env";
 import { Firestore } from "./firestore";
@@ -34,16 +34,18 @@ const jsonError = (status: number, message: string, extra: Record<string, string
 
 // "This connection still exists" is trusted for a minute per isolate, and
 // lastUsedAt is written at most every 10 minutes, to keep Firestore use low.
-const connectionSeen = new Map<string, { ok: boolean; at: number }>();
+const connectionSeen = new Map<string, { scopes: string[] | null; at: number }>();
 const lastUsedWritten = new Map<string, number>();
 
-async function connectionExists(db: Firestore, props: AgentProps): Promise<boolean> {
+/** The scopes the user granted on this connection, or null when it was disconnected. */
+async function connectionScopes(db: Firestore, props: AgentProps): Promise<string[] | null> {
   const key = `${props.uid}/${props.connectionId}`;
   const hit = connectionSeen.get(key);
-  if (hit && Date.now() - hit.at < LIMITS.connectionCheckMs) return hit.ok;
-  const ok = (await db.get(`users/${props.uid}/agent_connections/${props.connectionId}`, ["createdAt"])) !== null;
-  connectionSeen.set(key, { ok, at: Date.now() });
-  return ok;
+  if (hit && Date.now() - hit.at < LIMITS.connectionCheckMs) return hit.scopes;
+  const doc = await db.get(`users/${props.uid}/agent_connections/${props.connectionId}`, ["scopes"]);
+  const scopes = doc ? (Array.isArray(doc.data.scopes) ? doc.data.scopes.filter((s): s is string => typeof s === "string") : []) : null;
+  connectionSeen.set(key, { scopes, at: Date.now() });
+  return scopes;
 }
 
 const mcpApi = {
@@ -61,7 +63,8 @@ const mcpApi = {
       const config = await loadConfig(db);
       if (!config.mcpEnabled) return jsonError(503, "TiffinBox AI agent access is turned off for now.");
 
-      if (!(await connectionExists(db, props))) {
+      const scopes = await connectionScopes(db, props);
+      if (scopes === null) {
         // Disconnected in the app (or by an admin): the agent must connect again.
         return jsonError(401, "invalid_token", { "www-authenticate": 'Bearer error="invalid_token"' });
       }
@@ -82,6 +85,8 @@ const mcpApi = {
       const server = buildServer({
         db,
         props,
+        guard: g,
+        scopes,
         gate: async () => {
           const verdict = await g.checkCall(props.connectionId, config.mcpDailyReadBudget);
           if (verdict.ok) return null;
@@ -132,7 +137,7 @@ function getProvider(env: Env): OAuthProvider<Env> {
     clientRegistrationEndpoint: "/register",
     scopesSupported: SCOPES,
     resourceMetadata: { resource: `${base}/mcp`, authorization_servers: [base], resource_name: "TiffinBox" },
-    requiredScopes: SCOPES,
+    requiredScopes: REQUIRED_SCOPES,
     // Revoking is instant anyway (every call checks the connection still
     // exists), so a few hours keeps OAuth's KV writes low on the free plan.
     accessTokenTTL: 6 * 3600,

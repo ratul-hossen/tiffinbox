@@ -258,6 +258,37 @@ service cloud.firestore {
         d.get("rankDiscount", 0) >= 0 && d.get("rankDiscount", 0) <= 60 &&
         d.get("totalPrice", 0) is number && d.get("totalPrice", 0) >= 0;
     }
+    // AI agent orders (mcp-server/src/orders.ts, created by the MCP server's
+    // service account, which bypasses these rules). Before an admin has
+    // verified the advance payment they sit in one of these states and the
+    // chef can't act on them:
+    //   AwaitingConfirmation -> (customer taps Confirm in the app) -> AwaitingPayment
+    //   AwaitingPayment -> (TrxID from the agent or the app) -> PaymentSubmitted
+    //   PaymentSubmitted -> (admin-web verifies) -> Placed, or Cancelled
+    function agentPending(status) {
+      return status in ["AwaitingConfirmation", "AwaitingPayment", "PaymentSubmitted"];
+    }
+    // The customer confirms their agent's order inside its 15-minute window
+    // (+1 min clock slack) and gets at most an hour (+1 min) to pay.
+    function agentConfirmOk() {
+      let d = request.resource.data;
+      return resource.data.get("source", "") == "agent" &&
+        resource.data.status == "AwaitingConfirmation" && d.status == "AwaitingPayment" &&
+        d.diff(resource.data).affectedKeys().hasOnly(["status", "confirmedAt", "payBy"]) &&
+        request.time.toMillis() <= resource.data.get("confirmBy", 0) + 60000 &&
+        d.payBy is number && d.payBy <= request.time.toMillis() + 3660000;
+    }
+    // Paying from the app: the TrxID is claimed in payment_txn_ids in the same
+    // batch, so one TrxID can never pay for two orders.
+    function agentPaymentOk(orderId) {
+      let d = request.resource.data;
+      return resource.data.get("source", "") == "agent" &&
+        resource.data.status == "AwaitingPayment" && d.status == "PaymentSubmitted" &&
+        d.diff(resource.data).affectedKeys().hasOnly(["status", "paymentMethod", "paymentTransactionId", "paymentSubmittedAt", "paymentSubmittedVia"]) &&
+        d.paymentMethod in ["BKASH", "NAGAD"] &&
+        d.paymentTransactionId is string && d.paymentTransactionId.matches("^[A-Z0-9]{8,12}$") &&
+        getAfter(/databases/$(database)/documents/payment_txn_ids/$(d.paymentMethod + "_" + d.paymentTransactionId)).data.orderId == orderId;
+    }
     match /orders/{orderId} {
       allow create: if isAdmin() || (isSignedIn() &&
         request.resource.data.customerId == request.auth.uid &&
@@ -268,22 +299,49 @@ service cloud.firestore {
         isOrderChef() ||
         resource.data.get("deliveryPartnerId", "") == request.auth.uid
       ));
-      allow update: if isAdmin() || (isSignedIn() && orderStatusKeysOnly() && (
+      allow update: if isAdmin() ||
+        (isSignedIn() && resource.data.customerId == request.auth.uid && (agentConfirmOk() || agentPaymentOk(orderId))) ||
+        (isSignedIn() && orderStatusKeysOnly() && (
+        // Customer cancels an agent order that isn't paid yet (or it timed out).
+        (resource.data.customerId == request.auth.uid &&
+          resource.data.status in ["AwaitingConfirmation", "AwaitingPayment"] &&
+          request.resource.data.status == "Cancelled" &&
+          request.resource.data.cancelReason in ["customer", "auto_expired"]) ||
         (resource.data.customerId == request.auth.uid &&
           resource.data.status == "Placed" && request.resource.data.status == "Cancelled" && (
             // Customer's own cancel: only within 5 minutes of placing (+30s clock slack).
+            // Not for agent orders: those are prepaid, so a cancel needs support (refund).
             (request.resource.data.cancelReason == "customer" &&
+              resource.data.get("source", "") != "agent" &&
               request.time.toMillis() - resource.data.get("placedAt", 0) < 330000) ||
             // The 12h "chef never accepted" auto-cancel, applied by whichever client reads it
             // (for a pre-order the app also waits until its slot has passed).
             (request.resource.data.cancelReason == "auto_expired" &&
               request.time.toMillis() - resource.data.get("placedAt", 0) > 43200000)
           )) ||
-        isOrderChef() ||
+        // The chef can't touch an agent order before TiffinBox has verified its payment.
+        (isOrderChef() && !agentPending(resource.data.status)) ||
         (resource.data.get("deliveryPartnerId", "") == request.auth.uid &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]))
       ));
       // Admin only: Recycle Bin moves (a cancelled order) and the demo-data purge.
+      allow delete: if isAdmin();
+    }
+
+    // payment_txn_ids/{METHOD_TXNID} - every bKash/Nagad TrxID used to pay an
+    // agent order, so the same TrxID can't pay twice (a second create on the
+    // same id is an update, which nobody may do). Written by the MCP server or
+    // by the customer's app in the same batch that marks their order paid.
+    match /payment_txn_ids/{txnKey} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(["orderId", "customerId", "method", "createdAt"]) &&
+        request.resource.data.customerId == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.customerId == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == "PaymentSubmitted" &&
+        txnKey == request.resource.data.method + "_" +
+          getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.paymentTransactionId;
+      allow update: if false;
       allow delete: if isAdmin();
     }
 

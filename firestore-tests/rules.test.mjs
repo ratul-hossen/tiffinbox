@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp, writeBatch, increment } from "firebase/firestore";
 import fs from "node:fs";
 
 const env = await initializeTestEnvironment({
@@ -118,6 +118,65 @@ await t("admin blocks a customer's AI agent access", () => assertSucceeds(setDoc
 await t("customer can see they are blocked", () => assertSucceeds(getDoc(doc(cust, "mcp_blocks", CUST))));
 await t("customer cannot remove the block", () => assertFails(deleteDoc(doc(cust, "mcp_blocks", CUST))));
 await t("app_config MCP switch is admin-only", () => assertFails(setDoc(doc(cust, "app_config", "settings"), { mcpEnabled: true }, { merge: true })));
+
+
+console.log("\n--- AI agent orders: confirm, pay in advance, admin verifies ---");
+const now = Date.now();
+const agentOrder = (over = {}) => ({
+  ...order({ status: "AwaitingConfirmation", paymentMethod: "", source: "agent", confirmBy: now + 15 * 60000, payBy: 0 }),
+  mealQuantities: { m1: 2 }, platesReserved: true, platesRestored: false,
+  ...over,
+});
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, "meals", "m1"), { name: "Biryani", chefId: CHEF, price: 150, availableQuantity: 8 });
+  await setDoc(doc(db, "orders", "a1"), agentOrder());
+  await setDoc(doc(db, "orders", "a2"), agentOrder({ confirmBy: now - 10 * 60000 }));
+  await setDoc(doc(db, "orders", "a3"), agentOrder({ status: "AwaitingPayment", payBy: now + 3600000 }));
+  await setDoc(doc(db, "orders", "a4"), agentOrder({ status: "AwaitingPayment", payBy: now + 3600000 }));
+  await setDoc(doc(db, "orders", "a5"), agentOrder({ status: "PaymentSubmitted", paymentMethod: "BKASH", paymentTransactionId: "ABC1234567" }));
+  await setDoc(doc(db, "orders", "a6"), agentOrder({ status: "Placed", placedAt: now - 60000 }));
+});
+const confirm = (db, id, over = {}) =>
+  updateDoc(doc(db, "orders", id), { status: "AwaitingPayment", confirmedAt: Date.now(), payBy: Date.now() + 3600000, ...over });
+await t("customer confirms their agent's order in time", () => assertSucceeds(confirm(cust, "a1")));
+await t("…but not after the 15-minute window", () => assertFails(confirm(cust, "a2")));
+await t("…and can't give themselves days to pay", () => assertFails(confirm(cust, "a2", { payBy: Date.now() + 86400000 })));
+await t("someone else can't confirm it", () => assertFails(confirm(chef, "a1")));
+await t("the chef can't accept an unpaid agent order", () => assertFails(updateDoc(doc(chef, "orders", "a3"), { status: "Accepted" })));
+await t("the customer can't skip payment and mark it Placed", () =>
+  assertFails(updateDoc(doc(cust, "orders", "a3"), { status: "Placed" })));
+
+const pay = (db, id, method, txn, claimTxn = true, claimFor = id) => {
+  const b = writeBatch(db);
+  if (claimTxn) b.set(doc(db, "payment_txn_ids", `${method}_${txn}`), { orderId: claimFor, customerId: CUST, method, createdAt: Date.now() });
+  b.update(doc(db, "orders", id), { status: "PaymentSubmitted", paymentMethod: method, paymentTransactionId: txn, paymentSubmittedAt: Date.now(), paymentSubmittedVia: "app" });
+  return b.commit();
+};
+await t("customer submits a bKash TrxID from the app", () => assertSucceeds(pay(cust, "a3", "BKASH", "TRX1234567")));
+await t("the same TrxID can't pay for a second order", () => assertFails(pay(cust, "a4", "BKASH", "TRX1234567")));
+await t("a TrxID without claiming it in payment_txn_ids", () => assertFails(pay(cust, "a4", "NAGAD", "NGD7654321", false)));
+await t("a malformed TrxID", () => assertFails(pay(cust, "a4", "NAGAD", "bad-id")));
+await t("an unknown payment method", () => assertFails(pay(cust, "a4", "CASH_ON_DELIVERY", "TRX9999999")));
+await t("customer can't read another person's TrxID claims", () =>
+  assertFails(getDoc(doc(chef, "payment_txn_ids", "BKASH_TRX1234567"))));
+
+await t("customer cancels an unpaid agent order and plates go back", () => {
+  const b = writeBatch(cust);
+  b.update(doc(cust, "meals", "m1"), { availableQuantity: increment(2), lastRestoreOrderId: "a4" });
+  b.update(doc(cust, "orders", "a4"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now(), platesRestored: true });
+  return assertSucceeds(b.commit());
+});
+await t("a paid order can't be cancelled by the customer", () =>
+  assertFails(updateDoc(doc(cust, "orders", "a5"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now() })));
+await t("a verified (Placed) agent order can't be self-cancelled - refunds go through support", () =>
+  assertFails(updateDoc(doc(cust, "orders", "a6"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now() })));
+await t("once verified, the chef accepts it like any order", () => assertSucceeds(updateDoc(doc(chef, "orders", "a6"), { status: "Accepted" })));
+await t("admin verifies a payment", () => assertSucceeds(updateDoc(doc(admin, "orders", "a5"), { status: "Placed", paymentVerifiedAt: Date.now() })));
+await t("a normal app order can still be self-cancelled within 5 minutes", async () => {
+  await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), "orders", "n1"), order({ placedAt: Date.now() - 60000 })));
+  await assertSucceeds(updateDoc(doc(cust, "orders", "n1"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now() }));
+});
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
