@@ -2,6 +2,7 @@ package com.ratulhossen.tiffinbox.ui.navigation
 
 import com.ratulhossen.tiffinbox.ui.screens.rewards.RewardsScreen
 import com.ratulhossen.tiffinbox.ui.screens.chefside.ChefCouponsScreen
+import com.ratulhossen.tiffinbox.ui.screens.profile.AgentMcpScreen
 import com.ratulhossen.tiffinbox.ui.screens.profile.EditProfileScreen
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
@@ -230,6 +231,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 onNotificationsClick = { navController.navigate(Routes.NOTIFICATIONS) },
                 onEditProfileClick = { navController.navigate(Routes.EDIT_PROFILE) },
                 onRewardsClick = { navController.navigate(Routes.REWARDS) },
+                onAgentMcpClick = { navController.navigate(Routes.AGENT_MCP) },
                 onOpenMapClick = { navController.navigate(Routes.CHEF_MAP) },
                 onLogout = {
                     FirebaseAuthRepository.signOut()
@@ -326,6 +328,10 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
 
         composable(Routes.REWARDS) {
             RewardsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.AGENT_MCP) {
+            AgentMcpScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.DELIVERY_OPTION) {

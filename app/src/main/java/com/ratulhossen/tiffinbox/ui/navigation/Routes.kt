@@ -38,6 +38,7 @@ object Routes {
     const val NOTIFICATIONS = "notifications"
     const val DELIVERY_OPTION = "delivery_option"
     const val REWARDS = "rewards"
+    const val AGENT_MCP = "agent_mcp"
     const val DELIVERY_APPLICATION = "delivery_application"
     const val CHEF_VERIFICATION = "chef_verification"
     const val CHEF_MAP = "chef_map"

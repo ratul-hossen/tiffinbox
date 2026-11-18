@@ -90,6 +90,41 @@ service cloud.firestore {
       allow update: if isAdmin() || (isOwner(userId) &&
         request.resource.data.get("role", "") == resource.data.get("role", ""));
       allow delete: if isOwner(userId) || isAdmin();
+
+      // users/{uid}/agent_connections/{id} - AI agents (MCP) this customer has
+      // connected (mcp-server/src/auth.ts). Only the MCP server creates them,
+      // with its service account (which bypasses these rules); the owner sees
+      // them in Profile -> AI Agent (MCP) and disconnects one by deleting it.
+      // An admin can do the same from admin-web's User Details.
+      match /agent_connections/{connectionId} {
+        allow read, delete: if isOwner(userId) || isAdmin();
+        allow create, update: if false;
+      }
+    }
+
+    // mcp_pairing/{code} - the one-time code a customer creates in the app
+    // to connect an AI agent. Nobody can read a code back (the MCP server
+    // reads it with its service account); the doc id is the code itself, so
+    // it must look like one, belong to the signed-in user and be stamped with
+    // the server time (the MCP server rejects codes older than 5 minutes and
+    // deletes each one when it is used). The owner may cancel their own.
+    match /mcp_pairing/{code} {
+      allow create: if isSignedIn()
+        && code.matches('^[A-HJKMNP-Z2-9]{8}$')
+        && request.resource.data.keys().hasOnly(["uid", "createdAt"])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read, update: if false;
+    }
+
+    // mcp_blocks/{uid} - an admin switching AI agent access off for one
+    // account (admin-web User Details). Kept out of users/{uid} on purpose:
+    // the owner may delete and recreate their own user doc, which would
+    // otherwise clear the block.
+    match /mcp_blocks/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
     }
 
     // chefs/{chefId} — public kitchen profiles, only the owning chef can edit.

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { logActivity } from "../lib/activityLog";
+import McpSettingsCard from "./McpSettingsCard";
 
 /**
  * App-wide settings the Android app reads from `app_config/settings`
@@ -194,6 +195,8 @@ export default function AppSettingsPage() {
         {invalid.length > 0 && <span className="text-xs text-apple-red">Some values are out of range.</span>}
       </div>
       {message && <p className={`text-sm ${message.ok ? "text-apple-green" : "text-apple-red"}`}>{message.text}</p>}
+      <McpSettingsCard />
+
       <p className="text-xs text-apple-secondary">
         Needs the app_config block in firestore.rules (re-paste the rules in Firebase Console once).
       </p>

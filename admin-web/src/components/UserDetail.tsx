@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import DetailDrawer from "./ui/DetailDrawer";
+import AgentAccessSection from "./AgentAccessSection";
 import Badge from "./ui/Badge";
 import type { AppUser, Chef, Meal, Order } from "../types";
 import { formatCurrency, formatDate, formatDateTime } from "../lib/format";
@@ -198,6 +199,8 @@ export default function UserDetail({ user, orders, chefs, meals, onClose }: Prop
             </div>
           </section>
         )}
+
+        {!isChef && <AgentAccessSection uid={user.id} />}
 
         <section>
           <h4 className="text-sm font-semibold text-apple-text mb-2">
