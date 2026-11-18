@@ -8,7 +8,7 @@
 
   // OAuth clients, grants and tokens (managed by @cloudflare/workers-oauth-provider).
   // Create with: npx wrangler kv namespace create OAUTH_KV  -> paste the id here.
-  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }],
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "2b4b627b814149d888b2282a52c54980" }],
 
   // Daily counters, read budget and pairing lockouts (one small Durable Object).
   "durable_objects": { "bindings": [{ "name": "GUARD", "class_name": "Guard" }] },
@@ -22,7 +22,7 @@
 
   "vars": {
     // This Worker's public address (after the first deploy wrangler prints it).
-    "PUBLIC_URL": "https://tiffinbox-mcp.REPLACE_WITH_ACCOUNT.workers.dev",
+    "PUBLIC_URL": "https://tiffinbox-mcp.mytiffinbox.workers.dev",
     "FIREBASE_PROJECT_ID": "tiffinbox-2cb8b",
     // Optional Cloudflare Turnstile site key for the code page ("" = off).
     "TURNSTILE_SITE_KEY": ""
