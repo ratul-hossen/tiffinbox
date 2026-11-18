@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.FavoritesStore
+import com.ratulhossen.tiffinbox.ui.components.FavoriteHeartButton
 import com.ratulhossen.tiffinbox.ui.components.NewKitchenBadge
 import com.ratulhossen.tiffinbox.ui.components.isNewKitchen
 import com.ratulhossen.tiffinbox.ui.components.cardEdge
@@ -96,6 +98,8 @@ fun MealDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        // Keep the stepper and button above the phone's own back/home buttons.
+                        .navigationBarsPadding()
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -173,6 +177,16 @@ fun MealDetailScreen(
                         tint = Color.White
                     )
                 }
+                // Save this dish to Favorites -> Food.
+                FavoriteHeartButton(
+                    isFavorite = FavoritesStore.isMealFavorite(meal.id),
+                    onToggle = { FavoritesStore.toggleMeal(meal.id) },
+                    iconSize = 22.dp,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(14.dp)
+                )
                 if (meal.isTodaySpecial) {
                     Surface(
                         shape = MaterialTheme.shapes.small,

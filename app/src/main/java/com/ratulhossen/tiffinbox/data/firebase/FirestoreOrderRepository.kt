@@ -25,6 +25,9 @@ import java.util.Locale
  * configured yet or the device is offline, so they never interrupt the
  * demo flow. This mirrors the Order model in README.md.
  */
+/** Statuses of an order the chef has accepted but not yet delivered, in order. */
+val ACTIVE_ORDER_STATUSES = listOf("Accepted", "Cooking", "OutForDelivery")
+
 /** A "Placed" order the chef hasn't accepted within this window is cancelled automatically. */
 const val ORDER_ACCEPT_TIMEOUT_MS = 12L * 60 * 60 * 1000
 
@@ -250,6 +253,11 @@ object FirestoreOrderRepository {
                 paymentMethod = paymentMethod
             )
             FirestoreNotificationRepository.addNotification(
+                uid = chefId,
+                title = if (isPreOrder) "New pre-order" else "New order",
+                body = "$itemsSummary - ৳$total. Open your dashboard to accept it."
+            )
+            FirestoreNotificationRepository.addNotification(
                 uid = customerId,
                 title = "Order placed",
                 body = if (isPreOrder) "Your pre-order has been placed and is waiting for the chef to accept it."
@@ -369,6 +377,19 @@ object FirestoreOrderRepository {
     suspend fun getIncomingOrders(chefId: String): List<ChefOrderUi> {
         return fetchRecentOrders(chefId)
             .filter { it.status == "Placed" }
+            .sortedByDescending { it.placedAt }
+    }
+
+    /**
+     * Orders the chef accepted but hasn't finished yet (Accepted -> Cooking ->
+     * OutForDelivery). Before, an order vanished from the dashboard once
+     * accepted and nobody in the app could move it to Delivered, so with no
+     * delivery rider it stayed "in progress" forever (cash-on-delivery orders
+     * were never closed). The chef now walks it through to Delivered.
+     */
+    suspend fun getActiveOrders(chefId: String): List<ChefOrderUi> {
+        return fetchRecentOrders(chefId)
+            .filter { it.status in ACTIVE_ORDER_STATUSES }
             .sortedByDescending { it.placedAt }
     }
 
@@ -523,14 +544,25 @@ object FirestoreOrderRepository {
                 ref.update("status", status)
             }
             if (customerId != null) {
+                val (title, body) = customerStatusMessage(status)
                 FirestoreNotificationRepository.addNotification(
                     uid = customerId,
-                    title = "Order update",
-                    body = "Your order is now: $status"
+                    title = title,
+                    body = body
                 )
             }
         } catch (e: Exception) {
             // Firebase not configured yet, or offline — safe to ignore.
         }
+    }
+
+    /** What the customer is told (in-app list + phone notification) when the chef moves their order on. */
+    private fun customerStatusMessage(status: String): Pair<String, String> = when (status) {
+        "Accepted" -> "Order accepted" to "The chef accepted your order and will start cooking soon."
+        "Cooking" -> "Your food is cooking" to "The chef has started preparing your order."
+        "OutForDelivery" -> "Order on the way" to "Your order has left the kitchen and is on its way to you."
+        "Delivered" -> "Order delivered" to "Your order was delivered. Enjoy your meal!"
+        "Cancelled" -> "Order cancelled" to "The chef couldn't take your order, so it was cancelled."
+        else -> "Order update" to "Your order is now: $status"
     }
 }

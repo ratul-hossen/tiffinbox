@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.ui.components.UnreadCountBadge
 import com.ratulhossen.tiffinbox.data.firebase.ChatThreadUi
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreChatRepository
 import androidx.compose.ui.graphics.Color
@@ -98,6 +99,7 @@ fun ChefChatListScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
+                        UnreadCountBadge(count = thread.unreadCount)
                     }
                     HorizontalDivider()
                 }
@@ -193,6 +195,7 @@ fun CustomerChatListScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
+                        UnreadCountBadge(count = thread.unreadCount)
                     }
                     HorizontalDivider()
                 }

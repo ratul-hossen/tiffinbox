@@ -14,6 +14,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import androidx.compose.ui.platform.LocalContext
+import com.ratulhossen.tiffinbox.data.RoleCache
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreUserRepository
 import com.ratulhossen.tiffinbox.ui.screens.auth.CompleteGoogleProfileScreen
@@ -75,6 +77,7 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
     ) {
 
         composable(Routes.SPLASH) {
+            val context = LocalContext.current
             SplashScreen(onFinished = {
                 // Skip straight back in if Firebase already has a signed-in
                 // user (e.g. app was reopened), using their persisted role
@@ -82,7 +85,12 @@ fun TiffinNavGraph(navController: NavHostController = rememberNavController()) {
                 val user = FirebaseAuthRepository.currentUser
                 val destination = if (user != null) {
                     FirestoreUserRepository.registerFcmToken(user.uid)
-                    val role = FirestoreUserRepository.getRole(user.uid) ?: UserRole.CUSTOMER.name
+                    // Firestore first; if that read fails (offline / slow start) use the
+                    // role last seen on this phone instead of guessing "customer".
+                    val role = FirestoreUserRepository.getRole(user.uid)
+                        ?.also { RoleCache.write(context, user.uid, it) }
+                        ?: RoleCache.read(context, user.uid)
+                        ?: UserRole.CUSTOMER.name
                     // isEmailVerified is cached on the device - reload once
                     // so someone who clicked the link since last launch isn't
                     // sent back to the verification screen.

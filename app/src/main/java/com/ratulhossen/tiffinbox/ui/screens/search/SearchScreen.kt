@@ -80,8 +80,10 @@ fun SearchScreen(
     var priceFilter by remember { mutableStateOf(PriceFilterOption.ALL) }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    // Kitchen mode filter
-    var nearbyOnly by remember { mutableStateOf(true) }
+    // Kitchen mode filter. Starts on "All": the map/location features aren't
+    // complete yet, so a kitchen search covers every kitchen by default and
+    // "Nearby" is an opt-in narrowing.
+    var nearbyOnly by remember { mutableStateOf(false) }
 
     var allMeals by remember { mutableStateOf(FirestoreCatalogRepository.getCachedMeals()) }
     var allChefs by remember {
@@ -366,16 +368,16 @@ fun SearchScreen(
                 // Kitchens filter chips
                 item {
                     FilterChip(
-                        selected = nearbyOnly,
-                        onClick = { nearbyOnly = true },
-                        label = { Text(stringResource(R.string.search_distance_nearby)) }
+                        selected = !nearbyOnly,
+                        onClick = { nearbyOnly = false },
+                        label = { Text(stringResource(R.string.search_distance_all)) }
                     )
                 }
                 item {
                     FilterChip(
-                        selected = !nearbyOnly,
-                        onClick = { nearbyOnly = false },
-                        label = { Text(stringResource(R.string.search_distance_all)) }
+                        selected = nearbyOnly,
+                        onClick = { nearbyOnly = true },
+                        label = { Text(stringResource(R.string.search_distance_nearby)) }
                     )
                 }
             }

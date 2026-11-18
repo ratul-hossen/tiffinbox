@@ -708,4 +708,25 @@
     <string name="chef_meal_plan_save_failed">Failed to save meal plan settings</string>
     <string name="meal_plans_how">Subscribe once and your meals arrive every day — no need to order each time.</string>
     <string name="meal_plans_per_week">per week</string>
+
+    <!-- 2026-11 tester fixes -->
+    <string name="password_show">Show password</string>
+    <string name="password_hide">Hide password</string>
+    <string name="role_name_chef">Home Chef</string>
+    <string name="role_name_customer">Customer</string>
+    <string name="login_google_role_mismatch">This Google account is registered as a %1$s. Go back and choose %1$s, or use a different Google account.</string>
+    <string name="login_google_network_error">Couldn\'t reach the server. Check your internet connection and try again.</string>
+    <string name="chef_active_orders_title">Active orders</string>
+    <string name="chef_active_orders_subtitle">Move each accepted order on until it\'s delivered. The customer is notified at every step.</string>
+    <string name="chef_active_orders_empty">No active orders right now</string>
+    <string name="chef_active_order_collect_cash">Collect ৳%1$d cash from the customer on delivery</string>
+    <string name="chef_active_order_start_cooking">Start cooking</string>
+    <string name="chef_active_order_out_for_delivery">Send out for delivery</string>
+    <string name="chef_active_order_delivered">Mark delivered</string>
+    <string name="chef_active_order_delivered_cash">Delivered &amp; cash received</string>
+    <string name="favorites_tab_food">Food (%1$d)</string>
+    <string name="favorites_tab_kitchen">Kitchens (%1$d)</string>
+    <string name="favorites_food_empty_title">No favourite food yet</string>
+    <string name="favorites_food_empty_subtitle">Tap the ♥ on any dish to keep it here</string>
+    <string name="settings_app_version">TiffinBox version %1$s</string>
 </resources>
