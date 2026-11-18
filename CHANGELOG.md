@@ -4,6 +4,25 @@ All notable changes to the TiffinBox Android app. Versions follow
 [Semantic Versioning](https://semver.org): MAJOR.MINOR.PATCH.
 How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
 
+## [1.2.1] - 2026-11-18
+
+### Changed
+- **Release APKs are now signed with TiffinBox's permanent release key**
+  (stored as GitHub secrets), instead of a new temporary debug key on every
+  build. Its fingerprint is registered in Firebase, so **"Continue with
+  Google" now works in the APK from the Releases page**, and future versions
+  install as normal updates on top of this one.
+
+### Upgrade note
+- Coming from **v1.2.0**: uninstall v1.2.0 once before installing v1.2.1
+  (v1.2.0 was signed with a temporary key, so Android won't update over it).
+  From v1.2.1 onwards, updates install directly.
+
+### Fixed
+- Android CI no longer fails before the build starts (the SDK setup step
+  tried to install a package Google has removed). PR checks run once per
+  pull request instead of twice.
+
 ## [1.2.0] - 2026-11-18
 
 First tagged release. Fixes from the tester feedback round.
