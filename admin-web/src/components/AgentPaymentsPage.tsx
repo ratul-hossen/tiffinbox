@@ -93,6 +93,14 @@ export default function AgentPaymentsPage({ search }: { search: string }) {
           viaAgent: true,
         });
       }
+      // The coupon's use counts now that the order is real (app orders count it at checkout).
+      if (o.couponCode) {
+        try {
+          await updateDoc(doc(db, "coupons", o.couponCode), { usedCount: increment(1) });
+        } catch {
+          // Coupon deleted since - the discount on the order stands.
+        }
+      }
       await logActivity("verify_agent_payment", "orders", o.id, {
         method: o.paymentMethod,
         transactionId: o.paymentTransactionId,
@@ -183,6 +191,11 @@ export default function AgentPaymentsPage({ search }: { search: string }) {
               <div className="text-sm text-apple-secondary">
                 {(o.items ?? []).map((i) => `${i.quantity}× ${i.mealName}`).join(", ")}
               </div>
+              {o.couponCode ? (
+                <div className="text-xs text-apple-secondary">
+                  Coupon <span className="font-mono font-semibold">{o.couponCode}</span> −{formatCurrency(o.discount ?? 0)} (counted when you approve)
+                </div>
+              ) : null}
               {o.status === "PaymentSubmitted" ? (
                 <div className="grid sm:grid-cols-3 gap-2 text-sm">
                   <div className="bg-apple-bg rounded-xl px-3 py-2">

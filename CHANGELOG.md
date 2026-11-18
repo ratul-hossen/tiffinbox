@@ -16,6 +16,9 @@ How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
     **No cash on delivery** for agent orders.
   - TiffinBox checks the payment, then the order goes to the kitchen.
   - Messages your agent sends are marked "🤖 Sent via AI agent" in the chat.
+  - **Coupons:** your agent can find the coupons you can use right now (and
+    which kitchen offers them), tells you the best one for your order, and
+    applies it if you agree - with exactly the same rules as Checkout.
   - Connected before this version? Disconnect and connect your agent again
     to allow ordering.
 - admin-web: **Agent Payments** page (check payment → Approve / Reject) and the

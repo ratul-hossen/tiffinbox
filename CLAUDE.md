@@ -1321,13 +1321,19 @@ In-app assistant = later, separate decision.
   - Server: `src/orders.ts` (quote = server-priced, stored in the Guard DO 10
     min; plates reserved in one commit with updateTime preconditions;
     `payment_txn_ids/{METHOD}_{TXN}` claimed atomically), `src/chat.ts`,
-    `src/rewards.ts` (port of Rewards.kt + test). Coupons / spending points
-    not supported via agents yet. Trust tiers in `src/limits.ts`.
+    `src/rewards.ts` (port of Rewards.kt + test), `src/coupons.ts` (port of
+    FirestoreCouponRepository.validate/discountFor + test). Coupons: tool
+    `find_coupons` (live coupons at approved kitchens only, best first, no
+    counters exposed), counts in search_kitchens, list in get_menu,
+    `prepare_order` takes `couponCode` and *suggests* the best one (never
+    auto-applies); re-checked at place_order; `usedCount` is incremented by
+    admin-web when the payment is approved. Spending points not via agents
+    yet. Trust tiers in `src/limits.ts`.
   - Scopes: new connections get `menu:read account orders chat`; phase-A
     connections (stored `scopes: ["menu:read"]`) must reconnect for phase B.
   - App: `AgentOrdersSection.kt` on Orders; `FirestoreOrderRepository`
     listen/confirm/submitAgentPayment/cancelAgentOrder. admin-web:
     `AgentPaymentsPage.tsx` (+ sidebar count), payment number in
     `McpSettingsCard.tsx`.
-  - Tests: firestore-tests 66, mcp vitest 36, e2e 66 (`--slow` adds the
-    1-minute cache checks).
+  - Tests: firestore-tests 66, mcp vitest 46, e2e 79 (`--slow` adds the
+    1-minute cache checks; the e2e pauses twice for the 30/min agent limit).

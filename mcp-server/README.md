@@ -31,6 +31,10 @@ the app.
 | `get_delivery_quote` | Fee + ETA from a kitchen to the user's saved address or an area |
 | `list_my_addresses` | The user's saved addresses (labels and text only) |
 | `list_areas` | Area names the server understands (Dhaka and nearby, English + Bengali) |
+| `find_coupons` | Coupons usable right now (TiffinBox-wide and kitchens' own, approved kitchens only), best saving first; with a subtotal, how much each saves |
+
+`search_kitchens` also says how many coupons each kitchen has, and `get_menu`
+lists the ones that work there.
 
 ### Phase B (connections made after phase B; older ones must reconnect)
 
@@ -42,7 +46,7 @@ the app.
 | `list_my_notifications` | Latest in-app notifications |
 | `list_my_chats` / `read_chat` | Chats with kitchens (kitchen text is marked as data) |
 | `send_message_to_kitchen` | Sends the customer's words to a kitchen they ordered from, marked "via AI agent". 20 a day, 500 chars, 15 s apart. |
-| `prepare_order` | Server prices a cart from one kitchen: dishes, delivery fee, platform fee, rank discount. Places nothing; returns a 10-minute `quoteId`. |
+| `prepare_order` | Server prices a cart from one kitchen: dishes, delivery fee, platform fee, rank discount, optional `couponCode`. Places nothing; returns a 10-minute `quoteId`, and suggests the best coupon when none was given (never applied silently). |
 | `place_order` | Places it from the quote with an idempotency key. Plates are reserved atomically. |
 | `submit_payment` | The customer's bKash/Nagad TrxID. Each TrxID can pay one order only. |
 | `cancel_order` | Only before payment; plates go back. Paid orders need support (refund). |
@@ -67,7 +71,10 @@ prepare_order -> customer says yes -> place_order          status AwaitingConfir
 - Agent-order limits by delivered orders. New (0 delivered): 1 a day, up to ৳500.
   Regular (1+): 3 a day, ৳1000. Trusted (10+): 5 a day, ৳2000, 2 waiting at
   once. Hard cap ৳3000. 2 minutes between orders.
-- Coupons and spending points stay in the app for now; the rank discount and
+- Coupons follow the app's rules exactly (`src/coupons.ts`, tested against
+  the app's `validate()`): checked at quote time and again when placing. The
+  use is counted when an admin approves the payment, because only then is the
+  order real. Spending points stays in the app for now. The rank discount and
   top-rank free delivery are applied.
 
 Delivery fees use exactly the app's formula. `src/pricing.ts` is a port of

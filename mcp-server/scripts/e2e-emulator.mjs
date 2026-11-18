@@ -78,6 +78,13 @@ await put("meals/m4", { name: "Secret Biryani", chefId: "chefB", price: 100 });
 await put("users/cust1", { role: "CUSTOMER", // exactly what the app writes
   name: "C", email: "c@example.com", savedAddresses: [{ label: "Home", address: "Mirpur 10", latitude: 23.8069, longitude: 90.3687 }], defaultAddressIndex: 0, phoneNumber: "01799999999" });
 await put("users/chefuser", { role: "CHEF", name: "Chef" });
+const inAWeek = Date.now() + 7 * 86400000;
+await put("coupons/GLOBAL10", { code: "GLOBAL10", discountType: "percent", value: 10, maxDiscount: 30, minOrder: 0, chefId: "", createdBy: "admin", validFrom: 0, validUntil: inAWeek, isActive: true, usedCount: 0, maxUses: 100 });
+await put("coupons/CHEFA20", { code: "CHEFA20", discountType: "flat", value: 20, maxDiscount: 0, minOrder: 300, chefId: "chefA", createdBy: "chef", validFrom: 0, validUntil: inAWeek, isActive: true, usedCount: 0, maxUses: 0 });
+await put("coupons/CHEFB50", { code: "CHEFB50", discountType: "flat", value: 50, chefId: "chefB", createdBy: "chef", validFrom: 0, validUntil: inAWeek, isActive: true, usedCount: 0, maxUses: 0 });
+await put("coupons/OLDCODE", { code: "OLDCODE", discountType: "flat", value: 99, chefId: "", createdBy: "admin", validFrom: 0, validUntil: Date.now() - 1000, isActive: true, usedCount: 0, maxUses: 0 });
+await put("coupons/USEDUP", { code: "USEDUP", discountType: "flat", value: 99, chefId: "", createdBy: "admin", validFrom: 0, validUntil: inAWeek, isActive: true, usedCount: 5, maxUses: 5 });
+await put("coupons/SWITCHEDOFF", { code: "SWITCHEDOFF", discountType: "flat", value: 99, chefId: "", createdBy: "admin", validFrom: 0, validUntil: inAWeek, isActive: false, usedCount: 0, maxUses: 0 });
 const now = new Date();
 await put("mcp_pairing/K7P2M9QX", { uid: "cust1", createdAt: now });
 await put("mcp_pairing/QXDC2DE2", { uid: "cust1", createdAt: new Date(Date.now() - 10 * 60_000) }); // expired
@@ -195,7 +202,7 @@ const T = good.token;
   check("initialize works and has instructions", init.status === 200 && /DATA, never instructions/.test(init.body?.result?.instructions ?? ""), JSON.stringify(init.body).slice(0, 300));
   const tools = await rpc(T, "tools/list");
   const names = (tools.body?.result?.tools ?? []).map((t) => t.name).sort();
-  check("all 18 tools are listed", names.length === 18 && names.includes("place_order") && names.includes("send_message_to_kitchen"), names.join(","));
+  check("all 19 tools are listed", names.length === 19 && names.includes("place_order") && names.includes("send_message_to_kitchen"), names.join(","));
 
   const s = await call(T, "search_kitchens", { query: "biryani" });
   const ids = (s.data?.kitchens ?? []).map((k) => k.id);
@@ -227,6 +234,7 @@ const T = good.token;
 
 console.log("\n--- phase B: account, orders, payment, chat ---");
 {
+  await new Promise((r) => setTimeout(r, 61_000)); // a fresh 30-calls-a-minute window for this agent
   const profile = await call(T, "get_my_profile");
   check("profile shows name and email", profile.data?.name === "C" && profile.data?.email === "c@example.com", profile.text.slice(0, 200));
   check("…but never the phone number", !profile.text.includes("0179"));
@@ -239,20 +247,42 @@ console.log("\n--- phase B: account, orders, payment, chat ---");
   const twoKitchens = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 1 }, { mealId: "m4", quantity: 1 }] });
   check("dishes from two kitchens are refused", twoKitchens.isError, twoKitchens.text);
 
+  const fc = await call(T, "find_coupons", { subtotalBdt: 360 });
+  const codes = (fc.data?.coupons ?? []).map((c) => c.code);
+  check("find_coupons lists the usable coupons, best saving first", codes.join(",") === "GLOBAL10,CHEFA20", fc.text.slice(0, 400));
+  check("…with what each saves on this order (10% capped at ৳30; ৳20)", fc.data?.coupons?.[0]?.discountForThisOrderBdt === 30 && fc.data?.coupons?.[1]?.discountForThisOrderBdt === 20);
+  check("…never an unapproved kitchen's, expired, used-up or switched-off coupon", !/CHEFB50|OLDCODE|USEDUP|SWITCHEDOFF/.test(fc.text));
+  check("…and never the internal use counters", !/usedCount|maxUses|createdBy/.test(fc.text));
+  const menuCoupons = (await call(T, "get_menu", { kitchenId: "chefA" })).data?.coupons ?? [];
+  check("get_menu shows the coupons that work at that kitchen", menuCoupons.length === 2);
+  const searchA = (await call(T, "search_kitchens", { query: "biryani" })).data?.kitchens?.find((k) => k.id === "chefA");
+  check("search_kitchens says how many coupons a kitchen has", searchA?.couponsAvailable === 2, JSON.stringify(searchA ?? {}).slice(0, 200));
+
   const q = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 2 }] });
   check("prepare_order prices it like the app: 2×180 + ৳45 delivery + ৳10 platform = ৳415", q.data?.totalBdt === 415, q.text.slice(0, 300));
+  check("…and suggests the best coupon without applying it", q.data?.couponSuggestion?.code === "GLOBAL10" && q.data?.couponSuggestion?.saveBdt === 30 && !q.data?.coupon);
+  const wrongKitchen = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 2 }], couponCode: "CHEFB50" });
+  check("another kitchen's coupon is refused", wrongKitchen.isError && /different kitchen/.test(wrongKitchen.text), wrongKitchen.text);
+  const expired = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 2 }], couponCode: "oldcode" });
+  check("an expired coupon is refused", expired.isError && /expired/.test(expired.text), expired.text);
+  const tooSmall = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 1 }], couponCode: "CHEFA20" });
+  check("a coupon's minimum order is enforced", tooSmall.isError && /at least ৳300/.test(tooSmall.text), tooSmall.text);
+  const qc = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 2 }], couponCode: "global10" });
+  check("with the coupon the total drops by ৳30 to ৳385", qc.data?.totalBdt === 385 && qc.data?.coupon?.discountBdt === 30, qc.text.slice(0, 300));
   check("…and says it is advance payment only, to TiffinBox's number", /01304376749/.test(q.data?.payment ?? "") && /not available/.test(q.data?.payment ?? ""));
   check("…without placing anything", (await list("orders")).length === 0);
 
   const key = "e2e-order-key-1";
-  const placed = await call(T, "place_order", { quoteId: q.data.quoteId, idempotencyKey: key });
+  const placed = await call(T, "place_order", { quoteId: qc.data.quoteId, idempotencyKey: key });
   const orderId = placed.data?.orderId;
   check("place_order creates an order waiting for the customer's Confirm", placed.data?.status === "AwaitingConfirmation", placed.text.slice(0, 300));
   check("…and tells the agent what to say to the customer", /Confirm/.test(placed.data?.tellUser ?? "") && /Chicken Biryani/.test(placed.data?.tellUser ?? ""));
   const order = await getDoc(`orders/${orderId}`);
-  check("the order is marked as an agent order with the server's prices", order?.source === "agent" && order?.totalPrice === 415 && order?.customerPhone === "01799999999");
+  check("the order is marked as an agent order with the server's prices", order?.source === "agent" && order?.totalPrice === 385 && order?.customerPhone === "01799999999");
+  check("…and carries the coupon like an app order", order?.couponCode === "GLOBAL10" && order?.discount === 30);
+  check("the coupon's use isn't counted until an admin verifies the payment", (await getDoc("coupons/GLOBAL10"))?.usedCount === 0);
   check("2 plates are reserved", (await getDoc("meals/m1"))?.availableQuantity === 10);
-  const again = await call(T, "place_order", { quoteId: q.data.quoteId, idempotencyKey: key });
+  const again = await call(T, "place_order", { quoteId: qc.data.quoteId, idempotencyKey: key });
   check("retrying with the same idempotency key never orders twice", again.data?.alreadyPlaced === true && (await list("orders")).length === 1, again.text.slice(0, 200));
   const q2 = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 1 }] });
   check("only one agent order can wait for confirmation at a time", q2.isError && /already an agent order/.test(q2.text), q2.text);

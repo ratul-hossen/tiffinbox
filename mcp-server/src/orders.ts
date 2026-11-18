@@ -12,11 +12,14 @@
  *     --admin Reject / timeout / customer cancel--> Cancelled (plates given back)
  *
  * Prices are always computed here from fresh Firestore data, never taken
- * from the agent. The same formulas as the app (pricing.ts, rewards.ts).
- * Coupons and spending points stay in the app for now.
+ * from the agent. The same formulas as the app (pricing.ts, rewards.ts,
+ * coupons.ts). A coupon is checked when quoting and again when placing; its
+ * use is counted when an admin approves the payment (the order is real only
+ * then). Spending points stays in the app for now.
  */
 import { DeliveryContext, haversineKm, quoteKitchen, surchargeAt } from "./pricing";
 import { AppConfig, Kitchen, SavedAddress, UserInfo, cleanText, loadKitchens, loadSurcharges } from "./catalog";
+import { Coupon, couponProblem, discountFor, isLive, loadActiveCoupons, loadCoupon, describe as describeCoupon } from "./coupons";
 import { ConflictError, Firestore, FsDoc, Write } from "./firestore";
 import { LIMITS, TrustLevel } from "./limits";
 import { rankDiscount, rewardsFromOrders } from "./rewards";
@@ -174,6 +177,10 @@ export interface Quote {
   platformFee: number;
   rankDiscount: number;
   rankTitle: string;
+  couponCode: string;
+  couponDiscount: number;
+  /** The best coupon the customer didn't ask for - suggested, never applied silently. */
+  couponSuggestion: { code: string; offer: string; saveBdt: number } | null;
   total: number;
   etaMinutes: number;
   deliveryHandledBy: string;
@@ -185,6 +192,13 @@ export interface Quote {
 export interface QuoteInput {
   items: Array<{ mealId: string; quantity: number }>;
   addressIndex?: number;
+  couponCode?: string;
+}
+
+/** The coupon that saves most on this order, among those usable at this kitchen right now. */
+function bestCoupon(coupons: Coupon[], kitchenId: string, subtotal: number, now: number): Coupon | null {
+  const usable = coupons.filter((c) => isLive(c, now) && (!c.chefId || c.chefId === kitchenId) && subtotal >= c.minOrder);
+  return usable.reduce<Coupon | null>((best, c) => (!best || discountFor(c, subtotal) > discountFor(best, subtotal) ? c : best), null);
 }
 
 /** Fresh meal docs (not the 60-s cache): price and plates must be exact when money is involved. */
@@ -271,11 +285,22 @@ export async function prepareQuote(
   };
   const delivery = quoteKitchen(kitchen, distance, ctx);
 
+  const now = Date.now();
+  let coupon: Coupon | null = null;
+  if (input.couponCode?.trim()) {
+    coupon = await loadCoupon(db, input.couponCode);
+    const problem = couponProblem(coupon, kitchenId, subtotal, now);
+    if (problem) throw new OrderError(`${problem} Use find_coupons to see what works here, or prepare the order without a coupon.`);
+  }
+  const couponDiscount = coupon ? discountFor(coupon, subtotal) : 0;
+  const best = coupon ? null : bestCoupon(await loadActiveCoupons(db), kitchenId, subtotal, now);
+
   const myOrders = await loadMyOrders(db, uid);
   const rewards = rewardsOf(myOrders);
+  // Same as Checkout: the rank discount is on the food subtotal, the coupon comes off too.
   const discount = rankDiscount(rewards.rank, subtotal);
   const deliveryFee = rewards.rank.freeDelivery ? 0 : delivery.fee;
-  const total = Math.max(subtotal + deliveryFee + cfg.platformFee - discount, 0);
+  const total = Math.max(subtotal + deliveryFee + cfg.platformFee - couponDiscount - discount, 0);
   const trust = checkTrust(myOrders, total);
 
   return {
@@ -288,6 +313,11 @@ export async function prepareQuote(
     platformFee: cfg.platformFee,
     rankDiscount: discount,
     rankTitle: `${rewards.rank.emoji} ${rewards.rank.title}`,
+    couponCode: coupon?.code ?? "",
+    couponDiscount,
+    couponSuggestion: best && discountFor(best, subtotal) > 0
+      ? { code: best.code, offer: describeCoupon(best), saveBdt: discountFor(best, subtotal) }
+      : null,
     total,
     etaMinutes: delivery.minutes,
     deliveryHandledBy: kitchen.deliveryMode,
@@ -308,6 +338,13 @@ export function quoteView(id: string, q: Quote, cfg: AppConfig) {
     platformFeeBdt: q.platformFee,
     rankDiscountBdt: q.rankDiscount || undefined,
     rank: q.rankTitle,
+    coupon: q.couponCode ? { code: q.couponCode, discountBdt: q.couponDiscount } : undefined,
+    couponSuggestion: q.couponSuggestion
+      ? {
+          ...q.couponSuggestion,
+          note: "Tell the customer about this coupon. If they want it, call prepare_order again with this couponCode.",
+        }
+      : undefined,
     totalBdt: q.total,
     deliverTo: `${q.address.label || "Home"}: ${q.address.address}`,
     estimatedMinutes: q.etaMinutes,
@@ -326,6 +363,10 @@ export async function placeFromQuote(
   agent: { connectionId: string; clientName: string },
 ): Promise<string> {
   // Re-read everything that could have changed since the quote.
+  if (quote.couponCode) {
+    const problem = couponProblem(await loadCoupon(db, quote.couponCode), quote.kitchenId, quote.subtotal, Date.now());
+    if (problem) throw new OrderError(`${problem} Prepare the order again.`);
+  }
   const meals = await readMeals(db, quote.items.map((i) => i.mealId));
   for (const m of meals) {
     const item = quote.items.find((i) => i.mealId === m.id)!;
@@ -346,8 +387,8 @@ export async function placeFromQuote(
     subtotal: quote.subtotal,
     deliveryFee: quote.deliveryFee,
     platformFee: quote.platformFee,
-    couponCode: "",
-    discount: 0,
+    couponCode: quote.couponCode,
+    discount: quote.couponDiscount,
     pointsRedeemed: 0,
     rankDiscount: quote.rankDiscount,
     estimatedDeliveryMinutes: quote.etaMinutes,
