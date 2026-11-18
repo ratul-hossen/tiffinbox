@@ -11,7 +11,7 @@
 [![Firebase](https://img.shields.io/badge/Firebase-BaaS-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)](https://www.android.com)
 [![Architecture](https://img.shields.io/badge/Architecture-MVVM-orange)]()
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red.svg)](LICENSE)
 [![AIBC 2026](https://img.shields.io/badge/AI%20Builders%20Congress-2026-red)](https://cloudcampbd.com/ai-builders-congress)
 
 </div>
@@ -946,7 +946,7 @@ This project is built for:
 
 ## 🤝 Contributing
 
-This project is currently a team submission for the **International AI Builders Congress 2026**. External contributions will be welcomed after the submission phase.
+This project is currently a team submission for the **International AI Builders Congress 2026**. Contributions are by invitation only (see [License](#-license)).
 
 ### For team members:
 
@@ -959,11 +959,15 @@ This project is currently a team submission for the **International AI Builders 
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+**Copyright © 2026 Md Ratul Hossen and the TiffinBox team. All rights reserved.**
 
-```
-MIT License — you are free to use, modify, and distribute this project with attribution.
-```
+This repository is public so it can be viewed, but it is **not open source**.
+You may not copy, modify, redistribute, publish or reuse any part of it
+(code, designs, images or the TiffinBox name) without written permission.
+See the [LICENSE](LICENSE) file for the full terms. Third-party fonts and
+libraries keep their own licenses (see [`licenses/`](licenses)).
+
+To ask for permission, open an issue on this repository.
 
 ---
 
