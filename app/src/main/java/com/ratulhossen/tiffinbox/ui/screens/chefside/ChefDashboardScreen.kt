@@ -831,6 +831,10 @@ fun ChefDashboardScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
+                    if (order.isPaidAgentOrder) {
+                        AgentPrepaidBadge()
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
                     if (order.scheduledFor > 0) {
                         Text(
                             stringResource(R.string.chef_preorder_badge, formatPreOrderSlot(order.scheduledFor)),
@@ -862,7 +866,8 @@ fun ChefDashboardScreen(
                         },
                         onChat = { onOpenChat(order.customerId) }
                     )
-                    if (order.paymentTransactionId.isNotBlank()) {
+                    // A paid agent order's TrxID is the customer's payment to TiffinBox, not to this kitchen.
+                    if (order.paymentTransactionId.isNotBlank() && !order.isPaidAgentOrder) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             stringResource(R.string.chef_dashboard_payment_transaction_label, order.paymentMethod, order.paymentTransactionId),
@@ -1557,6 +1562,10 @@ private fun ActiveOrderCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
+            if (order.isPaidAgentOrder) {
+                AgentPrepaidBadge()
+                Spacer(modifier = Modifier.height(6.dp))
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     order.itemsSummary,
@@ -1627,6 +1636,24 @@ private fun ActiveOrderCard(
                 }
             }
         }
+    }
+}
+
+/** On a paid AI-agent order: the customer already paid TiffinBox, so the chef must not collect money. */
+@Composable
+private fun AgentPrepaidBadge() {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            stringResource(R.string.chef_agent_prepaid_badge),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        )
     }
 }
 

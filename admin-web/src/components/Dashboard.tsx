@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Meal, AppUser, Order, OrderStatus, Subscription } from "../types";
-import { ORDER_STATUSES } from "../types";
+import { ALL_ORDER_STATUSES } from "../types";
 import { STATUS_CHART_COLOR } from "../lib/orderStatus";
 import { formatCurrency } from "../lib/format";
+import { isRealSale } from "../lib/sales";
 import StatCard from "./StatCard";
 
 export default function Dashboard() {
@@ -13,10 +14,10 @@ export default function Dashboard() {
   const { data: orders, loading: ordersLoading } = useCollection<Order>("orders");
   const { data: subscriptions } = useCollection<Subscription>("subscriptions");
 
-  const totalRevenue = useMemo(
-    () => orders.reduce((sum, o) => sum + (o.totalPrice ?? 0), 0),
-    [orders],
-  );
+  // Sales = not cancelled and not an agent order still waiting for its payment
+  // check (lib/sales.ts) - the same rule as Orders and Revenue, so all agree.
+  const sales = useMemo(() => orders.filter(isRealSale), [orders]);
+  const totalRevenue = useMemo(() => sales.reduce((sum, o) => sum + (o.totalPrice ?? 0), 0), [sales]);
 
   const activeSubscriptions = useMemo(
     () => subscriptions.filter((s) => s.isActive).length,
@@ -42,7 +43,7 @@ export default function Dashboard() {
     }
 
     const byKey = new Map(days.map((d) => [d.date, d]));
-    for (const order of orders) {
+    for (const order of sales) {
       if (!order.placedAt) continue;
       const key = new Date(order.placedAt).toISOString().slice(0, 10);
       const bucket = byKey.get(key);
@@ -50,7 +51,7 @@ export default function Dashboard() {
     }
 
     return days;
-  }, [orders]);
+  }, [sales]);
 
   const statusBreakdown = useMemo(() => {
     const counts = new Map<string, number>();
@@ -58,7 +59,8 @@ export default function Dashboard() {
       const status = (o.status as string) ?? "Placed";
       counts.set(status, (counts.get(status) ?? 0) + 1);
     }
-    return ORDER_STATUSES.map((status) => ({
+    // Every status, agent pre-payment ones included: this chart is the full picture, not sales.
+    return ALL_ORDER_STATUSES.map((status) => ({
       status,
       count: counts.get(status) ?? 0,
       fill: STATUS_CHART_COLOR[status as OrderStatus],
@@ -67,7 +69,7 @@ export default function Dashboard() {
 
   const topChefs = useMemo(() => {
     const byChef = new Map<string, { orders: number; revenue: number }>();
-    for (const o of orders) {
+    for (const o of sales) {
       if (!o.chefId) continue;
       const entry = byChef.get(o.chefId) ?? { orders: 0, revenue: 0 };
       entry.orders += 1;
@@ -79,7 +81,7 @@ export default function Dashboard() {
       .map(([chefId, stats]) => ({ chefId, name: chefName(chefId), ...stats }))
       .sort((a, b) => b.orders - a.orders)
       .slice(0, 5);
-  }, [orders, chefs]);
+  }, [sales, chefs]);
 
   const maxTopChefOrders = Math.max(1, ...topChefs.map((c) => c.orders));
   const maxDailyOrders = Math.max(1, ...ordersPerDay.map((d) => d.count));
@@ -90,7 +92,7 @@ export default function Dashboard() {
         <StatCard label="Chefs" value={chefs.length} caption="On the platform" />
         <StatCard label="Meals" value={meals.length} caption="Across all chefs" />
         <StatCard label="Customers" value={customers} caption="Registered" />
-        <StatCard label="Orders" value={orders.length} caption="All time" />
+        <StatCard label="Orders" value={sales.length} caption="All time, excl. cancelled & unpaid agent orders" />
         <StatCard label="Revenue" value={formatCurrency(totalRevenue)} caption="All time" />
         <StatCard label="Active subs" value={activeSubscriptions} caption="Weekly/monthly plans" />
       </div>
@@ -119,7 +121,8 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-apple-surface rounded-2xl border border-apple-border p-6 shadow-card hover:shadow-card-hover transition-shadow duration-200">
-          <h3 className="text-sm font-semibold text-apple-text mb-4">Orders by status</h3>
+          <h3 className="text-sm font-semibold text-apple-text mb-1">Orders by status</h3>
+          <p className="text-xs text-apple-secondary mb-4">All orders, incl. cancelled and agent orders awaiting payment.</p>
           {statusBreakdown.length === 0 ? (
             <p className="text-sm text-apple-secondary">No orders yet.</p>
           ) : (

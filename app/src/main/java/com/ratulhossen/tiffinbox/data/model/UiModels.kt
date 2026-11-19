@@ -186,7 +186,15 @@ data class PastOrderUi(
     /** mealId -> quantity, for "Order again". */
     val mealQuantities: Map<String, Int> = emptyMap(),
     /** Placed by the customer's AI agent and prepaid: cancelling needs TiffinBox support (refund). */
-    val viaAgent: Boolean = false
+    val viaAgent: Boolean = false,
+    /** An agent order whose advance payment TiffinBox verified (paymentVerifiedAt > 0). */
+    val paid: Boolean = false,
+    /** Admin's reason when they rejected the payment (cancelReason "payment_rejected"). */
+    val rejectReason: String = "",
+    /** "due" / "refunded" / blank (docs/AGENT_PAYMENTS.md). */
+    val refundStatus: String = "",
+    val refundAmount: Int = 0,
+    val refundTrxId: String = ""
 ) {
     /** Milliseconds left in the customer's cancel window (0 = can't cancel any more). */
     fun cancelMillisLeft(now: Long = System.currentTimeMillis()): Long =
@@ -283,8 +291,15 @@ data class ChefOrderUi(
     val deliveryAddress: String = "",
     /** The delivery point, for the kitchen -> customer distance. 0 = unknown. */
     val deliveryLatitude: Double = 0.0,
-    val deliveryLongitude: Double = 0.0
-)
+    val deliveryLongitude: Double = 0.0,
+    /** "agent" for an order the customer's AI agent prepared; blank for app orders. */
+    val source: String = "",
+    /** When TiffinBox verified an agent order's advance payment (0 = not paid through TiffinBox). */
+    val paymentVerifiedAt: Long = 0L
+) {
+    /** Prepaid to TiffinBox: the chef must not collect money for it. */
+    val isPaidAgentOrder: Boolean get() = source == "agent" && paymentVerifiedAt > 0
+}
 
 data class EarningsSummary(
     val todayTotal: Int,

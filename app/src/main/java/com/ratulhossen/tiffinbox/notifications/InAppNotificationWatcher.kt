@@ -14,6 +14,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.ratulhossen.tiffinbox.MainActivity
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.RoleCache
+import com.ratulhossen.tiffinbox.ui.navigation.PendingNavigation
 
 /**
  * Shows a phone notification for every new entry in the signed-in user's
@@ -58,11 +60,16 @@ object InAppNotificationWatcher {
                             val createdAt = doc.getLong("createdAt") ?: return@forEach
                             if (createdAt <= newest) return@forEach
                             newest = createdAt
+                            val title = doc.getString("title") ?: appContext.getString(R.string.app_name)
+                            val body = doc.getString("body").orEmpty()
                             show(
                                 appContext,
                                 id = doc.id.hashCode(),
-                                title = doc.getString("title") ?: appContext.getString(R.string.app_name),
-                                body = doc.getString("body").orEmpty()
+                                title = title,
+                                body = body,
+                                // Customers land on the Orders tab for anything about an order.
+                                openTab = if (!RoleCache.read(appContext, uid).equals("CHEF", ignoreCase = true) && isAboutAnOrder(title, body))
+                                    PendingNavigation.TAB_ORDERS else null
                             )
                         }
                     prefs.edit().putLong(uid, newest).apply()
@@ -78,16 +85,28 @@ object InAppNotificationWatcher {
         watchingUid = null
     }
 
-    private fun show(context: Context, id: Int, title: String, body: String) {
+    private val ORDER_WORDS = listOf("order", "refund", "payment", "অর্ডার", "রিফান্ড", "পেমেন্ট")
+
+    private fun isAboutAnOrder(title: String, body: String): Boolean {
+        val text = "$title $body".lowercase()
+        return ORDER_WORDS.any { it in text }
+    }
+
+    private fun show(context: Context, id: Int, title: String, body: String, openTab: String?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) return
         ensureNotificationChannel(context)
+        // SINGLE_TOP + CLEAR_TOP: a running app gets onNewIntent instead of a second activity.
+        val launch = Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        if (openTab != null) launch.putExtra(PendingNavigation.EXTRA_OPEN_TAB, openTab)
         val openApp = PendingIntent.getActivity(
             context,
-            0,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            // One PendingIntent per notification, so each keeps its own extras.
+            id,
+            launch,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = NotificationCompat.Builder(context, ORDER_UPDATES_CHANNEL_ID)

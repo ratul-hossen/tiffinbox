@@ -6,7 +6,10 @@
 //
 // It seeds the emulator, runs the real OAuth flow (register -> code page ->
 // token) like an AI agent would, calls every tool and checks the security
-// rules of the server (private fields, wrong codes, chefs, disconnect, kill switch).
+// rules of the server (private fields, wrong codes, chefs, disconnect, kill
+// switch, consent host, connection cap, browse-only tool list, grant
+// revocation, idempotent orders, sender digits, message gating) and runs the
+// Cron Trigger's expiry sweep via wrangler's /cdn-cgi/handler/scheduled.
 import crypto from "node:crypto";
 
 const MCP = process.env.MCP_URL ?? "http://localhost:8787";
@@ -91,11 +94,11 @@ await put("mcp_pairing/QXDC2DE2", { uid: "cust1", createdAt: new Date(Date.now()
 await put("mcp_pairing/CHEFCD23", { uid: "chefuser", createdAt: now });
 
 // ---------- OAuth like an agent ----------
-async function register(name) {
+async function register(name, redirect = REDIRECT) {
   const res = await fetch(`${MCP}/register`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ client_name: name, redirect_uris: [REDIRECT], token_endpoint_auth_method: "none", grant_types: ["authorization_code", "refresh_token"], response_types: ["code"] }),
+    body: JSON.stringify({ client_name: name, redirect_uris: [redirect], token_endpoint_auth_method: "none", grant_types: ["authorization_code", "refresh_token"], response_types: ["code"] }),
   });
   return (await res.json()).client_id;
 }
@@ -103,9 +106,9 @@ function pkce() {
   const verifier = crypto.randomBytes(32).toString("base64url");
   return { verifier, challenge: crypto.createHash("sha256").update(verifier).digest("base64url") };
 }
-async function authorizeUrl(clientId, challenge) {
+async function authorizeUrl(clientId, challenge, redirect = REDIRECT) {
   const q = new URLSearchParams({
-    response_type: "code", client_id: clientId, redirect_uri: REDIRECT, state: "st4te",
+    response_type: "code", client_id: clientId, redirect_uri: redirect, state: "st4te",
     code_challenge: challenge, code_challenge_method: "S256", scope: "menu:read", resource: `${MCP}/mcp`,
   });
   return `${MCP}/authorize?${q}`;
@@ -131,7 +134,22 @@ async function connect(name, code) {
   if (res.status !== 302 || !loc) return { res, text: await res.text() };
   const back = new URL(loc);
   const t = await token(clientId, back.searchParams.get("code"), verifier);
-  return { res, state: back.searchParams.get("state"), token: t.access_token };
+  return { res, state: back.searchParams.get("state"), token: t.access_token, refresh: t.refresh_token, clientId };
+}
+async function refresh(clientId, refreshToken) {
+  const res = await fetch(`${MCP}/token`, {
+    method: "POST",
+    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken, client_id: clientId, resource: `${MCP}/mcp` }),
+  });
+  return { status: res.status, body: await res.json().catch(() => ({})) };
+}
+/** The connection doc a client name produced (newest), with its id. */
+async function connectionNamed(name) {
+  for (const cid of await list("users/cust1/agent_connections")) {
+    const d = await getDoc(`users/cust1/agent_connections/${cid}`);
+    if (d?.clientName === name) return { id: cid, ...d };
+  }
+  return null;
 }
 
 let id = 1;
@@ -161,6 +179,10 @@ console.log("\n--- sign-in page ---");
 {
   const r = await fetch(`${MCP}/mcp`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
   check("/mcp without a token is refused (401)", r.status === 401);
+  const g = await fetch(`${MCP}/mcp`, { method: "GET", headers: { accept: "text/event-stream" } });
+  check("GET /mcp is refused with 405 before any token check", g.status === 405 && g.headers.get("allow") === "POST", String(g.status));
+  const d = await fetch(`${MCP}/mcp`, { method: "DELETE" });
+  check("DELETE /mcp is refused with 405", d.status === 405, String(d.status));
   const meta = await fetch(`${MCP}/.well-known/oauth-protected-resource/mcp`);
   check("protected resource metadata is published", meta.ok, String(meta.status));
   const clientId = await register("Page Check");
@@ -169,6 +191,11 @@ console.log("\n--- sign-in page ---");
   const html = await page.text();
   check("code page shows the agent's name", page.ok && html.includes("Page Check"));
   check("code page can't be framed", page.headers.get("x-frame-options") === "DENY");
+  check("code page shows where the tokens go (localhost, a desktop agent)", /Tokens will be sent to/.test(html) && html.includes(">localhost<") && !/Unverified agent/.test(html));
+  const odd = "https://agent.example.net/callback";
+  const oddId = await register("Odd Agent", odd);
+  const oddHtml = await (await fetch(await authorizeUrl(oddId, challenge, odd))).text();
+  check("an unknown redirect host is shown and labelled 'Unverified agent'", oddHtml.includes("agent.example.net") && /Unverified agent - only continue if you set this up yourself/.test(oddHtml), oddHtml.slice(0, 200));
 }
 
 console.log("\n--- codes ---");
@@ -189,7 +216,13 @@ check("the agent gets an access token", typeof good.token === "string" && good.t
 check("the code is single-use (deleted)", !(await exists("mcp_pairing/K7P2M9QX")));
 const conns = await list("users/cust1/agent_connections");
 check("a connection is recorded for the user", conns.length === 1);
-check("the user gets a notification", (await list("notifications/cust1/items")).length === 1);
+{
+  const c = await getDoc(`users/cust1/agent_connections/${conns[0]}`);
+  check("…with the redirect host and whether it's a known agent", c?.redirectHost === "localhost" && c?.knownClient === true, JSON.stringify(c));
+  const notes = await list("notifications/cust1/items");
+  const n = notes.length ? await getDoc(`notifications/cust1/items/${notes[0]}`) : null;
+  check("the user gets a notification naming where the tokens go", notes.length === 1 && /localhost/.test(n?.body ?? ""), n?.body);
+}
 {
   const again = await connect("Code Checks", "K7P2M9QX");
   check("the same code can't be used twice", again.res.status === 400);
@@ -276,6 +309,8 @@ console.log("\n--- phase B: account, orders, payment, chat ---");
   const placed = await call(T, "place_order", { quoteId: qc.data.quoteId, idempotencyKey: key });
   const orderId = placed.data?.orderId;
   check("place_order creates an order waiting for the customer's Confirm", placed.data?.status === "AwaitingConfirmation", placed.text.slice(0, 300));
+  const expectedId = crypto.createHash("sha256").update(`cust1:${key}`).digest("hex").slice(0, 20);
+  check("…its id is derived from the idempotency key (SHA-256 of uid:key)", orderId === expectedId, `${orderId} vs ${expectedId}`);
   check("…and tells the agent what to say to the customer", /Confirm/.test(placed.data?.tellUser ?? "") && /Chicken Biryani/.test(placed.data?.tellUser ?? ""));
   const order = await getDoc(`orders/${orderId}`);
   check("the order is marked as an agent order with the server's prices", order?.source === "agent" && order?.totalPrice === 385 && order?.customerPhone === "01799999999");
@@ -283,24 +318,30 @@ console.log("\n--- phase B: account, orders, payment, chat ---");
   check("the coupon's use isn't counted until an admin verifies the payment", (await getDoc("coupons/GLOBAL10"))?.usedCount === 0);
   check("2 plates are reserved", (await getDoc("meals/m1"))?.availableQuantity === 10);
   const again = await call(T, "place_order", { quoteId: qc.data.quoteId, idempotencyKey: key });
-  check("retrying with the same idempotency key never orders twice", again.data?.alreadyPlaced === true && (await list("orders")).length === 1, again.text.slice(0, 200));
+  check("retrying with the same idempotency key never orders twice", again.data?.alreadyPlaced === true && again.data?.orderId === orderId && (await list("orders")).length === 1, again.text.slice(0, 200));
   const q2 = await call(T, "prepare_order", { items: [{ mealId: "m1", quantity: 1 }] });
   check("only one agent order can wait for confirmation at a time", q2.isError && /already an agent order/.test(q2.text), q2.text);
 
-  const early = await call(T, "submit_payment", { orderId, method: "bkash", transactionId: "TRX1234567" });
+  const early = await call(T, "submit_payment", { orderId, method: "bkash", transactionId: "TRX1234567", senderLast4: "5678" });
   check("payment before the customer confirms is refused", early.isError && /Confirm/.test(early.text), early.text);
 
   // The customer taps Confirm in the app (rules-tested in firestore-tests).
   await put(`orders/${orderId}`, { ...order, status: "AwaitingPayment", confirmedAt: Date.now(), payBy: Date.now() + 3600000 });
-  const bad = await call(T, "submit_payment", { orderId, method: "bkash", transactionId: "12" });
-  check("a malformed TrxID is refused", bad.isError, bad.text);
-  const paid = await call(T, "submit_payment", { orderId: `#${orderId.slice(-6)}`, method: "bkash", transactionId: "trx 123 4567" });
+  const bad = await call(T, "submit_payment", { orderId, method: "bkash", transactionId: "12", senderLast4: "5678" });
+  check("a malformed TrxID is refused", bad.isError || !!bad.body?.error, bad.text);
+  const noDigits = await call(T, "submit_payment", { orderId, method: "bkash", transactionId: "TRX1234567" });
+  check("a payment without the sender's last 4 digits is refused", noDigits.isError || !!noDigits.body?.error, noDigits.text.slice(0, 200));
+  const paid = await call(T, "submit_payment", { orderId: `#${orderId.slice(-6)}`, method: "bkash", transactionId: "trx 123 4567", senderLast4: "৫৬৭৮" });
   check("submit_payment accepts the short #id and records the TrxID", paid.data?.status === "PaymentSubmitted", paid.text.slice(0, 300));
-  check("…and claims the TrxID", (await getDoc("payment_txn_ids/BKASH_TRX1234567"))?.orderId === orderId);
+  check("…and asks TiffinBox to match the sender's number (Bengali digits work)", paid.data?.payment?.senderLast4 === "5678" && /5678/.test(paid.data?.tellUser ?? ""), paid.text.slice(0, 300));
+  const claim = await getDoc("payment_txn_ids/BKASH_TRX1234567");
+  check("…and claims the TrxID with the sender digits", claim?.orderId === orderId && claim?.senderLast4 === "5678", JSON.stringify(claim));
+  check("…and stores them on the order", (await getDoc(`orders/${orderId}`))?.paymentSenderLast4 === "5678");
 
-  await put("orders/seedpay2", { customerId: "cust1", chefId: "chefA", status: "AwaitingPayment", source: "agent", totalPrice: 190, placedAt: Date.now(), payBy: Date.now() + 3600000, items: [{ mealId: "m1", mealName: "Chicken Biryani", quantity: 1, unitPrice: 180 }], mealQuantities: { m1: 1 }, platesReserved: true, platesRestored: false });
-  const reuse = await call(T, "submit_payment", { orderId: "seedpay2", method: "bkash", transactionId: "TRX1234567" });
-  check("the same TrxID can't pay for another order", reuse.isError && /already been used/.test(reuse.text), reuse.text);
+  // payBy passed 10 minutes ago: still inside the 30-minute grace.
+  await put("orders/seedpay2", { customerId: "cust1", chefId: "chefA", status: "AwaitingPayment", source: "agent", totalPrice: 190, placedAt: Date.now(), payBy: Date.now() - 10 * 60000, items: [{ mealId: "m1", mealName: "Chicken Biryani", quantity: 1, unitPrice: 180 }], mealQuantities: { m1: 1 }, platesReserved: true, platesRestored: false });
+  const reuse = await call(T, "submit_payment", { orderId: "seedpay2", method: "bkash", transactionId: "TRX1234567", senderLast4: "5678" });
+  check("the same TrxID can't pay for another order (even within the grace period)", reuse.isError && /already been used/.test(reuse.text), reuse.text);
   const cancelPaid = await call(T, "cancel_order", { orderId });
   check("a paid order can't be cancelled by the agent", cancelPaid.isError && /support/.test(cancelPaid.text), cancelPaid.text);
   const cancel2 = await call(T, "cancel_order", { orderId: "seedpay2" });
@@ -312,6 +353,10 @@ console.log("\n--- phase B: account, orders, payment, chat ---");
   check("list_my_orders shows both orders with their status", (mine.data?.orders ?? []).length === 2, mine.text.slice(0, 200));
   const status = await call(T, "get_order_status", { orderId });
   check("get_order_status explains the next step", /checking the payment/.test(status.data?.statusText ?? ""), status.text.slice(0, 200));
+  const early2 = await call(T, "send_message_to_kitchen", { kitchenId: "chefA", text: "Hello?" });
+  check("no messages to a kitchen with only unpaid / cancelled agent orders", early2.isError && /confirmed, paid order/.test(early2.text), early2.text);
+  // A real (verified) order with chefA, so messaging is allowed after the cache expires.
+  await put("orders/realA1", { customerId: "cust1", chefId: "chefA", status: "Placed", placedAt: Date.now() - 86400000, totalPrice: 200, items: [] });
 
   // The per-agent edge limit is 30 calls a minute, and this test is faster than any person:
   // wait it out so the rest checks the tools, not the rate limit.
@@ -330,6 +375,7 @@ console.log("\n--- phase B: account, orders, payment, chat ---");
   check("read_chat shows the conversation", (chat.data?.messages ?? []).some((m) => m.from === "customer (via AI agent)"), chat.text.slice(0, 300));
   const notes = await call(T, "list_my_notifications");
   check("notifications are readable", (notes.data?.notifications ?? []).length >= 3, notes.text.slice(0, 200));
+  check("…with a note that their text is data, not instructions", /not instructions/.test(notes.data?.note ?? ""));
   const rewards = await call(T, "get_my_rewards");
   check("rewards show the rank", /Rookie Eater/.test(rewards.data?.rank?.title ?? ""), rewards.text.slice(0, 200));
 }
@@ -338,6 +384,77 @@ console.log("\n--- tokens ---");
 {
   const forged = await rpc("abc:def:ghi", "tools/list");
   check("a forged token is refused", forged.status === 401);
+}
+
+console.log("\n--- browse-only connections, revoked grants, the 3-agent cap ---");
+{
+  await put("mcp_pairing/BRWS2AGT", { uid: "cust1", createdAt: new Date() });
+  const browse = await connect("Browse Agent", "BRWS2AGT");
+  const bc = await connectionNamed("Browse Agent");
+  // An old phase-A style connection: browsing only.
+  const { id: _bid, ...bdata } = bc ?? {};
+  if (bc) await put(`users/cust1/agent_connections/${bc.id}`, { ...bdata, scopes: ["menu:read"] });
+  const tl = await rpc(browse.token, "tools/list");
+  const bnames = (tl.body?.result?.tools ?? []).map((t) => t.name);
+  check("a browse-only connection is only offered the 7 browse tools", bnames.length === 7 && !bnames.includes("place_order") && bnames.includes("get_menu"), bnames.join(","));
+  const br = await refresh(browse.clientId, browse.refresh);
+  check("a live connection's refresh token works", br.status === 200 && !!br.body.access_token, JSON.stringify(br.body).slice(0, 200));
+
+  await put("mcp_pairing/RVKC2DE3", { uid: "cust1", createdAt: new Date() });
+  const rv = await connect("Revoke Check", "RVKC2DE3");
+  const rc = await connectionNamed("Revoke Check");
+  if (rc) await del(`users/cust1/agent_connections/${rc.id}`);
+  const gone = await rpc(rv.token, "tools/list");
+  check("a disconnected agent is refused (401)", gone.status === 401, String(gone.status));
+  await new Promise((r) => setTimeout(r, 1500));
+  const rr = await refresh(rv.clientId, rv.refresh);
+  check("…and its OAuth grant is revoked, so the refresh token stops working too", !rr.body.access_token, JSON.stringify(rr.body).slice(0, 200));
+
+  const have = await list("users/cust1/agent_connections");
+  const extras = [];
+  for (let i = have.length; i < 3; i++) {
+    extras.push(`extra${i}`);
+    await put(`users/cust1/agent_connections/extra${i}`, { clientName: "Extra", scopes: ["menu:read"], createdAt: Date.now() });
+  }
+  await put("mcp_pairing/CAPC2DE4", { uid: "cust1", createdAt: new Date() });
+  const capped = await connect("Cap Check", "CAPC2DE4");
+  check("a 4th agent is refused until one is disconnected", capped.res.status === 400 && /already has 3 AI agents/.test(capped.text ?? ""), capped.text?.slice(0, 200));
+  check("…and no connection is recorded for it", !(await connectionNamed("Cap Check")));
+  for (const e of extras) await del(`users/cust1/agent_connections/${e}`);
+}
+
+console.log("\n--- expiry sweep (Cron Trigger) ---");
+{
+  const t0 = Date.now();
+  const base = { customerId: "cust2", chefId: "chefA", totalPrice: 300, items: [], mealQuantities: { m1: 1 }, platesReserved: true, platesRestored: false };
+  await put("orders/sw1", { ...base, source: "agent", status: "AwaitingConfirmation", placedAt: t0 - 20 * 60000, confirmBy: t0 - 5 * 60000, payBy: 0 });
+  await put("orders/sw2", { ...base, source: "agent", status: "AwaitingPayment", placedAt: t0 - 80 * 60000, payBy: t0 - 10 * 60000 });
+  await put("orders/sw3", { ...base, source: "agent", status: "AwaitingPayment", placedAt: t0 - 120 * 60000, payBy: t0 - 31 * 60000 });
+  await put("orders/sw4", { ...base, source: "agent", status: "Placed", placedAt: t0 - 13 * 3600000, paymentVerifiedAt: t0 - 13 * 3600000 });
+  await put("orders/sw5", { ...base, status: "Placed", placedAt: t0 - 13 * 3600000 }); // an app order: the app handles it
+  const before = (await getDoc("meals/m1"))?.availableQuantity;
+  // Minute 2 of an hour, so the hourly "paid but never accepted" check runs too. Two at once: they must not double-count.
+  const at = Math.floor(t0 / 3600000) * 3600000 + 2 * 60000;
+  const fire = () => fetch(`${MCP}/cdn-cgi/handler/scheduled?cron=${encodeURIComponent("*/5 * * * *")}&time=${at}`);
+  const [f1] = await Promise.all([fire(), fire()]);
+  check("the scheduled handler runs", f1.ok, String(f1.status));
+  let sw1 = null;
+  for (let i = 0; i < 20 && sw1?.status !== "Cancelled"; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    sw1 = await getDoc("orders/sw1");
+  }
+  await new Promise((r) => setTimeout(r, 1500));
+  const [s2, s3, s4, s5] = await Promise.all(["sw2", "sw3", "sw4", "sw5"].map((id) => getDoc(`orders/${id}`)));
+  check("an order not confirmed in time is cancelled (auto_expired)", sw1?.status === "Cancelled" && sw1?.cancelReason === "auto_expired" && sw1?.platesRestored === true, JSON.stringify(sw1));
+  check("an unpaid order inside the 30-min grace is left alone", s2?.status === "AwaitingPayment");
+  check("an unpaid order past payBy + grace is cancelled", s3?.status === "Cancelled" && s3?.cancelReason === "auto_expired");
+  check("a paid order the chef didn't accept in 12 h is cancelled with a refund due", s4?.status === "Cancelled" && s4?.cancelReason === "auto_expired" && s4?.refundStatus === "due" && s4?.refundAmount === 300 && s4?.refundReason === "chef_timeout", JSON.stringify(s4));
+  const n2 = await list("notifications/cust2/items");
+  const refundNote = n2.length ? await getDoc(`notifications/cust2/items/${n2[0]}`) : null;
+  check("…and the customer is told ৳300 will be refunded", n2.length === 1 && /৳300/.test(refundNote?.body ?? ""), JSON.stringify(refundNote));
+  check("an app order is not touched by the sweep", s5?.status === "Placed");
+  const after = (await getDoc("meals/m1"))?.availableQuantity;
+  check("plates go back exactly once even with two overlapping runs (+3)", after === before + 3, `${before} -> ${after}`);
 }
 
 if (SLOW) {

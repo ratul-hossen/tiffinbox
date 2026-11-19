@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.ratulhossen.tiffinbox.R
 import com.ratulhossen.tiffinbox.data.CartStore
+import com.ratulhossen.tiffinbox.ui.navigation.PendingNavigation
 import com.ratulhossen.tiffinbox.ui.components.rememberCustomerUnreadChatCount
 import com.ratulhossen.tiffinbox.ui.screens.favorites.FavoritesScreen
 import com.ratulhossen.tiffinbox.ui.screens.home.HomeScreen
@@ -59,6 +61,14 @@ fun MainScreen(
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     // System back on another tab goes to Home first, like most apps, instead of closing the app.
     BackHandler(enabled = selectedTab != 0) { selectedTab = 0 }
+    // A tapped order notification opens the Orders tab (once).
+    val pendingTab = PendingNavigation.openTab
+    LaunchedEffect(pendingTab) {
+        if (pendingTab == PendingNavigation.TAB_ORDERS) {
+            selectedTab = 2
+            PendingNavigation.consume()
+        }
+    }
     val cartCount = CartStore.items.sumOf { it.quantity }
     val unreadChats = rememberCustomerUnreadChatCount()
     val tabs = listOf(

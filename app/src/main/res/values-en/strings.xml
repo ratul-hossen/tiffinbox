@@ -732,7 +732,7 @@
     <string name="agent_mcp_menu">AI Agent (MCP)</string>
     <string name="agent_mcp_title">AI Agent (MCP)</string>
     <string name="agent_mcp_intro_title">Use TiffinBox from your own AI</string>
-    <string name="agent_mcp_intro_body">Connect an AI agent such as Claude or ChatGPT to your TiffinBox account. It can find kitchens, read menus and tell you the delivery fee to your address. Ordering through an agent is coming soon.</string>
+    <string name="agent_mcp_intro_body">Connect an AI agent such as Claude or ChatGPT to your TiffinBox account. It can find kitchens, menus and coupons, and see your name, email, saved addresses, orders, chats, notifications and points. It can prepare orders, but nothing is ordered until YOU tap Confirm in the app, and you pay in advance by bKash or Nagad (no cash on delivery). It can also send the messages you ask for to kitchens you\'ve ordered from.</string>
     <string name="agent_mcp_server_title">Server address</string>
     <string name="agent_mcp_server_unavailable">Not available yet. Please check back soon.</string>
     <string name="agent_mcp_copy">Copy</string>
@@ -760,7 +760,7 @@
     <string name="agent_mcp_disabled">AI agent access is turned off by TiffinBox right now.</string>
     <string name="agent_mcp_blocked">AI agent access is turned off for your account. Contact support if you think this is a mistake.</string>
     <string name="agent_mcp_safety_title">Stay safe</string>
-    <string name="agent_mcp_safety_body">Agents can see kitchens, menus and your saved addresses. They can\'t order, pay or see your orders yet. Disconnect any agent you don\'t recognise.</string>
+    <string name="agent_mcp_safety_body">Agents can\'t change your profile or addresses, and can\'t see your phone number or PIN. Every order needs your Confirm in the app, and you only ever send money to TiffinBox\'s number. Each agent below shows where it sends your data; disconnect any agent you don\'t recognise or that says \"Unverified agent\".</string>
     <string name="agent_orders_title">AI agent orders</string>
     <string name="agent_orders_by">Prepared by %1$s · #%2$s</string>
     <string name="agent_orders_confirm_hint">Check it, then tap Confirm. It is cancelled automatically in %1$s.</string>
@@ -776,4 +776,29 @@
     <string name="agent_orders_txn_used">Couldn\'t submit it. This TrxID may already have been used, or the payment time is over.</string>
     <string name="agent_orders_action_failed">Couldn\'t update the order. Check your internet and try again.</string>
     <string name="chat_via_agent_label">🤖 Sent via AI agent</string>
+    <string name="agent_mcp_sends_to">Sends to: %1$s</string>
+    <string name="agent_mcp_unverified">Unverified agent</string>
+    <string name="agent_mcp_browse_only">Browse only - disconnect and connect again to allow ordering</string>
+    <string name="agent_orders_deliver_to">Deliver to: %1$s</string>
+    <string name="agent_orders_coupon_row">Coupon %1$s</string>
+    <string name="agent_orders_rank_discount_row">Rank discount</string>
+    <string name="agent_orders_eta">⏱ Arrives about %1$d min after the kitchen accepts</string>
+    <string name="agent_orders_expired">Expired - this order will be cancelled automatically.</string>
+    <string name="agent_orders_last4_label">Last 4 digits of the number you paid from</string>
+    <string name="agent_orders_last4_invalid">Type the last 4 digits of the number you paid from.</string>
+    <string name="agent_orders_payment_note_title">TiffinBox needs you to check your payment:</string>
+    <string name="agent_orders_pay_grace">Payment time is over - grace period, submit now (%1$s left).</string>
+    <string name="orders_cancel_reason_agent_unpaid">Not confirmed or paid in time</string>
+    <string name="orders_cancel_reason_payment_rejected">TiffinBox couldn\'t find your payment</string>
+    <string name="orders_cancel_reason_payment_rejected_with">Payment not verified: %1$s</string>
+    <string name="orders_cancel_reason_chef_paid">The kitchen couldn\'t take your order</string>
+    <string name="orders_cancel_reason_chef_timeout_paid">The kitchen didn\'t accept within 12 hours, so it was cancelled</string>
+    <string name="orders_refund_due">৳%1$d refund due - it goes back to the number you paid from</string>
+    <string name="orders_refunded">৳%1$d refunded (TrxID %2$s)</string>
+    <string name="orders_refunded_no_trx">৳%1$d refunded</string>
+    <string name="chef_agent_prepaid_badge">🤖 AI agent order · Prepaid to TiffinBox - don\'t collect money</string>
+    <string name="chat_agent_paid_warning_title">This order is already paid</string>
+    <string name="chat_agent_paid_warning_body">This customer already paid TiffinBox for their order. Only request money for something else.</string>
+    <string name="chat_agent_paid_warning_continue">Request for something else</string>
+    <string name="chat_agent_paid_warning_back">Go back</string>
 </resources>

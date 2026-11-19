@@ -172,6 +172,14 @@ export const ORDER_STATUSES: OrderStatus[] = [
   "Cancelled",
 ];
 
+/** Every status including the agent pre-payment ones (filters, charts). */
+export const ALL_ORDER_STATUSES: OrderStatus[] = [
+  "AwaitingConfirmation",
+  "AwaitingPayment",
+  "PaymentSubmitted",
+  ...ORDER_STATUSES,
+];
+
 export interface Order {
   id: string;
   customerId?: string;
@@ -217,7 +225,26 @@ export interface Order {
   paymentVerifiedAt?: number;
   paymentVerifiedBy?: string;
   rejectReason?: string;
+  /** Last 4 digits of the number the customer paid from (docs/AGENT_PAYMENTS.md). */
+  paymentSenderLast4?: string;
+  /** What the admin actually saw arrive (Approve). */
+  paymentAmountReceived?: number;
+  /** Admin's "Ask again" note, shown to the customer. */
+  paymentNote?: string;
+  // Money owed back on a paid order (overpaid, or cancelled after payment).
+  refundStatus?: "due" | "refunded" | string;
+  refundAmount?: number;
+  refundReason?: string;
+  refundTrxId?: string;
+  refundMethod?: string;
+  refundedAt?: number;
+  refundedBy?: string;
 }
+
+/** Agent-order windows, same values as mcp-server and the app (docs/AGENT_PAYMENTS.md). */
+export const PAYMENT_WINDOW_MS = 60 * 60 * 1000;
+export const PAYMENT_GRACE_MS = 30 * 60 * 1000;
+export const PAYMENT_SLA_ALERT_MS = 30 * 60 * 1000;
 
 export interface Review {
   id: string;

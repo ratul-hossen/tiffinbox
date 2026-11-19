@@ -12,8 +12,17 @@ data class AgentConnectionUi(
     val id: String,
     val clientName: String,
     val createdAt: Long,
-    val lastUsedAt: Long
-)
+    val lastUsedAt: Long,
+    /** OAuth scopes granted at connect time; phase-A connections only have "menu:read". */
+    val scopes: List<String> = emptyList(),
+    /** Where the agent's tokens go (the OAuth redirect host, e.g. "claude.ai"); blank on old connections. */
+    val redirectHost: String = "",
+    /** false = the server didn't recognise the redirect host ("Unverified agent"); null = not recorded. */
+    val knownClient: Boolean? = null
+) {
+    /** Connected before ordering existed (or without that permission): it can only browse. */
+    val browseOnly: Boolean get() = "orders" !in scopes
+}
 
 /** What the "AI Agent (MCP)" screen needs from app_config and mcp_blocks. */
 data class AgentMcpStatus(
@@ -107,7 +116,10 @@ object FirestoreAgentRepository {
                             id = doc.id,
                             clientName = doc.getString("clientName").orEmpty().ifBlank { "AI agent" },
                             createdAt = doc.getLong("createdAt") ?: 0L,
-                            lastUsedAt = doc.getLong("lastUsedAt") ?: 0L
+                            lastUsedAt = doc.getLong("lastUsedAt") ?: 0L,
+                            scopes = (doc.get("scopes") as? List<*>).orEmpty().mapNotNull { it as? String },
+                            redirectHost = doc.getString("redirectHost").orEmpty().trim(),
+                            knownClient = doc.getBoolean("knownClient")
                         )
                     }
                 )

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -42,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -267,11 +272,36 @@ fun AgentMcpScreen(onBack: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(c.clientName, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                stringResource(R.string.agent_mcp_connected_since, formatTime(c.createdAt)),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (c.redirectHost.isNotBlank()) {
+                                Text(
+                                    stringResource(R.string.agent_mcp_sends_to, c.redirectHost),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            if (c.knownClient == false || c.browseOnly) {
+                                Column(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    if (c.knownClient == false) {
+                                        StatusPill(
+                                            stringResource(R.string.agent_mcp_unverified),
+                                            MaterialTheme.colorScheme.errorContainer,
+                                            MaterialTheme.colorScheme.onErrorContainer,
+                                            Icons.Filled.Warning
+                                        )
+                                    }
+                                    if (c.browseOnly) {
+                                        StatusPill(
+                                            stringResource(R.string.agent_mcp_browse_only),
+                                            MaterialTheme.colorScheme.secondaryContainer,
+                                            MaterialTheme.colorScheme.onSecondaryContainer,
+                                            null
+                                        )
+                                    }
+                                }
+                            }
                             if (c.lastUsedAt > 0) {
                                 Text(
                                     stringResource(R.string.agent_mcp_last_used, formatTime(c.lastUsedAt)),
@@ -323,6 +353,22 @@ private fun McpCard(content: @Composable () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
+    }
+}
+
+@Composable
+private fun StatusPill(text: String, container: Color, content: Color, icon: ImageVector?) {
+    Surface(shape = RoundedCornerShape(50), color = container) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (icon != null) {
+                Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+            }
+            Text(text, style = MaterialTheme.typography.labelSmall, color = content, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 

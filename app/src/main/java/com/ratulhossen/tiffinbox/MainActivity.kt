@@ -2,6 +2,7 @@ package com.ratulhossen.tiffinbox
 
 import com.ratulhossen.tiffinbox.data.firebase.FirestoreAppConfigRepository
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -27,6 +28,7 @@ import com.ratulhossen.tiffinbox.notifications.ensureNotificationChannel
 import com.ratulhossen.tiffinbox.notifications.InAppNotificationWatcher
 import com.ratulhossen.tiffinbox.data.FavoritesStore
 import com.google.firebase.auth.FirebaseAuth
+import com.ratulhossen.tiffinbox.ui.navigation.PendingNavigation
 import com.ratulhossen.tiffinbox.ui.navigation.TiffinNavGraph
 import com.ratulhossen.tiffinbox.ui.theme.ThemePreferences
 import com.ratulhossen.tiffinbox.ui.components.AnimatedGradientBackground
@@ -53,9 +55,23 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             // Firebase not configured in this build - nothing to watch.
         }
+        // A tapped notification (InAppNotificationWatcher) may ask for a tab; not again on rotation.
+        if (savedInstanceState == null) handleOpenTab(intent)
         setContent {
             TiffinBoxApp()
         }
+    }
+
+    // launchMode singleTop + the notification's SINGLE_TOP/CLEAR_TOP flags: a running app lands here.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleOpenTab(intent)
+    }
+
+    private fun handleOpenTab(intent: Intent?) {
+        PendingNavigation.request(intent?.getStringExtra(PendingNavigation.EXTRA_OPEN_TAB))
+        intent?.removeExtra(PendingNavigation.EXTRA_OPEN_TAB)
     }
 
     // Phone notifications for new order / status updates, for whoever is signed in.

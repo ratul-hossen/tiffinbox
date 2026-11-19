@@ -127,6 +127,12 @@ export default function McpSettingsCard() {
         bKash/Nagad number customers pay agent orders to (Send Money)
         <input className={inputClass} inputMode="tel" value={payNumber ?? ""} onChange={(e) => setPayNumber(e.target.value)} />
       </label>
+      {payNumber !== null && trimmedNumber !== savedNumber && (
+        <p className="text-xs text-apple-amber bg-apple-amber/10 rounded-lg px-3 py-2">
+          Changing the payment number from {savedNumber}: orders already waiting for payment will show the new number
+          too. Keep checking the old number's SMS for payments customers may have already sent there.
+        </p>
+      )}
       <p className="text-xs text-apple-secondary">
         The free plan allows about 50,000 reads a day for the whole app. When agents use up this budget, only agent
         access pauses until the next day; the app keeps working.

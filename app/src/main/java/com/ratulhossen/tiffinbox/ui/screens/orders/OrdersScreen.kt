@@ -220,13 +220,7 @@ private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit, onOrde
                 if (order.status == OrderStage.CANCELLED && order.cancelReason.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        stringResource(
-                            when (order.cancelReason) {
-                                "auto_expired" -> R.string.orders_cancel_reason_expired
-                                "customer" -> R.string.orders_cancel_reason_customer
-                                else -> R.string.orders_cancel_reason_other
-                            }
-                        ),
+                        cancelReasonText(order),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -267,6 +261,17 @@ private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit, onOrde
                     )
                 }
             }
+            // Money owed back: a cancelled paid agent order, or an overpayment.
+            refundLineText(order)?.let { refundText ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    refundText,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (order.refundStatus == "refunded") MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.tertiary
+                )
+            }
             val cancelLeft = order.cancelMillisLeft(now)
             if (cancelLeft > 0) {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -294,6 +299,46 @@ private fun OrderRow(order: PastOrderUi, now: Long, onCancel: () -> Unit, onOrde
                 )
             }
         }
+    }
+}
+
+/**
+ * Why an order was cancelled. Agent orders have their own cases
+ * (docs/AGENT_PAYMENTS.md): never confirmed / paid in time, payment rejected
+ * by TiffinBox, or - once paid - the kitchen rejecting it or not accepting it
+ * within 12 h (both of which mean a refund).
+ */
+@Composable
+private fun cancelReasonText(order: PastOrderUi): String {
+    val paidAgent = order.viaAgent && order.paid
+    return when (order.cancelReason) {
+        "payment_rejected" ->
+            if (order.rejectReason.isNotBlank()) stringResource(R.string.orders_cancel_reason_payment_rejected_with, order.rejectReason)
+            else stringResource(R.string.orders_cancel_reason_payment_rejected)
+        "chef_timeout" -> stringResource(R.string.orders_cancel_reason_chef_timeout_paid)
+        "auto_expired" -> stringResource(
+            when {
+                paidAgent -> R.string.orders_cancel_reason_chef_timeout_paid
+                order.viaAgent -> R.string.orders_cancel_reason_agent_unpaid
+                else -> R.string.orders_cancel_reason_expired
+            }
+        )
+        "chef" -> stringResource(if (paidAgent) R.string.orders_cancel_reason_chef_paid else R.string.orders_cancel_reason_other)
+        "customer" -> stringResource(R.string.orders_cancel_reason_customer)
+        else -> stringResource(R.string.orders_cancel_reason_other)
+    }
+}
+
+/** "৳X refund due" / "৳X refunded (TrxID …)", or null when no money is owed back. */
+@Composable
+private fun refundLineText(order: PastOrderUi): String? {
+    if (order.refundAmount <= 0) return null
+    return when (order.refundStatus) {
+        "due" -> stringResource(R.string.orders_refund_due, order.refundAmount)
+        "refunded" ->
+            if (order.refundTrxId.isNotBlank()) stringResource(R.string.orders_refunded, order.refundAmount, order.refundTrxId)
+            else stringResource(R.string.orders_refunded_no_trx, order.refundAmount)
+        else -> null
     }
 }
 

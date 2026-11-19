@@ -1337,3 +1337,39 @@ In-app assistant = later, separate decision.
     `McpSettingsCard.tsx`.
   - Tests: firestore-tests 66, mcp vitest 46, e2e 79 (`--slow` adds the
     1-minute cache checks; the e2e pauses twice for the 30/min agent limit).
+- **Hardening + payment verification (2026-11-19, branch feat/agent-hardening,
+  still v1.4.0 - one release for everything).** Owner: hackathon/preliminary
+  stage, no bKash/Nagad merchant or agent account, so payments stay Send Money
+  to TiffinBox's personal number with **manual admin verification**. The full
+  contract is **`docs/AGENT_PAYMENTS.md`** (states, fields, windows, admin
+  checklist) - change it first, then server/app/admin-web/rules.
+  - The customer gives TrxID + method + `paymentSenderLast4`; the admin
+    enters `paymentAmountReceived` and confirms the digits. Approve (a
+    transaction; an overpay becomes refund due), Ask again (back to
+    AwaitingPayment with `paymentNote`, TrxID claim deleted), Reject. 30-min
+    grace after `payBy`.
+  - Refunds: any cancel of a paid agent order (chef, 12 h `chef_timeout`,
+    admin) sets `refundStatus "due"` + `refundAmount` (+ any overpay already
+    due) + `refundReason`. admin-web Refunds tab -> `refunded` + `refundTrxId`
+    / `refundMethod`. Rules `refundRuleOk()` enforce it for chef/customer writes.
+  - MCP server:
+    - Cron `*/5` sweep (`runSweep`, orders.ts `sweepExpiredOrders`).
+    - Consent page shows the redirect host (known list in `src/util.ts`,
+      others "Unverified agent"); connections store `redirectHost` /
+      `knownClient`; max 3 per customer.
+    - Central path validation (`assertSafePath`) + zod id patterns.
+    - Guard has per-customer read caps, global pairing/registration caps and
+      IPv6 /64 keys.
+    - Deterministic order id = sha256(uid:idempotencyKey); `takeQuote`.
+    - Messages only to kitchens with a real order in 30 days, 5/kitchen/day,
+      on the Dhaka day.
+    - GET/DELETE /mcp -> 405; grant revoked on disconnect; browse-only
+      connections only see browse tools; Workers observability on.
+  - App: `AgentOrdersSection` (breakdown, last-4, grace, Expired, paymentNote),
+    refund/cancel-reason texts, chef prepaid badge + payment-request warning,
+    `PendingNavigation` (notification -> Orders tab, MainActivity singleTop),
+    AgentMcpScreen host/unverified/browse-only.
+  - admin-web: `AgentPaymentsPage` (4 tabs, SLA badge, coupon warnings),
+    `lib/orderPlates.ts` transactional cancel with refund fields, `lib/sales.ts`
+    `isRealSale` shared by Dashboard/Orders/Revenue.
+  - Tests: firestore-tests 98, mcp vitest 64, e2e 104.

@@ -775,7 +775,7 @@
     <string name="agent_mcp_menu">এআই এজেন্ট (MCP)</string>
     <string name="agent_mcp_title">এআই এজেন্ট (MCP)</string>
     <string name="agent_mcp_intro_title">নিজের AI দিয়ে TiffinBox ব্যবহার করুন</string>
-    <string name="agent_mcp_intro_body">Claude বা ChatGPT-এর মতো কোনো AI এজেন্ট আপনার TiffinBox অ্যাকাউন্টে যুক্ত করুন। এটি কিচেন খুঁজে দেবে, মেনু পড়বে আর আপনার ঠিকানায় ডেলিভারি চার্জ জানাবে। এজেন্ট দিয়ে অর্ডার দেওয়ার সুবিধা শিগগিরই আসছে।</string>
+    <string name="agent_mcp_intro_body">Claude বা ChatGPT-এর মতো কোনো AI এজেন্ট আপনার TiffinBox অ্যাকাউন্টে যুক্ত করুন। এটি কিচেন, মেনু আর কুপন খুঁজে দেবে; আপনার নাম, ইমেইল, সেভ করা ঠিকানা, অর্ডার, চ্যাট, নোটিফিকেশন আর পয়েন্ট দেখতে পারবে। এটি অর্ডার তৈরি করতে পারে, কিন্তু অ্যাপে আপনি Confirm না চাপলে অর্ডার হবে না, আর bKash/Nagad-এ আগে পেমেন্ট লাগবে (ক্যাশ অন ডেলিভারি নেই)। আপনি বললে যেসব কিচেন থেকে অর্ডার করেছেন তাদের মেসেজও পাঠাতে পারে।</string>
     <string name="agent_mcp_server_title">সার্ভারের ঠিকানা</string>
     <string name="agent_mcp_server_unavailable">এখনো চালু হয়নি। কিছুদিন পর আবার দেখুন।</string>
     <string name="agent_mcp_copy">কপি</string>
@@ -803,7 +803,7 @@
     <string name="agent_mcp_disabled">TiffinBox এখন AI এজেন্ট সুবিধা বন্ধ রেখেছে।</string>
     <string name="agent_mcp_blocked">আপনার অ্যাকাউন্টে AI এজেন্ট সুবিধা বন্ধ করা হয়েছে। ভুল মনে হলে সাপোর্টে যোগাযোগ করুন।</string>
     <string name="agent_mcp_safety_title">নিরাপদ থাকুন</string>
-    <string name="agent_mcp_safety_body">এজেন্ট শুধু কিচেন, মেনু আর আপনার সেভ করা ঠিকানা দেখতে পারে। এখনো অর্ডার, পেমেন্ট বা আপনার অর্ডারের তালিকা দেখতে পারে না। অচেনা কোনো এজেন্ট দেখলে বিচ্ছিন্ন করে দিন।</string>
+    <string name="agent_mcp_safety_body">এজেন্ট আপনার প্রোফাইল বা ঠিকানা বদলাতে পারে না, আর আপনার ফোন নম্বর বা PIN দেখতে পারে না। প্রতিটি অর্ডারে অ্যাপে আপনার Confirm লাগবে, আর টাকা শুধু TiffinBox-এর নম্বরেই পাঠাবেন। প্রতিটি এজেন্ট কোথায় তথ্য পাঠায় তা নিচে দেখানো আছে; অচেনা বা \"যাচাই হয়নি\" লেখা কোনো এজেন্ট দেখলে বিচ্ছিন্ন করে দিন।</string>
     <string name="agent_orders_title">AI এজেন্টের অর্ডার</string>
     <string name="agent_orders_by">%1$s তৈরি করেছে · #%2$s</string>
     <string name="agent_orders_confirm_hint">দেখে নিয়ে Confirm চাপুন। %1$s পরে নিজে থেকে বাতিল হবে।</string>
@@ -819,4 +819,29 @@
     <string name="agent_orders_txn_used">জমা দেওয়া যায়নি। এই TrxID হয়তো আগে ব্যবহার হয়েছে, অথবা পেমেন্টের সময় শেষ।</string>
     <string name="agent_orders_action_failed">অর্ডার আপডেট করা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।</string>
     <string name="chat_via_agent_label">🤖 AI এজেন্টের মাধ্যমে পাঠানো</string>
+    <string name="agent_mcp_sends_to">তথ্য যায়: %1$s</string>
+    <string name="agent_mcp_unverified">যাচাই হয়নি এমন এজেন্ট</string>
+    <string name="agent_mcp_browse_only">শুধু দেখতে পারে - অর্ডারের অনুমতি দিতে বিচ্ছিন্ন করে আবার যুক্ত করুন</string>
+    <string name="agent_orders_deliver_to">ডেলিভারি ঠিকানা: %1$s</string>
+    <string name="agent_orders_coupon_row">কুপন %1$s</string>
+    <string name="agent_orders_rank_discount_row">র‍্যাঙ্ক ডিসকাউন্ট</string>
+    <string name="agent_orders_eta">⏱ কিচেন গ্রহণ করার পর আনুমানিক %1$d মিনিটে পৌঁছাবে</string>
+    <string name="agent_orders_expired">মেয়াদ শেষ - এই অর্ডার নিজে থেকে বাতিল হয়ে যাবে।</string>
+    <string name="agent_orders_last4_label">যে নম্বর থেকে টাকা পাঠিয়েছেন তার শেষ ৪ সংখ্যা</string>
+    <string name="agent_orders_last4_invalid">যে নম্বর থেকে টাকা পাঠিয়েছেন তার শেষ ৪টি সংখ্যা লিখুন।</string>
+    <string name="agent_orders_payment_note_title">TiffinBox আবার তথ্য চাইছে:</string>
+    <string name="agent_orders_pay_grace">পেমেন্টের সময় শেষ - অতিরিক্ত সময় চলছে, এখনই জমা দিন (%1$s বাকি)।</string>
+    <string name="orders_cancel_reason_agent_unpaid">সময়মতো কনফার্ম বা পেমেন্ট হয়নি</string>
+    <string name="orders_cancel_reason_payment_rejected">TiffinBox আপনার পেমেন্ট খুঁজে পায়নি</string>
+    <string name="orders_cancel_reason_payment_rejected_with">পেমেন্ট যাচাই হয়নি: %1$s</string>
+    <string name="orders_cancel_reason_chef_paid">কিচেন অর্ডারটি নিতে পারেনি</string>
+    <string name="orders_cancel_reason_chef_timeout_paid">কিচেন ১২ ঘণ্টার মধ্যে গ্রহণ করেনি, তাই বাতিল হয়েছে</string>
+    <string name="orders_refund_due">৳%1$d রিফান্ড বাকি - যে নম্বর থেকে পাঠিয়েছিলেন সেখানে ফেরত যাবে</string>
+    <string name="orders_refunded">৳%1$d রিফান্ড হয়েছে (TrxID %2$s)</string>
+    <string name="orders_refunded_no_trx">৳%1$d রিফান্ড হয়েছে</string>
+    <string name="chef_agent_prepaid_badge">🤖 AI এজেন্টের অর্ডার · TiffinBox-এ আগেই পেমেন্ট হয়েছে - টাকা নেবেন না</string>
+    <string name="chat_agent_paid_warning_title">এই অর্ডারের টাকা দেওয়া হয়ে গেছে</string>
+    <string name="chat_agent_paid_warning_body">এই কাস্টমার তার অর্ডারের টাকা আগেই TiffinBox-কে দিয়েছেন। শুধু অন্য কিছুর জন্য টাকা চাইবেন।</string>
+    <string name="chat_agent_paid_warning_continue">অন্য কিছুর জন্য চাইব</string>
+    <string name="chat_agent_paid_warning_back">ফিরে যান</string>
 </resources>
