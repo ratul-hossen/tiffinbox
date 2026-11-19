@@ -4,23 +4,12 @@ All notable changes to the TiffinBox Android app. Versions follow
 [Semantic Versioning](https://semver.org): MAJOR.MINOR.PATCH.
 How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
 
-## [1.4.0] - 2026-11-19
+## [1.5.0] - 2026-11-19
+
+Everything from the AI-agent review, on top of 1.4.0 (which was tagged
+before these fixes were merged).
 
 ### Added
-- **AI agents can order for you (MCP phase B).** Your own AI agent (Claude,
-  ChatGPT...) can now see your orders, chats, notifications and points,
-  prepare and place orders, and message kitchens you've ordered from.
-  - Every agent order shows up under **Orders → AI agent orders**. Tap
-    **Confirm** within 15 minutes, then pay in advance: bKash/Nagad **Send
-    Money** to TiffinBox's number and type the TrxID (or tell your agent).
-    **No cash on delivery** for agent orders.
-  - TiffinBox checks the payment, then the order goes to the kitchen.
-  - Messages your agent sends are marked "🤖 Sent via AI agent" in the chat.
-  - **Coupons:** your agent can find the coupons you can use right now (and
-    which kitchen offers them), tells you the best one for your order, and
-    applies it if you agree - with exactly the same rules as Checkout.
-  - Connected before this version? Disconnect and connect your agent again
-    to allow ordering.
 - **Safer agent payments.** Give the TrxID **and the last 4 digits of the
   number you paid from**. You get 30 extra minutes if you're a little late.
   If something doesn't match, TiffinBox asks you to send it again instead of
@@ -49,6 +38,27 @@ How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
   - Duplicate orders are impossible.
   - Messages only go to kitchens you really ordered from (5 a day per kitchen).
   - Daily limits follow the Dhaka day.
+- Firestore rules: sender last 4 digits, the 30-min grace, refund rules and
+  stricter chat creation. **Re-paste the rules in Firebase Console** before
+  releasing.
+
+## [1.4.0] - 2026-11-19
+
+### Added
+- **AI agents can order for you (MCP phase B).** Your own AI agent (Claude,
+  ChatGPT...) can now see your orders, chats, notifications and points,
+  prepare and place orders, and message kitchens you've ordered from.
+  - Every agent order shows up under **Orders → AI agent orders**. Tap
+    **Confirm** within 15 minutes, then pay in advance: bKash/Nagad **Send
+    Money** to TiffinBox's number and type the TrxID (or tell your agent).
+    **No cash on delivery** for agent orders.
+  - TiffinBox checks the payment, then the order goes to the kitchen.
+  - Messages your agent sends are marked "🤖 Sent via AI agent" in the chat.
+  - **Coupons:** your agent can find the coupons you can use right now (and
+    which kitchen offers them), tells you the best one for your order, and
+    applies it if you agree - with exactly the same rules as Checkout.
+  - Connected before this version? Disconnect and connect your agent again
+    to allow ordering.
 - New Firestore rules: agent order states, `payment_txn_ids`. **Re-paste the
   rules in Firebase Console** before releasing.
 

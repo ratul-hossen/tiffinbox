@@ -1338,7 +1338,7 @@ In-app assistant = later, separate decision.
   - Tests: firestore-tests 66, mcp vitest 46, e2e 79 (`--slow` adds the
     1-minute cache checks; the e2e pauses twice for the 30/min agent limit).
 - **Hardening + payment verification (2026-11-19, branch feat/agent-hardening,
-  still v1.4.0 - one release for everything).** Owner: hackathon/preliminary
+  released as v1.5.0 - v1.4.0 had already been tagged before this merged).** Owner: hackathon/preliminary
   stage, no bKash/Nagad merchant or agent account, so payments stay Send Money
   to TiffinBox's personal number with **manual admin verification**. The full
   contract is **`docs/AGENT_PAYMENTS.md`** (states, fields, windows, admin
