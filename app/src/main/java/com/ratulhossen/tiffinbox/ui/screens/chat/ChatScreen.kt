@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.ratulhossen.tiffinbox.R
+import com.ratulhossen.tiffinbox.data.firebase.FirestoreOrderRepository
 import com.ratulhossen.tiffinbox.data.SampleData
 import com.ratulhossen.tiffinbox.data.firebase.ChatMessageUi
 import com.ratulhossen.tiffinbox.data.firebase.FirebaseAuthRepository
@@ -155,6 +156,13 @@ private fun ChatScreenContent(
 
     // Dialog state for Chef payment request
     var showPaymentRequestDialog by remember { mutableStateOf(false) }
+    // A running paid AI-agent order with this customer: they already paid TiffinBox,
+    // so the chef is warned before asking for money (docs/AGENT_PAYMENTS.md).
+    var hasPaidAgentOrder by remember(chefId, customerId) { mutableStateOf(false) }
+    var showPaidAgentWarning by remember { mutableStateOf(false) }
+    LaunchedEffect(isChef, chefId, customerId) {
+        if (isChef) hasPaidAgentOrder = FirestoreOrderRepository.hasActivePaidAgentOrder(chefId, customerId)
+    }
 
     DisposableEffect(chatId) {
         val registration = FirestoreChatRepository.listenMessages(chatId) {
@@ -235,7 +243,9 @@ private fun ChatScreenContent(
                 actions = {
                     if (isChef) {
                         Button(
-                            onClick = { showPaymentRequestDialog = true },
+                            onClick = {
+                                if (hasPaidAgentOrder) showPaidAgentWarning = true else showPaymentRequestDialog = true
+                            },
                             colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen),
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             modifier = Modifier.padding(end = 8.dp)
@@ -508,6 +518,25 @@ private fun ChatScreenContent(
                 }
             }
         }
+    }
+
+    if (showPaidAgentWarning) {
+        AlertDialog(
+            onDismissRequest = { showPaidAgentWarning = false },
+            title = { Text(stringResource(R.string.chat_agent_paid_warning_title)) },
+            text = { Text(stringResource(R.string.chat_agent_paid_warning_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showPaidAgentWarning = false
+                    showPaymentRequestDialog = true
+                }) { Text(stringResource(R.string.chat_agent_paid_warning_continue)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPaidAgentWarning = false }) {
+                    Text(stringResource(R.string.chat_agent_paid_warning_back))
+                }
+            }
+        )
     }
 
     if (showPaymentRequestDialog) {

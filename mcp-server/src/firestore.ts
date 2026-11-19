@@ -23,6 +23,39 @@ export class FirestoreError extends Error {
   }
 }
 
+/** A document path with a segment that isn't a plain id (thrown before anything is fetched). */
+export class UnsafePathError extends Error {}
+
+/** Every collection name and document id the server uses: letters, digits, "_" and "-". */
+export const SAFE_SEGMENT = /^[A-Za-z0-9_-]{1,128}$/;
+
+/**
+ * Throws unless every segment of [path] is a plain id. Ids come from tool
+ * input (meal, kitchen, order, coupon ids), so this is what stops "../",
+ * "?", "%2F" or ":commit" from ever reaching a Firestore URL.
+ */
+export function assertSafePath(path: string): void {
+  const segments = path.split("/");
+  if (!segments.length || !segments.every((s) => SAFE_SEGMENT.test(s))) {
+    throw new UnsafePathError("unsafe Firestore path");
+  }
+}
+
+/** Error statuses that mean "someone else changed the data first" (a precondition), not a failure. */
+const CONFLICT_STATUSES = new Set(["FAILED_PRECONDITION", "ALREADY_EXISTS", "NOT_FOUND", "ABORTED"]);
+
+/** Reads Firestore's error body ({ error: { status, message } }) - best effort. */
+async function errorOf(res: Response): Promise<{ status: string; message: string }> {
+  try {
+    const j = (await res.json()) as { error?: { status?: string; message?: string } };
+    return { status: j.error?.status ?? "", message: j.error?.message ?? "" };
+  } catch {
+    return { status: "", message: "" };
+  }
+}
+
+const isConflict = (http: number, status: string) => http === 409 || http === 412 || CONFLICT_STATUSES.has(status);
+
 // ---------- auth ----------
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
@@ -168,6 +201,7 @@ export class Firestore {
 
   /** One document, or null. [fields] limits what is downloaded (e.g. skip photos). */
   async get(path: string, fields?: string[]): Promise<FsDoc | null> {
+    assertSafePath(path);
     const qs = fields?.map((f) => `mask.fieldPaths=${encodeURIComponent(f)}`).join("&");
     const res = await this.call(`${this.base}/${path}${qs ? `?${qs}` : ""}`);
     this.reads += 1;
@@ -188,6 +222,8 @@ export class Firestore {
       orderBy?: { field: string; direction: "ASCENDING" | "DESCENDING" };
     } = {},
   ): Promise<FsDoc[]> {
+    assertSafePath(collection);
+    if (opts.parentPath) assertSafePath(opts.parentPath);
     const structuredQuery: Record<string, unknown> = { from: [{ collectionId: collection }] };
     if (opts.select) structuredQuery.select = { fields: opts.select.map((f) => ({ fieldPath: f })) };
     if (opts.orderBy) structuredQuery.orderBy = [{ field: { fieldPath: opts.orderBy.field }, direction: opts.orderBy.direction }];
@@ -215,6 +251,7 @@ export class Firestore {
 
   /** Several writes, all or nothing. Throws [ConflictError] when a precondition fails. */
   async commit(writes: Write[]): Promise<void> {
+    for (const w of writes) assertSafePath(w.path);
     const body = writes.map((w) => {
       const transforms = (inc?: Record<string, number>) =>
         inc && Object.keys(inc).length
@@ -244,23 +281,31 @@ export class Firestore {
       }
     });
     const res = await this.call(`${this.base}:commit`, { method: "POST", body: JSON.stringify({ writes: body }) });
-    if (res.status === 400 || res.status === 409 || res.status === 412 || res.status === 404) {
-      throw new ConflictError(`commit failed (${res.status})`);
+    if (!res.ok) {
+      const err = await errorOf(res);
+      if (isConflict(res.status, err.status)) throw new ConflictError(`commit failed (${err.status || res.status})`);
+      console.error("firestore commit failed", res.status, err.status, err.message);
+      throw new FirestoreError(res.status, `commit failed (${err.status || res.status})`);
     }
-    if (!res.ok) throw new FirestoreError(res.status, "commit failed");
   }
 
   /** Creates a document; fails (409) if it already exists. */
   async create(collectionPath: string, id: string, data: Record<string, unknown>): Promise<void> {
+    assertSafePath(`${collectionPath}/${id}`);
     const res = await this.call(`${this.base}/${collectionPath}?documentId=${encodeURIComponent(id)}`, {
       method: "POST",
       body: JSON.stringify({ fields: encodeFields(data) }),
     });
-    if (!res.ok) throw new FirestoreError(res.status, `create ${collectionPath}/${id} failed`);
+    if (!res.ok) {
+      const err = await errorOf(res);
+      if (res.status === 409 || err.status === "ALREADY_EXISTS") throw new ConflictError(`${collectionPath}/${id} already exists`);
+      throw new FirestoreError(res.status, `create ${collectionPath}/${id} failed (${err.status || res.status})`);
+    }
   }
 
   /** Sets only [data]'s fields on an existing document. */
   async update(path: string, data: Record<string, unknown>): Promise<void> {
+    assertSafePath(path);
     const mask = Object.keys(data).map((f) => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join("&");
     const res = await this.call(`${this.base}/${path}?${mask}&currentDocument.exists=true`, {
       method: "PATCH",
@@ -275,14 +320,17 @@ export class Firestore {
    * single-use even when two requests race.
    */
   async delete(path: string, updateTime?: string): Promise<boolean> {
+    assertSafePath(path);
     // A commit with a precondition (rather than DELETE ?currentDocument.updateTime=,
     // which the emulator mis-handles) - same behaviour in production and in tests.
     const name = `projects/${this.env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`;
     const write: Record<string, unknown> = { delete: name };
     if (updateTime) write.currentDocument = { updateTime };
     const res = await this.call(`${this.base}:commit`, { method: "POST", body: JSON.stringify({ writes: [write] }) });
-    if (res.status === 400 || res.status === 404 || res.status === 409 || res.status === 412) return false;
-    if (!res.ok) throw new FirestoreError(res.status, `delete ${path} failed`);
-    return true;
+    if (res.ok) return true;
+    const err = await errorOf(res);
+    if (isConflict(res.status, err.status)) return false;
+    console.error("firestore delete failed", res.status, err.status, err.message);
+    throw new FirestoreError(res.status, `delete ${path} failed (${err.status || res.status})`);
   }
 }

@@ -41,9 +41,16 @@ val AGENT_PENDING_STATUSES = listOf(AGENT_AWAITING_CONFIRMATION, AGENT_AWAITING_
 /** After confirming, the customer has this long to pay (matches mcp-server LIMITS.paymentWindowMs). */
 const val AGENT_PAYMENT_WINDOW_MS = 60L * 60 * 1000
 
+/**
+ * A payment is still accepted this long after `payBy` (docs/AGENT_PAYMENTS.md
+ * PAYMENT_GRACE), so someone who paid at the last minute can still type the TrxID.
+ */
+const val AGENT_PAYMENT_GRACE_MS = 30L * 60 * 1000
+
 /** One agent order waiting on the customer or on TiffinBox. */
 data class AgentOrderUi(
     val id: String,
+    val chefId: String = "",
     val kitchenName: String,
     val itemsSummary: String,
     val total: Int,
@@ -52,10 +59,32 @@ data class AgentOrderUi(
     val confirmBy: Long,
     val payBy: Long,
     val paymentMethod: String,
-    val paymentTransactionId: String
+    val paymentTransactionId: String,
+    val deliveryAddress: String = "",
+    val subtotal: Int = 0,
+    val deliveryFee: Int = 0,
+    val platformFee: Int = 0,
+    /** Coupon discount and its code (blank = no coupon). */
+    val discount: Int = 0,
+    val couponCode: String = "",
+    val rankDiscount: Int = 0,
+    val estimatedDeliveryMinutes: Int = 0,
+    /** The admin's "Ask again" note, shown above the payment form. */
+    val paymentNote: String = ""
 ) {
     val shortId: String get() = id.takeLast(6).uppercase()
+
+    /** Past the confirm deadline, or past payBy + grace: nothing can be done any more. */
+    fun isExpired(now: Long): Boolean = when (status) {
+        AGENT_AWAITING_CONFIRMATION -> confirmBy in 1 until now
+        AGENT_AWAITING_PAYMENT -> payBy > 0 && now > payBy + AGENT_PAYMENT_GRACE_MS
+        else -> false
+    }
 }
+
+/** A paid agent order (TiffinBox verified the advance payment) - cancelling it means a refund. */
+private fun DocumentSnapshot.isPaidAgentOrder(): Boolean =
+    getString("source") == "agent" && (getLong("paymentVerifiedAt") ?: 0L) > 0
 
 /** What happened when the customer typed a TrxID in the app. */
 enum class AgentPaymentResult { OK, INVALID, ALREADY_USED_OR_FAILED }
@@ -82,7 +111,7 @@ object FirestoreOrderRepository {
         // whoever reads it first cancels it; the MCP server does the same).
         val agentDeadline = when (status) {
             AGENT_AWAITING_CONFIRMATION -> doc.getLong("confirmBy") ?: 0L
-            AGENT_AWAITING_PAYMENT -> doc.getLong("payBy") ?: 0L
+            AGENT_AWAITING_PAYMENT -> (doc.getLong("payBy") ?: 0L).let { if (it > 0) it + AGENT_PAYMENT_GRACE_MS else 0L }
             else -> 0L
         }
         if (agentDeadline > 0 && System.currentTimeMillis() > agentDeadline) {
@@ -93,9 +122,11 @@ object FirestoreOrderRepository {
         val deadline = maxOf(placedAt + ORDER_ACCEPT_TIMEOUT_MS, doc.getLong("scheduledFor") ?: 0L)
         if (status == "Placed" && placedAt > 0 && System.currentTimeMillis() > deadline) {
             // Fire-and-forget: also hands the reserved plates back to the menu.
-            cancelInTransaction(doc.reference, "auto_expired") { it.getString("status") == "Placed" }
+            cancelInTransaction(doc.reference, "auto_expired", refundReason = "chef_timeout") { it.getString("status") == "Placed" }
                 .addOnSuccessListener { cancelled ->
                     val customerId = cancelled?.getString("customerId") ?: return@addOnSuccessListener
+                    // A paid agent order gets the refund notice from cancelInTransaction instead.
+                    if (cancelled.isPaidAgentOrder()) return@addOnSuccessListener
                     FirestoreNotificationRepository.addNotification(
                         uid = customerId,
                         title = "Order cancelled",
@@ -113,14 +144,21 @@ object FirestoreOrderRepository {
      * (firestore.rules checks the amounts against the order's mealQuantities).
      * [guard] sees the fresh order; returning false aborts with no change.
      * The task's result is the order snapshot, or null when nothing changed.
+     *
+     * A paid agent order (docs/AGENT_PAYMENTS.md: the chef rejects it, or it
+     * sits 12 h unaccepted) also records the money owed back - refundStatus
+     * "due", refundAmount, refundReason ([refundReason], default [reason]) -
+     * and the customer is told a refund is coming.
      */
     private fun cancelInTransaction(
         ref: DocumentReference,
         reason: String,
+        refundReason: String = reason,
         guard: (DocumentSnapshot) -> Boolean
     ): Task<DocumentSnapshot?> {
         val db = FirebaseFirestore.getInstance()
-        return db.runTransaction<DocumentSnapshot?> { tx ->
+        var refundAmount = 0L
+        val task = db.runTransaction<DocumentSnapshot?> { tx ->
             val snap = tx.get(ref)
             if (!snap.exists() || !guard(snap)) return@runTransaction null
             val update = mutableMapOf<String, Any>(
@@ -128,6 +166,15 @@ object FirestoreOrderRepository {
                 "cancelReason" to reason,
                 "cancelledAt" to System.currentTimeMillis()
             )
+            refundAmount = 0L
+            if (snap.isPaidAgentOrder()) {
+                // An overpayment still owed is part of what goes back (same as admin-web's orderPlates.ts).
+                val alreadyOwed = if (snap.getString("refundStatus") == "due") snap.getLong("refundAmount") ?: 0L else 0L
+                refundAmount = (snap.getLong("totalPrice") ?: 0L) + alreadyOwed
+                update["refundStatus"] = "due"
+                update["refundAmount"] = refundAmount
+                update["refundReason"] = refundReason
+            }
             val restore = mutableListOf<Pair<DocumentReference, Long>>()
             if (snap.getBoolean("platesReserved") == true && snap.getBoolean("platesRestored") != true) {
                 update["platesRestored"] = true
@@ -144,6 +191,19 @@ object FirestoreOrderRepository {
             tx.update(ref, update)
             snap
         }
+        task.addOnSuccessListener { snap ->
+            if (snap == null || !snap.isPaidAgentOrder()) return@addOnSuccessListener
+            val customerId = snap.getString("customerId").orEmpty()
+            if (customerId.isBlank()) return@addOnSuccessListener
+            FirestoreNotificationRepository.addNotification(
+                uid = customerId,
+                title = "রিফান্ড আসছে · Refund on the way",
+                body = (if (refundReason == "chef_timeout") "The kitchen didn't accept order #${ref.id.takeLast(6).uppercase()} in time, so it was cancelled. "
+                else "Order #${ref.id.takeLast(6).uppercase()} was cancelled. ") +
+                    "৳$refundAmount will be refunded to the number you paid from."
+            )
+        }
+        return task
     }
 
     /**
@@ -351,6 +411,8 @@ object FirestoreOrderRepository {
 
             val dayFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             snapshot.documents
+                // Cancelled orders and agent orders TiffinBox hasn't verified yet aren't real demand.
+                .filter { val st = it.getString("status") ?: "Placed"; st != "Cancelled" && st !in AGENT_PENDING_STATUSES }
                 .mapNotNull { it.getLong("placedAt") }
                 .filter { it >= cutoff }
                 .groupBy { dayFormat.format(Date(it)) }
@@ -401,12 +463,32 @@ object FirestoreOrderRepository {
                         itemQuantities = (doc.get("items") as? List<*>).orEmpty()
                             .mapNotNull { it as? Map<*, *> }
                             .groupBy { it["mealName"] as? String ?: "—" }
-                            .mapValues { (_, rows) -> rows.sumOf { (it["quantity"] as? Number)?.toInt() ?: 0 } }
+                            .mapValues { (_, rows) -> rows.sumOf { (it["quantity"] as? Number)?.toInt() ?: 0 } },
+                        source = doc.getString("source").orEmpty(),
+                        paymentVerifiedAt = doc.getLong("paymentVerifiedAt") ?: 0L
                     )
                 }
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    /**
+     * True when [customerId] has a paid agent order with this kitchen that is
+     * still running (Placed -> OutForDelivery). The chef's chat warns before
+     * a payment request then: that order is already paid to TiffinBox.
+     */
+    suspend fun hasActivePaidAgentOrder(chefId: String, customerId: String): Boolean = try {
+        FirebaseFirestore.getInstance().collection("orders")
+            .whereEqualTo("chefId", chefId)
+            .whereEqualTo("customerId", customerId)
+            .limit(50)
+            .get()
+            .await()
+            .documents
+            .any { it.isPaidAgentOrder() && (it.getString("status") ?: "") in listOf("Placed") + ACTIVE_ORDER_STATUSES }
+    } catch (e: Exception) {
+        false
     }
 
     /** Accepted-or-waiting pre-orders whose slot is still ahead, soonest first. */
@@ -498,6 +580,8 @@ object FirestoreOrderRepository {
                     val placedAt = doc.getLong("placedAt") ?: 0L
                     val stage = effectiveStatus(doc).toOrderStage() ?: OrderStage.PLACED
                     val total = (doc.getLong("totalPrice") ?: 0L).toInt()
+                    // Cancelled just now by the 12 h expiry: this snapshot predates the refund fields.
+                    val justExpiredPaid = stage == OrderStage.CANCELLED && doc.getString("status") == "Placed" && doc.isPaidAgentOrder()
                     PastOrderUi(
                         id = doc.id,
                         chefName = chefName,
@@ -521,7 +605,12 @@ object FirestoreOrderRepository {
                             }
                             .groupBy({ it.first }, { it.second })
                             .mapValues { (_, q) -> q.sum() },
-                        viaAgent = doc.getString("source") == "agent"
+                        viaAgent = doc.getString("source") == "agent",
+                        paid = (doc.getLong("paymentVerifiedAt") ?: 0L) > 0,
+                        rejectReason = doc.getString("rejectReason").orEmpty(),
+                        refundStatus = if (justExpiredPaid) "due" else doc.getString("refundStatus").orEmpty(),
+                        refundAmount = if (justExpiredPaid) total else (doc.getLong("refundAmount") ?: 0L).toInt(),
+                        refundTrxId = doc.getString("refundTrxId").orEmpty()
                     )
                 }
         } catch (e: Exception) {
@@ -598,6 +687,8 @@ object FirestoreOrderRepository {
                             val items = (doc.get("items") as? List<*>).orEmpty().mapNotNull { it as? Map<*, *> }
                             AgentOrderUi(
                                 id = doc.id,
+                                chefId = doc.getString("chefId").orEmpty(),
+                                // Filled in by the card with getChef() when the cache doesn't have it.
                                 kitchenName = FirestoreCatalogRepository.getCachedChefs()
                                     .find { it.id == doc.getString("chefId") }?.kitchenName ?: "",
                                 itemsSummary = items.joinToString(", ") {
@@ -609,7 +700,16 @@ object FirestoreOrderRepository {
                                 confirmBy = doc.getLong("confirmBy") ?: 0L,
                                 payBy = doc.getLong("payBy") ?: 0L,
                                 paymentMethod = doc.getString("paymentMethod").orEmpty(),
-                                paymentTransactionId = doc.getString("paymentTransactionId").orEmpty()
+                                paymentTransactionId = doc.getString("paymentTransactionId").orEmpty(),
+                                deliveryAddress = doc.getString("deliveryAddress").orEmpty(),
+                                subtotal = (doc.getLong("subtotal") ?: 0L).toInt(),
+                                deliveryFee = (doc.getLong("deliveryFee") ?: 0L).toInt(),
+                                platformFee = (doc.getLong("platformFee") ?: 0L).toInt(),
+                                discount = (doc.getLong("discount") ?: 0L).toInt(),
+                                couponCode = doc.getString("couponCode").orEmpty(),
+                                rankDiscount = (doc.getLong("rankDiscount") ?: 0L).toInt(),
+                                estimatedDeliveryMinutes = (doc.getLong("estimatedDeliveryMinutes") ?: 0L).toInt(),
+                                paymentNote = doc.getString("paymentNote").orEmpty().trim()
                             )
                         }
                     onUpdate(list)
@@ -631,13 +731,17 @@ object FirestoreOrderRepository {
     }
 
     /**
-     * Records the bKash/Nagad TrxID for an agent order. The TrxID is claimed in
-     * payment_txn_ids in the same batch, so the rules refuse one that already
-     * paid for another order.
+     * Records the bKash/Nagad TrxID and the last 4 digits of the number the
+     * customer paid from (the admin matches both against the received-money
+     * SMS). The TrxID is claimed in payment_txn_ids in the same batch, so the
+     * rules refuse one that already paid for another order.
      */
-    suspend fun submitAgentPayment(orderId: String, method: String, rawTxnId: String): AgentPaymentResult {
+    suspend fun submitAgentPayment(orderId: String, method: String, rawTxnId: String, senderLast4: String): AgentPaymentResult {
         val txn = rawTxnId.uppercase().filter { it.isLetterOrDigit() }
-        if (method !in listOf("BKASH", "NAGAD") || !Regex("^[A-Z0-9]{8,12}$").matches(txn)) return AgentPaymentResult.INVALID
+        val last4 = senderLast4.trim()
+        if (method !in listOf("BKASH", "NAGAD") || !Regex("^[A-Z0-9]{8,12}$").matches(txn) ||
+            !Regex("^[0-9]{4}$").matches(last4)
+        ) return AgentPaymentResult.INVALID
         val uid = FirebaseAuthRepository.currentUser?.uid ?: return AgentPaymentResult.ALREADY_USED_OR_FAILED
         return try {
             val db = FirebaseFirestore.getInstance()
@@ -645,7 +749,7 @@ object FirestoreOrderRepository {
             db.batch()
                 .set(
                     db.collection("payment_txn_ids").document("${method}_$txn"),
-                    mapOf("orderId" to orderId, "customerId" to uid, "method" to method, "createdAt" to now)
+                    mapOf("orderId" to orderId, "customerId" to uid, "method" to method, "senderLast4" to last4, "createdAt" to now)
                 )
                 .update(
                     db.collection("orders").document(orderId),
@@ -653,6 +757,7 @@ object FirestoreOrderRepository {
                         "status" to AGENT_PAYMENT_SUBMITTED,
                         "paymentMethod" to method,
                         "paymentTransactionId" to txn,
+                        "paymentSenderLast4" to last4,
                         "paymentSubmittedAt" to now,
                         "paymentSubmittedVia" to "app"
                     )

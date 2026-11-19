@@ -9,11 +9,18 @@
   "workers_dev": true,
   "preview_urls": false,
 
+  // Workers Logs (free plan included): console.log/error from tools, the sweep and Firestore failures.
+  "observability": { "enabled": true },
+
+  // Expiry sweep (no Cloud Functions on Spark): cancels agent orders past their confirm / payment
+  // deadline every 5 minutes, and paid ones the chef never accepted (12 h) once an hour. See index.ts.
+  "triggers": { "crons": ["*/5 * * * *"] },
+
   // OAuth clients, grants and tokens (managed by @cloudflare/workers-oauth-provider).
   // Create with: npx wrangler kv namespace create OAUTH_KV  -> paste the id here.
   "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "2b4b627b814149d888b2282a52c54980" }],
 
-  // Daily counters, read budget and pairing lockouts (one small Durable Object).
+  // Daily counters, read budgets, pairing lockouts, quotes and order/message slots (one small Durable Object).
   "durable_objects": { "bindings": [{ "name": "GUARD", "class_name": "Guard" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Guard"] }],
 

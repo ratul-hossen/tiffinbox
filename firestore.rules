@@ -232,7 +232,7 @@ service cloud.firestore {
     //  - delivery partner: may only change status.
     function orderStatusKeysOnly() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(["status", "cancelReason", "cancelledAt", "platesRestored"]);
+        .hasOnly(["status", "cancelReason", "cancelledAt", "platesRestored", "refundStatus", "refundAmount", "refundReason"]);
     }
     function isOrderChef() {
       return get(/databases/$(database)/documents/chefs/$(resource.data.chefId)).data.userId == request.auth.uid;
@@ -268,6 +268,33 @@ service cloud.firestore {
     function agentPending(status) {
       return status in ["AwaitingConfirmation", "AwaitingPayment", "PaymentSubmitted"];
     }
+    // A paid agent order: TiffinBox has verified its advance payment (docs/AGENT_PAYMENTS.md).
+    function paidAgentOrder() {
+      return resource.data.get("source", "") == "agent" && resource.data.get("paymentVerifiedAt", null) != null;
+    }
+    // When the chef cancels a paid agent order, or the customer's app applies
+    // the 12 h auto_expired cancel to one, the same write must record the
+    // money owed back: refundStatus "due", refundReason "chef" (chef's cancel)
+    // or "chef_timeout" (12 h), and refundAmount = totalPrice plus any
+    // overpayment refund that was already due. Otherwise (not a cancel of a
+    // paid agent order) nobody but an admin may touch the refund fields.
+    function refundRecordedOk() {
+      let d = request.resource.data;
+      let total = resource.data.get("totalPrice", 0);
+      let wasDue = resource.data.get("refundStatus", "") == "due";
+      return d.get("refundStatus", "") == "due" &&
+        d.get("refundReason", "") in ["chef", "chef_timeout"] &&
+        d.get("refundAmount", null) is number &&
+        ((wasDue && d.refundAmount == total + resource.data.get("refundAmount", 0)) ||
+          (!wasDue && d.refundAmount == total));
+    }
+    function refundRuleOk() {
+      let cancellingPaid = paidAgentOrder() && resource.data.status != "Cancelled" &&
+        request.resource.data.status == "Cancelled";
+      return (cancellingPaid && refundRecordedOk()) ||
+        (!cancellingPaid && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(["refundStatus", "refundAmount", "refundReason"]));
+    }
     // The customer confirms their agent's order inside its 15-minute window
     // (+1 min clock slack) and gets at most an hour (+1 min) to pay.
     function agentConfirmOk() {
@@ -279,14 +306,18 @@ service cloud.firestore {
         d.payBy is number && d.payBy <= request.time.toMillis() + 3660000;
     }
     // Paying from the app: the TrxID is claimed in payment_txn_ids in the same
-    // batch, so one TrxID can never pay for two orders.
+    // batch, so one TrxID can never pay for two orders. The customer gives the
+    // TrxID, the method and the last 4 digits of the number they paid from,
+    // until payBy + 30 min (PAYMENT_GRACE).
     function agentPaymentOk(orderId) {
       let d = request.resource.data;
       return resource.data.get("source", "") == "agent" &&
         resource.data.status == "AwaitingPayment" && d.status == "PaymentSubmitted" &&
-        d.diff(resource.data).affectedKeys().hasOnly(["status", "paymentMethod", "paymentTransactionId", "paymentSubmittedAt", "paymentSubmittedVia"]) &&
+        d.diff(resource.data).affectedKeys().hasOnly(["status", "paymentMethod", "paymentTransactionId", "paymentSenderLast4", "paymentSubmittedAt", "paymentSubmittedVia"]) &&
         d.paymentMethod in ["BKASH", "NAGAD"] &&
         d.paymentTransactionId is string && d.paymentTransactionId.matches("^[A-Z0-9]{8,12}$") &&
+        d.get("paymentSenderLast4", "") is string && d.get("paymentSenderLast4", "").matches("^[0-9]{4}$") &&
+        request.time.toMillis() <= resource.data.get("payBy", 0) + 1800000 &&
         getAfter(/databases/$(database)/documents/payment_txn_ids/$(d.paymentMethod + "_" + d.paymentTransactionId)).data.orderId == orderId;
     }
     match /orders/{orderId} {
@@ -301,7 +332,7 @@ service cloud.firestore {
       ));
       allow update: if isAdmin() ||
         (isSignedIn() && resource.data.customerId == request.auth.uid && (agentConfirmOk() || agentPaymentOk(orderId))) ||
-        (isSignedIn() && orderStatusKeysOnly() && (
+        (isSignedIn() && orderStatusKeysOnly() && refundRuleOk() && (
         // Customer cancels an agent order that isn't paid yet (or it timed out).
         (resource.data.customerId == request.auth.uid &&
           resource.data.status in ["AwaitingConfirmation", "AwaitingPayment"] &&
@@ -335,8 +366,11 @@ service cloud.firestore {
     match /payment_txn_ids/{txnKey} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
       allow create: if isSignedIn() &&
-        request.resource.data.keys().hasOnly(["orderId", "customerId", "method", "createdAt"]) &&
+        request.resource.data.keys().hasOnly(["orderId", "customerId", "method", "senderLast4", "createdAt"]) &&
         request.resource.data.customerId == request.auth.uid &&
+        request.resource.data.get("senderLast4", "") is string &&
+        request.resource.data.get("senderLast4", "").matches("^[0-9]{4}$") &&
+        getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.get("paymentSenderLast4", "") == request.resource.data.senderLast4 &&
         getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.customerId == request.auth.uid &&
         getAfter(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == "PaymentSubmitted" &&
         txnKey == request.resource.data.method + "_" +
@@ -433,9 +467,20 @@ service cloud.firestore {
     // restricted to the thread's two participants or an admin (rather than
     // "any signed-in user", which previously let anyone read any chat by
     // guessing its id) via a lookup on the parent chat doc.
+    // A thread can only be created by one of its own two participants (the
+    // customerId or chefId written into it), so nobody can open a chat in
+    // someone else's name.
     match /chats/{chatId} {
-      allow read, write: if isAdmin() || (isSignedIn() && (
+      allow read: if isAdmin() || (isSignedIn() && (
         resource == null ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.chefId == request.auth.uid
+      ));
+      allow create: if isAdmin() || (isSignedIn() && (
+        request.resource.data.get("customerId", "") == request.auth.uid ||
+        request.resource.data.get("chefId", "") == request.auth.uid
+      ));
+      allow update, delete: if isAdmin() || (isSignedIn() && (
         resource.data.customerId == request.auth.uid ||
         resource.data.chefId == request.auth.uid
       ));

@@ -21,8 +21,34 @@ How to cut a release: [docs/RELEASING.md](docs/RELEASING.md).
     applies it if you agree - with exactly the same rules as Checkout.
   - Connected before this version? Disconnect and connect your agent again
     to allow ordering.
-- admin-web: **Agent Payments** page (check payment → Approve / Reject) and the
-  payment number in App Settings → AI agents.
+- **Safer agent payments.** Give the TrxID **and the last 4 digits of the
+  number you paid from**. You get 30 extra minutes if you're a little late.
+  If something doesn't match, TiffinBox asks you to send it again instead of
+  cancelling the order.
+- **Refunds are tracked.** If a paid order is cancelled (the kitchen can't
+  take it, or nobody accepts it within 12 hours), the order shows "৳X refund
+  due", you get a notification, and TiffinBox records the refund TrxID when
+  it sends the money back.
+- The agent order card shows the address, the price breakdown and the
+  delivery time. Expired orders show "Expired" instead of buttons.
+- Tapping an order notification opens Orders.
+- Kitchens see "🤖 AI agent order · Prepaid - don't collect money".
+- The **AI Agent (MCP)** screen describes what agents can do now, shows where
+  each agent sends your data, and warns about unverified agents and
+  browse-only connections.
+- admin-web **Agent Payments**: check the amount received and the sender's
+  last 4 digits, then Approve, Ask again or Reject. There are **Refunds due**
+  and Verified-today tabs, plus a warning when a payment has waited over
+  30 minutes. Orders, Dashboard and Revenue now count sales the same way. The
+  payment number is set in App Settings → AI agents.
+- MCP server hardening:
+  - The consent page shows where tokens go.
+  - Every id is validated; a customer can have at most 3 agents.
+  - Per-customer and global quota caps, with IPv6-aware lockouts.
+  - Expired orders are cancelled every 5 minutes (Cron).
+  - Duplicate orders are impossible.
+  - Messages only go to kitchens you really ordered from (5 a day per kitchen).
+  - Daily limits follow the Dhaka day.
 - New Firestore rules: agent order states, `payment_txn_ids`. **Re-paste the
   rules in Firebase Console** before releasing.
 

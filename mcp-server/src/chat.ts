@@ -1,13 +1,15 @@
 /**
  * The customer's chats with kitchens (chats/{customerUid}_{chefId}, same
  * shape FirestoreChatRepository writes). An agent can read them and send a
- * text message - only to kitchens the customer has ordered from, marked
- * "via AI agent" so the chef knows, and within LIMITS.messagesPerDay.
+ * text message - only to a kitchen the customer has a real order with
+ * (Placed..Delivered, placed in the last 30 days), marked "via AI agent" so
+ * the chef knows, within LIMITS.messagesPerDay per customer and
+ * LIMITS.messagesPerKitchenPerDay per kitchen (Dhaka day, kept in Guard).
  */
 import { cleanText } from "./catalog";
 import { Firestore } from "./firestore";
 import { LIMITS } from "./limits";
-import { OrderError, loadMyOrders, notification, randomId } from "./orders";
+import { OrderError, REAL_ORDER_STATUSES, loadMyOrders, notification, randomId } from "./orders";
 
 const num = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -32,7 +34,7 @@ export async function listChats(db: Firestore, uid: string) {
 }
 
 export async function readChat(db: Firestore, uid: string, kitchenId: string, limit = 30) {
-  if (!/^[A-Za-z0-9]{1,64}$/.test(kitchenId)) throw new OrderError("Unknown kitchen id.");
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(kitchenId)) throw new OrderError("Unknown kitchen id.");
   const chatId = chatIdFor(uid, kitchenId);
   const thread = await db.get(`chats/${chatId}`, ["customerId", "chefName"]);
   if (!thread || thread.data.customerId !== uid) return { kitchenId, messages: [], note: "No chat with this kitchen yet." };
@@ -60,23 +62,47 @@ export async function readChat(db: Firestore, uid: string, kitchenId: string, li
   };
 }
 
+/**
+ * Does the customer have a real order with this kitchen - verified (Placed
+ * or later, not cancelled) and placed in the last 30 days? An agent order
+ * still waiting for confirmation or payment doesn't count, so an agent can't
+ * open a chat with any chef just by preparing an order.
+ */
+export function hasRecentRealOrder(orders: Array<{ data: Record<string, unknown> }>, kitchenId: string, now = Date.now()): boolean {
+  return orders.some(
+    (o) =>
+      o.data.chefId === kitchenId &&
+      REAL_ORDER_STATUSES.includes(str(o.data.status)) &&
+      num(o.data.placedAt) >= now - LIMITS.messageOrderWindowMs,
+  );
+}
+
+/**
+ * Sends the customer's text to a kitchen. [takeSlots] runs after the checks
+ * and before the write (the daily / per-kitchen / cooldown limits); it throws
+ * an [OrderError] to refuse.
+ */
 export async function sendToKitchen(
   db: Firestore,
   uid: string,
   kitchenId: string,
   rawText: string,
   agentName: string,
+  takeSlots: () => Promise<void> = async () => {},
 ): Promise<{ kitchenName: string; text: string }> {
-  if (!/^[A-Za-z0-9]{1,64}$/.test(kitchenId)) throw new OrderError("Unknown kitchen id.");
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(kitchenId)) throw new OrderError("Unknown kitchen id.");
   const text = cleanText(rawText, LIMITS.maxMessageChars);
   if (!text) throw new OrderError("The message is empty.");
-  // Only kitchens the customer has actually ordered from - no cold messages to every chef.
-  const orders = await loadMyOrders(db, uid);
-  if (!orders.some((o) => o.data.chefId === kitchenId)) {
-    throw new OrderError("Messages can only go to kitchens this customer has ordered from.");
+  // Only kitchens with a real, recent order - no cold messages to every chef.
+  if (!hasRecentRealOrder(await loadMyOrders(db, uid), kitchenId)) {
+    throw new OrderError(
+      "Messages can only go to a kitchen this customer has a confirmed, paid order with in the last 30 days. " +
+        "The customer can still chat in the app.",
+    );
   }
   const kitchen = await db.get(`chefs/${kitchenId}`, ["kitchenName"]);
   if (!kitchen) throw new OrderError("That kitchen no longer exists.");
+  await takeSlots();
   const kitchenName = cleanText(kitchen.data.kitchenName, 80);
   const chatId = chatIdFor(uid, kitchenId);
   const now = Date.now();

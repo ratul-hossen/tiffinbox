@@ -4,10 +4,11 @@ import { Download, Trash2 } from "lucide-react";
 import { db } from "../firebase";
 import { useCollection } from "../hooks/useCollection";
 import type { Chef, Order } from "../types";
-import { ORDER_STATUSES } from "../types";
+import { AGENT_PENDING_STATUSES, ALL_ORDER_STATUSES, ORDER_STATUSES } from "../types";
 import { logActivity } from "../lib/activityLog";
 import { softDelete } from "../lib/recycleBin";
-import { cancelOrderReleasingPlates, expiresAt } from "../lib/orderPlates";
+import { cancelOrderReleasingPlates, expiresAt, isPaidAgentOrder } from "../lib/orderPlates";
+import { isRealSale } from "../lib/sales";
 import { formatCurrency, formatDateTime } from "../lib/format";
 import { STATUS_BADGE_TONE } from "../lib/orderStatus";
 import Badge from "./ui/Badge";
@@ -39,6 +40,11 @@ function downloadCsv(filename: string, rows: string[][]) {
   URL.revokeObjectURL(url);
 }
 
+/** Agent orders before the admin has verified the payment - only Agent Payments moves these. */
+function isAgentPending(order: Order): boolean {
+  return order.source === "agent" && AGENT_PENDING_STATUSES.includes(String(order.status));
+}
+
 export default function OrdersPage({ search }: Props) {
   const { data: orders, loading, error } = useCollection<Order>("orders");
   const { data: chefs } = useCollection<Chef>("chefs");
@@ -50,13 +56,14 @@ export default function OrdersPage({ search }: Props) {
   // Same 12h rule as the Android app (FirestoreOrderRepository.ORDER_ACCEPT_TIMEOUT_MS):
   // a still-"Placed" order the chef never accepted is cancelled automatically.
   // There are no Cloud Functions on the free plan, so whichever client reads
-  // it first (app or this page) performs the flip.
+  // it first (app or this page) performs the flip. A paid agent order gets
+  // refundStatus "due" on the way (inside cancelOrderReleasingPlates).
   useEffect(() => {
     const now = Date.now();
     orders
       .filter((o) => (o.status ?? "Placed") === "Placed" && o.placedAt && now > expiresAt(o))
       .forEach((o) => {
-        cancelOrderReleasingPlates(o, "auto_expired").catch(() => {});
+        cancelOrderReleasingPlates(o, "auto_expired", { expectStatus: ["Placed"] }).catch(() => {});
       });
   }, [orders]);
 
@@ -69,23 +76,59 @@ export default function OrdersPage({ search }: Props) {
       if (statusFilter !== "all" && o.status !== statusFilter) return false;
       if (chefFilter !== "all" && o.chefId !== chefFilter) return false;
       if (q) {
-        const haystack = `${o.id} ${o.customerId ?? ""} ${chefName(o.chefId)}`.toLowerCase();
+        const haystack = [
+          o.id,
+          o.customerId,
+          o.customerName,
+          o.customerPhone,
+          o.paymentTransactionId,
+          o.refundTrxId,
+          chefName(o.chefId),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
   }, [orders, statusFilter, chefFilter, search, chefs]);
 
-  const totalRevenue = useMemo(
-    () => filtered.reduce((sum, o) => sum + (o.totalPrice ?? 0), 0),
-    [filtered],
-  );
+  // Same rule as Dashboard and Revenue: cancelled and unverified agent orders aren't sales.
+  const sales = useMemo(() => filtered.filter(isRealSale), [filtered]);
+  const totalRevenue = useMemo(() => sales.reduce((sum, o) => sum + (o.totalPrice ?? 0), 0), [sales]);
 
   // Cancelling an order moves it to the Recycle Bin (same as every other
   // "remove" action in admin-web) rather than just flipping its status -
   // it disappears from this list immediately, and can be restored or
   // permanently deleted from the Recycle Bin page later.
+  //
+  // Exception: a paid agent order (or any order with a refund due) stays in
+  // Orders as Cancelled with refundStatus "due", so the refund isn't lost -
+  // it then shows under Agent Payments -> Refunds due.
   async function changeStatus(order: Order, status: string) {
+    if (status === "Cancelled" && order.status !== "Cancelled" && (isPaidAgentOrder(order) || order.refundStatus === "due")) {
+      const owed = isPaidAgentOrder(order)
+        ? (order.totalPrice ?? 0) + (order.refundStatus === "due" ? order.refundAmount ?? 0 : 0)
+        : order.refundAmount ?? 0;
+      if (
+        !confirm(
+          `This order was prepaid. Cancelling it records a refund of ${formatCurrency(owed)} due to the customer ` +
+            "(Agent Payments -> Refunds due). It stays in Orders, not the Recycle Bin. Cancel it?",
+        )
+      )
+        return;
+      setBusyId(order.id);
+      try {
+        const done = await cancelOrderReleasingPlates(order, "admin");
+        if (done) await logActivity("Cancelled paid agent order (refund due)", "orders", order.id, { refundAmount: owed });
+      } catch (err) {
+        alert(err instanceof Error ? err.message : String(err));
+      } finally {
+        setBusyId(null);
+      }
+      return;
+    }
     setBusyId(order.id);
     try {
       if (status === "Cancelled") {
@@ -113,7 +156,11 @@ export default function OrdersPage({ search }: Props) {
     await logActivity("Removed order (moved to recycle bin)", "orders", order.id, { status: order.status ?? "" });
   }
 
-  const cancelledOrders = useMemo(() => orders.filter((o) => o.status === "Cancelled"), [orders]);
+  // Never offer the Recycle Bin for an order that still owes the customer money.
+  const cancelledOrders = useMemo(
+    () => orders.filter((o) => o.status === "Cancelled" && o.refundStatus !== "due"),
+    [orders],
+  );
 
   /** One click to clear every already-cancelled order into the Recycle Bin. */
   async function removeAllCancelled() {
@@ -155,7 +202,7 @@ export default function OrdersPage({ search }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-apple-secondary">
-          {filtered.length} orders · {formatCurrency(totalRevenue)}
+          {filtered.length} orders · {sales.length} sales · {formatCurrency(totalRevenue)}
         </p>
         <div className="flex gap-2 items-center">
           <select
@@ -164,7 +211,7 @@ export default function OrdersPage({ search }: Props) {
             className="text-sm border border-apple-border2 rounded-lg px-3 py-1.5 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
           >
             <option value="all">All statuses</option>
-            {ORDER_STATUSES.map((s) => (
+            {ALL_ORDER_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -235,24 +282,41 @@ export default function OrdersPage({ search }: Props) {
                   ) : null}
                 </td>
                 <td className="px-4 py-3">
-                  <select
-                    value={order.status ?? "Placed"}
-                    disabled={busyId === order.id}
-                    onChange={(e) => changeStatus(order, e.target.value)}
-                    className="text-xs border border-apple-border2 rounded-lg px-2 py-1 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
-                  >
-                    {ORDER_STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="mt-1">
+                  {isAgentPending(order) ? (
+                    <>
+                      <select
+                        value={String(order.status)}
+                        disabled
+                        className="text-xs border border-apple-border2 rounded-lg px-2 py-1 bg-apple-surface opacity-60"
+                      >
+                        <option value={String(order.status)}>{order.status}</option>
+                      </select>
+                      <div className="mt-1 text-[11px] text-apple-secondary">Handled in Agent Payments</div>
+                    </>
+                  ) : (
+                    <select
+                      value={order.status ?? "Placed"}
+                      disabled={busyId === order.id}
+                      onChange={(e) => changeStatus(order, e.target.value)}
+                      className="text-xs border border-apple-border2 rounded-lg px-2 py-1 bg-apple-surface focus:outline-none focus:ring-2 focus:ring-apple-blue/50 transition-all duration-150"
+                    >
+                      {ORDER_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <div className="mt-1 flex flex-wrap gap-1">
                     <Badge
                       tone={STATUS_BADGE_TONE[(order.status as keyof typeof STATUS_BADGE_TONE) ?? "Placed"] ?? "neutral"}
                     >
                       {order.status ?? "Placed"}
                     </Badge>
+                    {order.refundStatus === "due" && (
+                      <Badge tone="amber">Refund due {formatCurrency(order.refundAmount ?? 0)}</Badge>
+                    )}
+                    {order.refundStatus === "refunded" && <Badge tone="green">Refunded</Badge>}
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -276,7 +340,9 @@ export default function OrdersPage({ search }: Props) {
         order={detailOrder}
         chefName={chefName(detailOrder?.chefId)}
         onClose={() => setDetailOrderId(null)}
-        onRemove={removeOrder}
+        onRemove={
+          detailOrder && detailOrder.refundStatus !== "due" && !isAgentPending(detailOrder) ? removeOrder : undefined
+        }
       />
     </div>
   );

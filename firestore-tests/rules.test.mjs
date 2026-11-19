@@ -136,6 +136,15 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(db, "orders", "a4"), agentOrder({ status: "AwaitingPayment", payBy: now + 3600000 }));
   await setDoc(doc(db, "orders", "a5"), agentOrder({ status: "PaymentSubmitted", paymentMethod: "BKASH", paymentTransactionId: "ABC1234567" }));
   await setDoc(doc(db, "orders", "a6"), agentOrder({ status: "Placed", placedAt: now - 60000 }));
+  await setDoc(doc(db, "orders", "g1"), agentOrder({ status: "AwaitingPayment", payBy: now - 10 * 60000 }));
+  await setDoc(doc(db, "orders", "g2"), agentOrder({ status: "AwaitingPayment", payBy: now - 31 * 60000 }));
+  await setDoc(doc(db, "orders", "g3"), agentOrder({ status: "AwaitingPayment", payBy: now - 10 * 60000 }));
+  // Paid (admin-verified) agent orders waiting for the chef.
+  const paid = (over) => agentOrder({ status: "Placed", placedAt: now - 60000, paymentMethod: "BKASH", paymentVerifiedAt: now - 60000, ...over });
+  await setDoc(doc(db, "orders", "p1"), paid());
+  await setDoc(doc(db, "orders", "p2"), paid({ refundStatus: "due", refundAmount: 15, refundReason: "overpaid" }));
+  await setDoc(doc(db, "orders", "p3"), paid({ placedAt: now - 13 * 3600000, paymentVerifiedAt: now - 13 * 3600000 }));
+  await setDoc(doc(db, "orders", "n2"), order({ placedAt: now - 13 * 3600000 }));
 });
 const confirm = (db, id, over = {}) =>
   updateDoc(doc(db, "orders", id), { status: "AwaitingPayment", confirmedAt: Date.now(), payBy: Date.now() + 3600000, ...over });
@@ -147,10 +156,18 @@ await t("the chef can't accept an unpaid agent order", () => assertFails(updateD
 await t("the customer can't skip payment and mark it Placed", () =>
   assertFails(updateDoc(doc(cust, "orders", "a3"), { status: "Placed" })));
 
-const pay = (db, id, method, txn, claimTxn = true, claimFor = id) => {
+// The app's submit: TrxID + method + last 4 digits of the sender's number, claimed in payment_txn_ids in one batch.
+// last4 / claimLast4 = null leaves that field out.
+const pay = (db, id, method, txn, claimTxn = true, claimFor = id, last4 = "5678", claimLast4 = last4) => {
   const b = writeBatch(db);
-  if (claimTxn) b.set(doc(db, "payment_txn_ids", `${method}_${txn}`), { orderId: claimFor, customerId: CUST, method, createdAt: Date.now() });
-  b.update(doc(db, "orders", id), { status: "PaymentSubmitted", paymentMethod: method, paymentTransactionId: txn, paymentSubmittedAt: Date.now(), paymentSubmittedVia: "app" });
+  if (claimTxn) {
+    const claim = { orderId: claimFor, customerId: CUST, method, createdAt: Date.now() };
+    if (claimLast4 !== null) claim.senderLast4 = claimLast4;
+    b.set(doc(db, "payment_txn_ids", `${method}_${txn}`), claim);
+  }
+  const upd = { status: "PaymentSubmitted", paymentMethod: method, paymentTransactionId: txn, paymentSubmittedAt: Date.now(), paymentSubmittedVia: "app" };
+  if (last4 !== null) upd.paymentSenderLast4 = last4;
+  b.update(doc(db, "orders", id), upd);
   return b.commit();
 };
 await t("customer submits a bKash TrxID from the app", () => assertSucceeds(pay(cust, "a3", "BKASH", "TRX1234567")));
@@ -158,6 +175,25 @@ await t("the same TrxID can't pay for a second order", () => assertFails(pay(cus
 await t("a TrxID without claiming it in payment_txn_ids", () => assertFails(pay(cust, "a4", "NAGAD", "NGD7654321", false)));
 await t("a malformed TrxID", () => assertFails(pay(cust, "a4", "NAGAD", "bad-id")));
 await t("an unknown payment method", () => assertFails(pay(cust, "a4", "CASH_ON_DELIVERY", "TRX9999999")));
+await t("a payment without the sender's last 4 digits", () => assertFails(pay(cust, "a4", "NAGAD", "NGD1111111", true, "a4", null, null)));
+await t("sender digits that aren't exactly 4 digits", () => assertFails(pay(cust, "a4", "NAGAD", "NGD2222222", true, "a4", "56a8")));
+await t("sender digits only on the order, not on the TrxID claim", () => assertFails(pay(cust, "a4", "NAGAD", "NGD3333333", true, "a4", "5678", null)));
+await t("different sender digits on the claim and the order", () => assertFails(pay(cust, "a4", "NAGAD", "NGD4444444", true, "a4", "5678", "1234")));
+await t("a TrxID claim with extra fields", async () => {
+  const b = writeBatch(cust);
+  b.set(doc(cust, "payment_txn_ids", "NAGAD_NGD5555555"), { orderId: "a4", customerId: CUST, method: "NAGAD", senderLast4: "5678", createdAt: Date.now(), verified: true });
+  b.update(doc(cust, "orders", "a4"), { status: "PaymentSubmitted", paymentMethod: "NAGAD", paymentTransactionId: "NGD5555555", paymentSenderLast4: "5678", paymentSubmittedAt: Date.now(), paymentSubmittedVia: "app" });
+  await assertFails(b.commit());
+});
+await t("…the TrxID claim stores the sender digits", async () => {
+  let claim;
+  await env.withSecurityRulesDisabled(async (ctx) => { claim = (await getDoc(doc(ctx.firestore(), "payment_txn_ids", "BKASH_TRX1234567"))).data(); });
+  if (claim?.senderLast4 !== "5678") throw new Error(JSON.stringify(claim));
+});
+await t("paying 10 minutes after payBy is still accepted (30-min grace)", () => assertSucceeds(pay(cust, "g1", "BKASH", "TRXGRACE01")));
+await t("…but not 31 minutes after payBy", () => assertFails(pay(cust, "g2", "BKASH", "TRXLATE001")));
+await t("the customer may still cancel during the grace period", () =>
+  assertSucceeds(updateDoc(doc(cust, "orders", "g3"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now() })));
 await t("customer can't read another person's TrxID claims", () =>
   assertFails(getDoc(doc(chef, "payment_txn_ids", "BKASH_TRX1234567"))));
 
@@ -177,6 +213,50 @@ await t("a normal app order can still be self-cancelled within 5 minutes", async
   await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), "orders", "n1"), order({ placedAt: Date.now() - 60000 })));
   await assertSucceeds(updateDoc(doc(cust, "orders", "n1"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now() }));
 });
+
+console.log("\n--- paid agent orders: cancelling records the refund ---");
+const chefCancel = (id, over = {}) =>
+  updateDoc(doc(chef, "orders", id), { status: "Cancelled", cancelReason: "chef_rejected", cancelledAt: Date.now(), ...over });
+await t("the chef can't cancel a paid agent order without recording the refund", () => assertFails(chefCancel("p1")));
+await t("…or with the wrong amount", () => assertFails(chefCancel("p1", { refundStatus: "due", refundAmount: 100, refundReason: "chef" })));
+await t("…or with a made-up reason", () => assertFails(chefCancel("p1", { refundStatus: "due", refundAmount: 345, refundReason: "whatever" })));
+await t("…or by marking it already refunded", () => assertFails(chefCancel("p1", { refundStatus: "refunded", refundAmount: 345, refundReason: "chef" })));
+await t("the chef cancels a paid agent order with refundStatus due and the full total", () =>
+  assertSucceeds(chefCancel("p1", { refundStatus: "due", refundAmount: 345, refundReason: "chef" })));
+await t("an overpayment refund already due is added to the refund", () =>
+  assertFails(chefCancel("p2", { refundStatus: "due", refundAmount: 345, refundReason: "chef" })));
+await t("…total + the ৳15 already due goes through", () =>
+  assertSucceeds(chefCancel("p2", { refundStatus: "due", refundAmount: 360, refundReason: "chef" })));
+await t("the customer's 12 h auto-expiry of a paid agent order needs the refund too", () =>
+  assertFails(updateDoc(doc(cust, "orders", "p3"), { status: "Cancelled", cancelReason: "auto_expired", cancelledAt: Date.now() })));
+await t("…and goes through with refundStatus due, chef_timeout, the full total", () =>
+  assertSucceeds(updateDoc(doc(cust, "orders", "p3"), {
+    status: "Cancelled", cancelReason: "auto_expired", cancelledAt: Date.now(), refundStatus: "due", refundAmount: 345, refundReason: "chef_timeout",
+  })));
+await t("an app order's 12 h auto-expiry needs no refund fields", () =>
+  assertSucceeds(updateDoc(doc(cust, "orders", "n2"), { status: "Cancelled", cancelReason: "auto_expired", cancelledAt: Date.now() })));
+await t("nobody but an admin writes refund fields outside such a cancel", () =>
+  assertFails(updateDoc(doc(chef, "orders", "a6"), { status: "Cooking", refundStatus: "refunded", refundAmount: 0 })));
+await t("the customer can't mark their own refund as due on an unpaid cancel", () =>
+  assertFails(updateDoc(doc(cust, "orders", "a1"), { status: "Cancelled", cancelReason: "customer", cancelledAt: Date.now(), refundStatus: "due", refundAmount: 345 })));
+await t("admin marks a refund as done (refundMethod etc. are admin fields)", () =>
+  assertSucceeds(updateDoc(doc(admin, "orders", "p1"), { refundStatus: "refunded", refundTrxId: "RF12345678", refundedAt: Date.now(), refundedBy: ADMIN, refundMethod: "bkash" })));
+
+console.log("\n--- chats: only a participant opens a thread ---");
+const thread = (customerId, chefId) => ({ customerId, chefId, chefName: "K", lastMessage: "hi", lastMessageAt: Date.now() });
+await t("customer opens a thread with a chef", () => assertSucceeds(setDoc(doc(cust, "chats", `${CUST}_${CHEF_UID}`), thread(CUST, CHEF_UID), { merge: true })));
+await t("chef opens a thread with a customer", () => assertSucceeds(setDoc(doc(chef, "chats", "cust9_" + CHEF_UID), thread("cust9", CHEF_UID))));
+await t("nobody opens a thread between two other people", () =>
+  assertFails(setDoc(doc(cust, "chats", "victim_otherchef"), thread("victim", "otherchef"))));
+await t("…not even under their own chat id", () => assertFails(setDoc(doc(cust, "chats", `${CUST}_x`), thread("victim", "otherchef"))));
+await t("signed out: no threads", () => assertFails(setDoc(doc(anon, "chats", "a_b"), thread("a", "b"))));
+await t("admin can open any thread", () => assertSucceeds(setDoc(doc(admin, "chats", "z_y"), thread("z", "y"))));
+await t("a participant still updates the thread", () => assertSucceeds(updateDoc(doc(chef, "chats", `${CUST}_${CHEF_UID}`), { unreadForChef: 0 })));
+await t("a participant still sends messages", () =>
+  assertSucceeds(setDoc(doc(cust, "chats", `${CUST}_${CHEF_UID}`, "messages", "m1"), { senderId: CUST, text: "hi", sentAt: Date.now(), type: "text" })));
+await t("an outsider can't read the thread", () => assertFails(getDoc(doc(anon, "chats", `${CUST}_${CHEF_UID}`))));
+await t("an outsider can't post into it", () =>
+  assertFails(setDoc(doc(env.authenticatedContext("stranger").firestore(), "chats", `${CUST}_${CHEF_UID}`, "messages", "m2"), { senderId: "stranger", text: "x" })));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
