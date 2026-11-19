@@ -1,0 +1,26 @@
+TiffinBox
+Copyright (C) 2026 Md Ratul Hossen and the TiffinBox team
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version. See the LICENSE file.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+details.
+
+If you run a modified version of this software as a network service (for
+example the admin panel or the MCP server), you must offer its complete
+corresponding source code to the users of that service, under the same
+license (AGPL v3, section 13).
+
+Additional terms under section 7(e) of the AGPL v3: this license grants no
+right to use the "TiffinBox" name, logo or brand. A modified version must
+use a different name and must not suggest it is the official TiffinBox.
+
+Third-party components keep their own licenses:
+- Fonts in licenses/ (SIL Open Font License, see licenses/HIND_SILIGURI_OFL.txt)
+- Libraries listed in app/build.gradle.kts, admin-web/package.json and
+  mcp-server/package.json, each under its own license.

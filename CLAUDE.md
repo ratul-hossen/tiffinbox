@@ -1373,3 +1373,12 @@ In-app assistant = later, separate decision.
     `lib/orderPlates.ts` transactional cancel with refund fields, `lib/sales.ts`
     `isRealSale` shared by Dashboard/Orders/Revenue.
   - Tests: firestore-tests 98, mcp vitest 64, e2e 104.
+
+## License + judging README (2026-11-19)
+
+Owner switched the license from "All Rights Reserved" to **GNU AGPL v3**
+(official text from gnu.org in `LICENSE`; `NOTICE` holds the copyright line
+"Md Ratul Hossen and the TiffinBox team" and an AGPL 7(e) term: no right to
+the TiffinBox name/logo). `README.md` was rewritten for hackathon judging and
+describes only what is actually built (app, admin-web, MCP server, on-device
+ML, tests). Keep its numbers (test counts, tool count) in sync when they change.
